@@ -377,7 +377,8 @@ public class CssConverter extends Converter {
 	protected void processDefaultStyle(boolean defaultFontDefined, boolean defaultBackgroundDefined, boolean defaultBorderDefined, ArrayList codeList, ArrayList staticCodeList, StyleSheet styleSheet, Device device, Environment environment ) {
 		//System.out.println("PROCESSSING DEFAULT STYLE " + styleSheet.getStyle("default").toString() );
 		Style copy = new Style( styleSheet.getStyle("default"));
-		HashMap group = copy.getGroup("font");
+		HashMap group;
+//		group = copy.getGroup("font");
 //		if (!defaultFontDefined) {
 //			if (group == null) {
 //				codeList.add( STANDALONE_MODIFIER + "int defaultFontColor = 0x000000;");
@@ -404,11 +405,14 @@ public class CssConverter extends Converter {
 		}
 		// set default values:
 		//copy.setSelector("defaultStyle");
-		group = new HashMap();
-		if (defaultFontDefined) {
-			group.put("font", "default");
+		if(copy.getGroup("font") == null) {
+    		group = new HashMap();
+    		if (defaultFontDefined) {
+    			group.put("font", "default");
+    		}
+    		copy.addGroup("font", group );
 		}
-		copy.addGroup("font", group );
+		
 		group = new HashMap();
 		group.put("background", "default");
 		copy.addGroup("background", group );
