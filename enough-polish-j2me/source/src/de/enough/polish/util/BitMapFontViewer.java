@@ -190,7 +190,7 @@ public class BitMapFontViewer {
         // {
 					rgb[i] = colorizePixel(pixel, color);
         // }
-      // }
+			}
 			
 			return Image.createRGBImage(rgb, w, h, true);
 		//#else
