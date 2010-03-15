@@ -4,30 +4,15 @@ package de.enough.polish.ui.keyboard.keys;
 import de.enough.polish.ui.Style;
 import de.enough.polish.ui.keyboard.KeyItem;
 import de.enough.polish.ui.keyboard.Keyboard;
-//#ifdef polish.i18n.useDynamicTranslations
-import de.enough.polish.util.Locale;
-//#endif
+
 /**
  * A special key item implementation for a blank key item
  * which does nothing and can be used as a blank filling in 
- * a keyboard layout
- * <pre>
- * history
- *        21-Jan-2010 - David added translations
- * </pre>
+ * a keyboard layout 
  * @author Andre
- * @author David
+ *
  */
 public class BlankItem extends KeyItem {
-       //I am pretty sure this isn't needed but just encase we can add it.
-        public static final String DISPLAY_NAME=
-        //#ifdef polish.i18n.useDynamicTranslations
-             //# Locale.get("polish.keyboard.blank");
-        //#elifdef polish.keyboard.blank:defined
-            //#= "${polish.keyboard.blank}";
-        //#else
-           " ";
-        //#endif
 
 	/**
 	 * Creates a new BlankItem instance
@@ -45,7 +30,7 @@ public class BlankItem extends KeyItem {
 	 * @param style the style
 	 */
 	public BlankItem(Keyboard keyboard, String position, Style style) {
-		super(keyboard, position, DISPLAY_NAME, style);
+		super(keyboard, position, " ", style);
 	}
 
 	/* (non-Javadoc)

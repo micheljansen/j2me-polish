@@ -2186,11 +2186,7 @@ public abstract class Item implements UiElement, Animatable
 	 */
 	public int getMinimumWidth()
 	{
-		if (this.minimumWidth != null) {
-			return this.minimumWidth.getValue(100);
-		} else {
-			return 0;
-		}
+		return this.minimumWidth.getValue(100);
 	}
 
 	/**
@@ -2204,11 +2200,7 @@ public abstract class Item implements UiElement, Animatable
 	 */
 	public int getMinimumHeight()
 	{
-		if (this.minimumHeight != null) {
-			return this.minimumHeight.getValue(100);
-		} else {
-			return 0;
-		}
+		return this.minimumHeight.getValue(100);
 	}
 
 	/**

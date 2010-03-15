@@ -506,7 +506,7 @@ public class CommandItem extends IconItem {
 		if (this.isOpen) {
 			handled = this.children.handlePointerDragged(x - this.children.relativeX, y - this.children.relativeY );
 		}
-		return handled || super.handlePointerDragged(x, y);
+		return handled || super.handlePointerReleased(x, y);
 	}
 	//#endif
 

@@ -27,7 +27,7 @@ public interface SecurityInfo
 	 * 
 	 * @return the Certificate used to establish the secure connection with the server.
 	 */
-	Certificate getServerCertificate();
+	public Certificate getServerCertificate();
 
 	/**
 	 * Returns the protocol version.
@@ -42,14 +42,14 @@ public interface SecurityInfo
 	 * 
 	 * @return a String containing the version of the protocol; the return value MUST NOT be null.
 	 */
-	String getProtocolVersion();
+	public String getProtocolVersion();
 
 	/**
 	 * Returns the secure protocol name.
 	 * 
 	 * @return a String containing the secure protocol identifier; if TLS (RFC 2246) or WAP TLS Profile and Tunneling (WAP-219-TLS) is used for the connection the return value is "TLS"; if SSL V3 (The SSL Protocol Version 3.0) is used for the connection; the return value is "SSL"); if WTLS (WAP 199) is used for the connection the return value is "WTLS".
 	 */
-	String getProtocolName();
+	public String getProtocolName();
 
 	/**
 	 * Returns the name of the cipher suite in use for the connection.
@@ -66,6 +66,6 @@ public interface SecurityInfo
 	 * 
 	 * @return a String containing the name of the cipher suite in use.
 	 */
-	String getCipherSuite();
+	public String getCipherSuite();
 
 }

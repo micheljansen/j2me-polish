@@ -6,29 +6,13 @@ import de.enough.polish.ui.keyboard.KeyItem;
 import de.enough.polish.ui.keyboard.Keyboard;
 import de.enough.polish.ui.keyboard.view.KeyboardView;
 
-//#ifdef polish.i18n.useDynamicTranslations
-import de.enough.polish.util.Locale;
-//#endif
 /**
  * A special key item implementation for a clear key
  * to clear the contents of a KeyboardView
- * <pre>
- * history
- *        21-Jan-2010 - David added translations
- * </pre>
  * @author Andre
- * @author David
+ *
  */
 public class ClearKeyItem extends KeyItem {
-
-        public static final String DISPLAY_NAME=
-        //#ifdef polish.i18n.useDynamicTranslations
-                //# Locale.get("polish.keyboard.clr");
-        //#elifdef polish.keyboard.clr:defined
-            //#= "${polish.keyboard.clr}";
-        //#else
-           "CLR";
-        //#endif
 	
 	/**
 	 * Creates a new ClearKeyItem instance
@@ -46,7 +30,7 @@ public class ClearKeyItem extends KeyItem {
 	 * @param style the style
 	 */
 	public ClearKeyItem(Keyboard keyboard, String position, Style style) {
-                super(keyboard, position, DISPLAY_NAME, style);
+		super(keyboard, position, "CLR", style);
 	}
 
 	protected void apply(boolean doubleclick) {

@@ -9,35 +9,35 @@ import java.io.OutputStream;
 
 public interface SocketConnection extends StreamConnection {
 
-	byte DELAY = 0;
+	public static final byte DELAY = 0;
 	
-	byte KEEPALIVE = 2;
+	public static final byte KEEPALIVE = 2;
 	
-	byte LINGER = 1;
+	public static final byte LINGER = 1;
 	
-	byte RCVBUF = 3;
+	public static final byte RCVBUF = 3;
 	
-	byte SNDBUF = 4;
+	public static final byte SNDBUF = 4;
 	       
-	void close() throws IOException;
+	public void close() throws IOException;
 	
-	InputStream openInputStream() throws IOException;
+	public InputStream openInputStream() throws IOException;
 	
-	OutputStream openOutputStream() throws IOException;
+	public OutputStream openOutputStream() throws IOException;
 	
-	DataInputStream openDataInputStream() throws IOException;
+	public DataInputStream openDataInputStream() throws IOException;
 
-	DataOutputStream openDataOutputStream() throws IOException;
+	public DataOutputStream openDataOutputStream() throws IOException;
 	
-	String getAddress();
+	public String getAddress();
 	
-	String getLocalAddress();
+	public String getLocalAddress();
 	
-	int getLocalPort();
+	public int getLocalPort();
 	
-	int getPort();
+	public int getPort();
 	
-	void setSocketOption(byte option, int value) throws IOException;
+	public void setSocketOption(byte option, int value) throws IOException;
 		
-	int getSocketOption(byte option) throws IOException;
+	public int getSocketOption(byte option) throws IOException;
 }

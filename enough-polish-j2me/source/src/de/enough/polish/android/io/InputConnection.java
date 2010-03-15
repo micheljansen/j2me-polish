@@ -7,8 +7,8 @@ import java.io.InputStream;
 
 public interface InputConnection extends Connection {
 	
-	InputStream openInputStream() throws IOException;
+	public InputStream openInputStream() throws IOException;
 	
-	DataInputStream openDataInputStream() throws IOException;
+	public DataInputStream openDataInputStream() throws IOException;
 
 }

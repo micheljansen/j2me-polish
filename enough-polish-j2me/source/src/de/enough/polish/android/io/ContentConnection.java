@@ -3,10 +3,10 @@ package de.enough.polish.android.io;
 
 public interface ContentConnection extends StreamConnection {
 
-	String getEncoding(); 
+	public String getEncoding(); 
     
-	long getLength(); 
+	public long getLength(); 
     
-	String getType(); 
+	public String getType(); 
 	
 }

@@ -5,6 +5,6 @@ import java.io.IOException;
 
 public interface Connection {
 	
-	void close() throws IOException;
+	public void close() throws IOException;
 
 }

@@ -4600,13 +4600,6 @@ public class TextField extends StringItem
 	}
 
 	//#if polish.TextField.showHelpText
-	/**
-	 * Sets a help text for this TextField. The help text
-	 * appears when a TextField has no input yet and is
-	 * used to inform the user about the desired content 
-	 * (e.g. "Insert name here ...")
-	 * @param text the help text
-	 */
 	public void setHelpText(String text)
 	{
 		this.helpItem.setText(text);
@@ -4614,10 +4607,6 @@ public class TextField extends StringItem
 	//#endif
 	
 	//#if polish.TextField.showHelpText
-	/**
-	 * Sets the style of the help text
-	 * @param style the style
-	 */
 	public void setHelpStyle(Style style)
 	{
 		this.helpItem.setStyle(style);
@@ -4625,18 +4614,10 @@ public class TextField extends StringItem
 	//#endif
 
 	//#if polish.TextField.useExternalInfo && !polish.blackberry
-	/**
-	 * Returns the StringItem which is displaying the input info
-	 * @return the StringItem displaying the input info
-	 */
 	public StringItem getInfoItem() {
 		return this.infoItem;
 	}
 
-	/**
-	 * Sets the StringItem which should display the input info 
-	 * @param infoItem the StringItem to display the input info
-	 */
 	public void setInfoItem(StringItem infoItem) {
 		this.infoItem = infoItem;
 	}

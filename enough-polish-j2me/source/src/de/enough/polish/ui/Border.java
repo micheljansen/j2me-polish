@@ -139,42 +139,4 @@ public abstract class Border implements Serializable
 		// do nothing
 	}
 
-	/**
-	 * Retrieves the border width.
-	 * 
-	 * @return the border for the top side in pixels
-	 */
-	public int getBorderWidthTop() {
-		return this.borderWidthTop;
-	}
-
-	/**
-	 * Retrieves the border width.
-	 * 
-	 * @return the border for the bottom side in pixels
-	 */
-	public int getBorderWidthBottom() {
-		return this.borderWidthBottom;
-	}
-
-	/**
-	 * Retrieves the border width.
-	 * 
-	 * @return the border for the left side in pixels
-	 */
-	public int getBorderWidthLeft() {
-		return this.borderWidthLeft;
-	}
-
-	/**
-	 * Retrieves the border width.
-	 * 
-	 * @return the border for the right side in pixels
-	 */
-	public int getBorderWidthRight() {
-		return this.borderWidthRight;
-	}
-	
-	
-	
 }
