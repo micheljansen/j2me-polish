@@ -39,7 +39,7 @@ import de.enough.polish.util.FileUtil;
 import de.enough.polish.util.IntegerIdGenerator;
 
 /**
- * <p>A container for several <library> tags.</p>
+ * <p>A container for several &lt;library&gt; tags.</p>
  *
  * <p>Copyright Enough Software 2005</p>
  * <pre>

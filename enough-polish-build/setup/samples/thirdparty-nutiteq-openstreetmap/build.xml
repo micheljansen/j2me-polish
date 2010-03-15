@@ -42,7 +42,7 @@
 			icon="/nutiteq.png" 
 			jarUrl="${polish.jarName}" 
 			version="1.0.0"
-			copyright="Nutiteq 2009"
+			copyright="Nutiteq 2010"
 		/>
 		<deviceRequirements if="test">
 			<requirement name="Identifier" value="${device}" />

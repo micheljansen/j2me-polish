@@ -263,16 +263,15 @@ public class Converter {
 		// now add definition for each layout:
 		StringBuffer buffer = new StringBuffer();
 		for (int i = 0; i < anchors.length; i++) {
-			boolean finished = (i == anchors.length -1 );
+			if (i > 0) {
+				buffer.append(" | ");
+			}
 			String value = anchors[i];
 			String anchor = (String) ANCHORS.get( value );
 			if (anchor == null) {
 				throw new BuildException("Invalid CSS: the [" + attributeName + "]-value \"" + anchorValue + "\" contains the invalid value \"" + value + "\". Please adjust the style \"" + styleName+ "\" - \"" + groupName + "\".");
 			}
 			buffer.append( anchor );
-			if (!finished) {
-				buffer.append(" | ");
-			}
 		}
 		return buffer.toString();
 	}

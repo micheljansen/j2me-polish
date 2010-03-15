@@ -1509,6 +1509,7 @@
 		<mapping from="3drotation" to="new de.enough.polish.ui.screenanimations.Rotate3DScreenChangeAnimation()"  condition="polish.api.3d" />
 		<mapping from="3dRotation" to="new de.enough.polish.ui.screenanimations.Rotate3DScreenChangeAnimation()"  condition="polish.api.3d" />
 		<mapping from="3d" to="new de.enough.polish.ui.screenanimations.Rotate3DScreenChangeAnimation()"  condition="polish.api.3d" />
+		<mapping from="rotate3d-m3g" to="new de.enough.polish.ui.screenanimations.RotatingScreenM3GScreenChangeAnimation()"  condition="polish.javapackage.jsr184" />
 		<mapping from="scale" to="new de.enough.polish.ui.screenanimations.ScaleScreenChangeAnimation()" />
 		<mapping from="leftshutter" to="new de.enough.polish.ui.screenanimations.LeftShutterScreenChangeAnimation()" />
 		<mapping from="leftShutter" to="new de.enough.polish.ui.screenanimations.LeftShutterScreenChangeAnimation()" />
@@ -2128,7 +2129,7 @@
 	
 	<attribute
 		name="scrollbar-slider-width"
-		type="integer"
+		type="dimension"
 		appliesTo="Screen, ScrollBar"
 		description="The width of the slider in pixels, is ignored when a slider-image is defined."
 		default="2"
@@ -4128,6 +4129,7 @@
 		<mapping from="plain" to="null" />
 		<mapping from="opacity" to="new de.enough.polish.ui.rgbfilters.OpacityRgbFilter()" />
 		<mapping from="grayscale" to="new de.enough.polish.ui.rgbfilters.GrayscaleRgbFilter()" />
+		<mapping from="rotate" to="new de.enough.polish.ui.rgbfilters.RotateRgbFilter()" />
 		<mapping from="blur" to="new de.enough.polish.ui.rgbfilters.GaussianBlurRgbFilter()" />
 		<mapping from="scale" to="new de.enough.polish.ui.rgbfilters.ScaleRgbFilter()" />
 		
@@ -4153,6 +4155,8 @@
 		id="344"
 		since="J2ME Polish 2.1"
 	/>
+	
+	
 	<!--  not yet implemented
 	<attribute
 		name="filter-grayscale-keep"
@@ -4274,7 +4278,7 @@
 		name="horizontalview-align-heights"
 		type="boolean"
 		appliesTo="HorizontalContainerView"
-		description="Specifies if all items should have the same height as the highest item in the group."
+		description="Specifies if all items should have the same height as the highest item in the group. You can exclude an item from aligning by setting its layout to vertical-shrink."
 		default="false"
 		id="357"
 		since="J2ME Polish 2.1"
@@ -4510,7 +4514,7 @@
 		name="align-heights"
 		type="boolean"
 		appliesTo="ContainerView"
-		description="Specifies if all items should have the same height as the highest item in the respective row."
+		description="Specifies if all items should have the same height as the highest item in the respective row. You can exclude an item from aligning by setting its layout to vertical-shrink."
 		default="false"
 		id="381"
 		since="J2ME Polish 2.1"
@@ -4708,6 +4712,7 @@
 		since="J2ME Polish 2.1.1"
 	/>
 	
+	
 	<attribute
 		name="menu-item-style"
 		type="style"
@@ -4717,8 +4722,230 @@
 		since="J2ME Polish 2.1.2"
 	/>
 	
+	<attribute
+		name="scrollbar-slider-minimum-height"
+		type="dimension"
+		appliesTo="ScrollBar"
+		description="The minimum height to be used for the slider of a scrollbar"
+		id="402"
+		since="J2ME Polish 2.1.3"
+	/>
 	
+	<attribute
+		name="vertical-scroll-max-lines"
+		type="integer"
+		appliesTo="VerticalScrollTextEffect"
+		description="The maximum lines to use for the verticalscrolltexteffect"
+		id="403"
+		since="J2ME Polish 2.1.3"
+	/>
+	
+	<attribute
+		name="horizontalview-distribution"
+		type="integer"
+		appliesTo="HorizontalContainerView"
+		description="Set to equal for giving each item the same available space."
+		id="404"
+		default="normal"
+		values="normal, equal"
+		since="J2ME Polish 2.1.3"
+	/>
+	
+	<attribute
+		name="calendar-day-style"
+		type="style"
+		appliesTo="CalendarItem"
+		description="The style of a normal day within an CalendarItem."
+		id="405"
+		since="J2ME Polish 2.1.3"
+	/>
 
+	<attribute
+		name="calendar-weekday-style"
+		type="style"
+		appliesTo="CalendarItem"
+		description="The style of the weekday headings within an CalendarItem."
+		id="406"
+		since="J2ME Polish 2.1.3"
+	/>
+
+	<attribute
+		name="calendar-day-inactive-style"
+		type="style"
+		appliesTo="CalendarItem"
+		description="The style for days of the preceding or following month within an CalendarItem."
+		id="407"
+		since="J2ME Polish 2.1.3"
+	/>
+
+	<attribute
+		name="calendar-current-day-style"
+		type="style"
+		appliesTo="CalendarItem"
+		description="The style of the currently selected day within an CalendarItem."
+		id="408"
+		since="J2ME Polish 2.1.3"
+	/>
+		
+	<attribute
+		name="exclusiveview-arrow-color-pressed"
+		type="color"
+		appliesTo="ExclusiveSingleLineView"
+		description="The color of the currently pressed arrow."
+		default="black"
+		id="409"
+		since="J2ME Polish 2.1.3"
+	/>
+	
+	<attribute
+		name="exclusiveview-right-arrow-pressed"
+		type="imageurl"
+		appliesTo="ExclusiveSingleLineView"
+		description="The URL of the right arrow image when it is pressed."
+		id="410"
+		since="J2ME Polish 2.1.3"
+	/>
+
+	<attribute
+		name="exclusiveview-left-arrow-pressed"
+		type="imageurl"
+		appliesTo="ExclusiveSingleLineView"
+		description="The URL of the left arrow image when it is pressed."
+		id="411"
+		since="J2ME Polish 2.1.3"
+	/>
+	
+	<attribute
+		name="max-lines-appendix-position"
+		type="integer"
+		appliesTo="StringItem"
+		default="after"
+		values="after,before"
+		id="412"
+		since="J2ME Polish 2.1.3"
+	/>
+	
+	<attribute
+		name="filter-scale-crop"
+		type="boolean"
+		appliesTo="ScaleRgbFilter"
+		description="Specifies if the resulting scaled image should be cropped to the original image dimensions. WARNING: May cause OutOfMemory errors when set to false! Use at your own risk."
+		default="false"
+		id="413"
+		since="J2ME Polish 2.1.3"
+	/>
+
+	<attribute
+		name="icon-filter-layout"
+		type="layout"
+		appliesTo="icon-filter"
+		description="Specifies the position of the icon filter result in case a size change is involved."
+		id="414"
+		shell="new Integer()"
+		since="J2ME Polish 2.1.3"
+	/>
+
+	<attribute
+		name="commands-style"
+		type="style"
+		appliesTo="Item,FakeCustomItem"
+		description="The style for the commands container of an item that is shown when an item is pressed/hold for a long time and when the preprocesing variable polish.Item.ShowCommandsOnHold is activated."
+		id="415"
+		since="J2ME Polish 2.1.3"
+	/>
+
+	<attribute
+		name="child-style"
+		type="style"
+		appliesTo="Container,FakeCustomContainer"
+		description="The style for the items of a Container that don't have a style assigned."
+		id="416"
+		since="J2ME Polish 2.1.3"
+	/>
+	
+	<attribute
+		name="child-style-first"
+		type="style"
+		appliesTo="Container,FakeCustomContainer"
+		description="The style for the first item of a Container in case that doesn't have a style assigned. Can be used only in conjunction with the child-style CSS attribute."
+		id="417"
+		since="J2ME Polish 2.1.3"
+	/>
+
+	<attribute
+		name="child-style-last"
+		type="style"
+		appliesTo="Container,FakeCustomContainer"
+		description="The style for the last item of a Container in case that doesn't have a style assigned. Can be used only in conjunction with the child-style CSS attribute."
+		id="418"
+		since="J2ME Polish 2.1.3"
+	/>
+
+	<attribute
+		name="filter-rotation-angle"
+		type="integer"
+		appliesTo="RotateRgbFilter"
+		description="The angle of rotation (in degrees)."
+		default="0"
+		id="419"
+		since="J2ME Polish 2.1.4"
+	/>
+	
+	
+	<attribute
+		name="fisheyeview-place-label-at-top"
+		type="boolean"
+		appliesTo="FishEyeContainerView"
+		description="Allows to place the label on top of the view. By default the label is rendered below the icons. This is only applicable when fisheyeview-remove-text is true."
+		default="false"
+		id="420"
+		since="J2ME Polish 2.1.4"
+	/>
+	
+	<attribute
+		name="box-align"
+		type="integer"
+		appliesTo="ChoiceItem, ChoiceGroup"
+		description="Allows to the radio- or checkbox of a choice element on the right side."
+		default="left"
+		values="left,right"
+		id="421"
+		since="J2ME Polish 2.1.4"
+	/>
+	
+	<attribute
+		name="text-filter"
+		type="filter"
+		appliesTo="StringItem,FakeStringCustomItem"
+		description="Specifies an RGB filter for the text of an StringItem or one of its subclasses"
+		default="none"
+		id="422"
+		since="J2ME Polish 2.1.4"
+	/>
+	
+	<attribute
+		name="text-filter-layout"
+		type="layout"
+		appliesTo="text-filter"
+		description="Specifies the position of the text filter result in case a size change is involved."
+		id="423"
+		shell="new Integer()"
+		since="J2ME Polish 2.1.4"
+	/>
+	
+<!--
+	<attribute
+		name="repaint-previous-screen-anchor"
+		type="integer"
+		appliesTo="Screen"
+		description="Position of a shrinked screen relative to the current item of a previous screen."
+		id="405"
+		default="none"
+		values="none, focused"
+		since="J2ME Polish 2.1.3"
+	/>
+-->
+	
 <!-- 
 	<attribute
 		name="content-layout"
@@ -4743,5 +4970,5 @@
 	/>
  -->
 	
-	
+ 
 </attributes>

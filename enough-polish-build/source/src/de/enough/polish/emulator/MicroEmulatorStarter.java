@@ -47,7 +47,7 @@ public class MicroEmulatorStarter {
 		try {
 			// read manifest:
 			Properties props = new Properties();
-			props.load( (new MicroEmulatorStarter().getClass().getResourceAsStream("/META-INF/J2MEPOLISHMANIFEST.MF")) );
+			props.load( new MicroEmulatorStarter().getClass().getResourceAsStream("/META-INF/J2MEPOLISHMANIFEST.MF") );
 			String midletClassName = props.getProperty("MIDlet-1");
 			if (midletClassName == null) {
 				System.err.println("Unable to read midlet class name from manifest, check the MIDlet-1 attribute within META-INF/J2MEPOLISHMANIFEST.MF.");

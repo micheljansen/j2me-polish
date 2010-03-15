@@ -63,7 +63,7 @@ public final class ProcessUtil {
 	 * @throws IOException when the process could not be started
 	 * @see #exec(String[], String, boolean)
 	 */
-	public static final int exec( ArrayList arguments, String info, boolean wait ) 
+	public static int exec( ArrayList arguments, String info, boolean wait ) 
 	throws IOException 
 	{
 		return exec( arguments, info, wait, null, null );
@@ -82,7 +82,7 @@ public final class ProcessUtil {
 	 * @throws IOException when the process could not be started
 	 * @see #exec(String[], String, boolean)
 	 */
-	public static final int exec( ArrayList arguments, String info, boolean wait, OutputFilter filter ) 
+	public static int exec( ArrayList arguments, String info, boolean wait, OutputFilter filter ) 
 	throws IOException 
 	{
 		return exec( arguments, info, wait, filter, null );
@@ -102,7 +102,7 @@ public final class ProcessUtil {
 	 * @throws IOException when the process could not be started
 	 * @see #exec(String[], String, boolean)
 	 */
-	public static final int exec( ArrayList arguments, String info, boolean wait, OutputFilter filter, File dir ) 
+	public static int exec( ArrayList arguments, String info, boolean wait, OutputFilter filter, File dir ) 
 	throws IOException 
 	{
 		String[] parameters = (String[]) arguments.toArray( new String[ arguments.size() ] );
@@ -120,7 +120,7 @@ public final class ProcessUtil {
 	 *         of the process is returned, 0 usally indicates success.
 	 * @throws IOException when the process could not be started
 	 */
-	public static final int exec( String[] arguments, String info, boolean wait ) 
+	public static int exec( String[] arguments, String info, boolean wait ) 
 	throws IOException 
 	{
 		return exec( arguments, info, wait, null, null );
@@ -137,7 +137,7 @@ public final class ProcessUtil {
 	 *         of the process is returned, 0 usally indicates success.
 	 * @throws IOException when the process could not be started
 	 */
-	public static final int exec( String[] arguments, String info, boolean wait, OutputFilter filter ) 
+	public static int exec( String[] arguments, String info, boolean wait, OutputFilter filter ) 
 	throws IOException
 	{
 		return exec( arguments, info, wait, filter, null );
@@ -155,7 +155,7 @@ public final class ProcessUtil {
 	 *         of the process is returned, 0 usally indicates success.
 	 * @throws IOException when the process could not be started
 	 */
-	public static final int exec( String[] arguments, String info, boolean wait, OutputFilter filter, File dir ) 
+	public static int exec( String[] arguments, String info, boolean wait, OutputFilter filter, File dir ) 
 	throws IOException 
 	{
 		Runtime runtime = Runtime.getRuntime();

@@ -109,7 +109,7 @@ public class SonyEricssonEmulator extends WtkEmulator {
 			}
 		}
 		String execPath;
-		if (this.sonyWtkHome  != null) {
+		if (this.sonyWtkHome != null) {
 			execPath = this.sonyWtkHome + "\\bin\\emulator.exe";	
 		} else {
 			execPath = this.sonyEricssonHome + "\\bin\\emulator.exe";

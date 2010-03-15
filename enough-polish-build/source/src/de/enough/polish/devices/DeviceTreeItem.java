@@ -129,7 +129,7 @@ public class DeviceTreeItem {
 
         // Uncheck the parent if we become unchecked as the parent can only be checked
         // if every child is checked. 
-		if(selected == false) {
+		if (!selected) {
             DeviceTreeItem parent = getParentItem();
             if(parent != null) {
                 parent.setIsSelectedOnItemAndParent(selected);

@@ -35,7 +35,7 @@
 	<!-- the device for the test mode - you can define it on the command-line
 	     using the -D switch, e.g. ant -Ddevice=Generic/midp2 emulator -->
 	<property name="device" value="Generic/AnyPhone"/>
-	<property name="devices" value="${device},Generic/jtwi,Generic/Midp2Cldc11,Nokia/Series40E3,Nokia/Series60E2,Nokia/Series60E3,Sony-Ericsson/JavaPlatform7,,Sony-Ericsson/JavaPlatform8"/>
+	<property name="devices" value="${device},Generic/AnyMsaPhone,Nokia/Series40E3,Nokia/Series60E3,Sony-Ericsson/JavaPlatform7,Sony-Ericsson/JavaPlatform8"/>
 	
 
 
@@ -93,14 +93,14 @@
 		         You can also define localized attributes in the resources/messages.txt files -->
 			<info
 				name="FishEye"
-				version="1.3.4"
+				version="2.1.4"
 				description="A simple project that uses the fisheye view-type."
 				vendorName="Enough Software"
 				infoUrl="http://www.j2mepolish.org"
-				icon="dot.png"
+				icon="iconlarge0.png"
 				jarName="${polish.vendor}-${polish.name}-${polish.locale}-fisheye.jar" 
 				jarUrl="${deploy-url}${polish.jarName}"
-				copyright="Copyright 2009 Enough Software. All rights reserved."
+				copyright="Copyright 2010 Enough Software. All rights reserved."
 				deleteConfirm="Do you really want to kill me?" 
 			/>
 			<!-- selection of supported devices -->

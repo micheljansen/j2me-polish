@@ -1,7 +1,5 @@
 /*
- * Created on 25-Apr-2005 at 19:07:06.
- * 
- * Copyright (c) 2005 Robert Virkus / Enough Software
+ * Copyright (c) 2009 Robert Virkus / Enough Software
  *
  * This file is part of J2ME Polish.
  *
@@ -28,13 +26,9 @@ package de.enough.polish.propertyfunctions;
 import de.enough.polish.Environment;
 
 /**
- * <p>Converts the fully qualified classname to the classname when the default package is used by J2ME Polish.</p>
+ * <p>Converts the fully qualified classname to the name of only the class (without package).</p>
  *
- * <p>Copyright Enough Software 2005</p>
- * <pre>
- * history
- *        25-Apr-2005 - rob creation
- * </pre>
+ * <p>Copyright Enough Software 2009</p>
  * @author Robert Virkus, j2mepolish@enough.de
  */
 public class ClassNameFunction extends PropertyFunction {
@@ -50,11 +44,9 @@ public class ClassNameFunction extends PropertyFunction {
 	 * @see de.enough.polish.propertyfunctions.PropertyFunction#process(java.lang.String, java.lang.String[], de.enough.polish.Environment)
 	 */
 	public String process(String input, String[] arguments, Environment env) {
-		if (env.hasSymbol("polish.useDefaultPackage")) {
-			int lastDotIndex = input.lastIndexOf('.');
-			if (lastDotIndex != -1) {
-				return input.substring( lastDotIndex + 1 );
-			}
+		int lastDotIndex = input.lastIndexOf('.');
+		if (lastDotIndex != -1) {
+			return input.substring( lastDotIndex + 1 );
 		}
 		return input;
 	}

@@ -38,19 +38,19 @@ public interface PolishBuildListener {
 	/**
 	 * The name of the Ant property for defining one or several classnames at the J2ME Polish task.
 	 */
-	public final static String ANT_PROPERTY_NAME = "polish.build.listener";
+	String ANT_PROPERTY_NAME = "polish.build.listener";
 	
 	/**
 	 * Used for setting up the directory that contains the preprocessed source code.
 	 * The source code directory is given as a java.io.File object.
 	 */
-	public final static String EVENT_PREPROCESS_SOURCE_DIR = "evt.preprocess.sourcedir";
+	String EVENT_PREPROCESS_SOURCE_DIR = "evt.preprocess.sourcedir";
 
 	/**
 	 * Notifies the listener about the end of a device build.
 	 * The environment is given as the data
 	 */
-	public final static String EVENT_BUILD_FINISHED = "evt.build.finished";
+	String EVENT_BUILD_FINISHED = "evt.build.finished";
 
 	/**
 	 * Notifies the implementation about a build event.
@@ -59,6 +59,6 @@ public interface PolishBuildListener {
 	 * @param name the name of the build event
 	 * @param data any value that might be associated with the event
 	 */
-	public void notifyBuildEvent( String name, Object data );
+	void notifyBuildEvent( String name, Object data );
 
 }

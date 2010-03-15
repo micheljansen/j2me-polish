@@ -73,7 +73,7 @@ public final class SwingUtil {
 	 * @param parent the frame which wants to show the FileChooser
 	 * @return the chosen file or null, when cancel was selected
 	 */
-	public final static File openFile(String extension, boolean open, File currentDirectory, JFrame parent ) {
+	public static File openFile(String extension, boolean open, File currentDirectory, JFrame parent ) {
 		JFileChooser fileChooser = new JFileChooser( currentDirectory );
 		if (extension != null) {
 			fileChooser.setFileFilter( INSTANCE.new CustomFileFilter( extension ) );
@@ -192,7 +192,7 @@ public final class SwingUtil {
 		 * @see javax.swing.filechooser.FileFilter#accept(java.io.File)
 		 */
 		public boolean accept(File f) {
-			return (f.isDirectory() || f.getName().endsWith( this.lowerCaseType ) || f.getName().endsWith(this.upperCaseType));
+			return f.isDirectory() || f.getName().endsWith( this.lowerCaseType ) || f.getName().endsWith(this.upperCaseType);
 		}
 		/* (non-Javadoc)
 		 * @see javax.swing.filechooser.FileFilter#getDescription()
@@ -201,8 +201,4 @@ public final class SwingUtil {
 			return this.lowerCaseType;
 		}	
 	}
-	
-	
-
-
 }

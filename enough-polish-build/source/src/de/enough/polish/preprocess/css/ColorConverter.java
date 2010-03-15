@@ -25,17 +25,20 @@
  */
 package de.enough.polish.preprocess.css;
 
+import de.enough.polish.BuildException;
 import de.enough.polish.util.StringUtil;
 
-import de.enough.polish.BuildException;
-
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * <p>Translates colors.</p>
  *
  * <p>Copyright Enough Software 2004, 2005</p>
-
+ * 
  * <pre>
  * history
  *        01-Mar-2004 - rob creation

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>sysinfo</name> 
+	<name>j2mepolish-sysinfo</name> 
         <comment>Checks the capabilities of your device.</comment>
 	<projects>
-		<project>sysinfo</project>
+		<project>j2mepolish-sysinfo</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

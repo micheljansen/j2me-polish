@@ -934,7 +934,7 @@ public class PolishPreprocessor extends CustomPreprocessor {
 	 * @return true when the given type is primitive
 	 */
 	protected static boolean isPrimitive(String paramType) {
-		return (PRIMITIVES_BY_NAME.get(paramType) != null);
+		return PRIMITIVES_BY_NAME.get(paramType) != null;
 	}
 
 
@@ -948,9 +948,4 @@ public class PolishPreprocessor extends CustomPreprocessor {
 		String wrapperClassName = (String) PRIMITIVES_BY_NAME.get(paramType);
 		buffer.append("new ").append( wrapperClassName ).append("( ").append( paramName ).append(" )");
 	}
-
-
-
-	
-
 }

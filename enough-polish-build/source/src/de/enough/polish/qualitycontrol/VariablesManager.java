@@ -41,7 +41,6 @@ import org.jdom.JDOMException;
 import org.jdom.input.SAXBuilder;
 
 import de.enough.polish.BuildException;
-import de.enough.polish.devices.Bug;
 import de.enough.polish.exceptions.InvalidComponentException;
 
 /**

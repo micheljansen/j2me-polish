@@ -72,3 +72,8 @@ im.presence.dnd=DND
 im.presence.unavailable=Unavailable
 im.error.notconnected=Not connected to RMI server
 
+polish.keyboard.blank=
+polish.keyboard.clr=Clear
+polish.keyboard.del=Delete
+polish.keyboard.mode=Mode
+polish.keyboard.shift=Shift

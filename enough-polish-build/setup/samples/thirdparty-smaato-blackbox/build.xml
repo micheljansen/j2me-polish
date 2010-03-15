@@ -81,7 +81,7 @@
 				infoUrl="http://www.smaato.com"
 				icon="rss.png"
 				jarName="${polish.vendor}-${polish.name}-${polish.locale}-blackbox.jar" 
-				copyright="Copyright 2009 Smaato, Inc. All rights reserved."
+				copyright="Copyright 2010 Smaato, Inc. All rights reserved."
 			/>
 			
 			<!-- selection of supported devices -->

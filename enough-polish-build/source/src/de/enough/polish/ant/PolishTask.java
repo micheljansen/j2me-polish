@@ -65,6 +65,7 @@ import de.enough.polish.Extension;
 import de.enough.polish.ExtensionManager;
 import de.enough.polish.ExtensionSetting;
 import de.enough.polish.LicenseLoader;
+import de.enough.polish.Notify;
 import de.enough.polish.PolishProject;
 import de.enough.polish.Variable;
 import de.enough.polish.ant.build.BuildSetting;
@@ -98,11 +99,9 @@ import de.enough.polish.devices.DeviceDatabase;
 import de.enough.polish.devices.LibraryManager;
 import de.enough.polish.emulator.Emulator;
 import de.enough.polish.finalize.Finalizer;
-import de.enough.polish.growl.GrowlNotifier;
 import de.enough.polish.jar.DefaultPackager;
 import de.enough.polish.jar.Packager;
 import de.enough.polish.libraryprocessor.LibraryProcessor;
-import de.enough.polish.linuxnotify.LinuxNotifier;
 import de.enough.polish.manifest.ManifestCreator;
 import de.enough.polish.obfuscate.Obfuscator;
 import de.enough.polish.postcompile.PostCompiler;
@@ -545,11 +544,8 @@ public class PolishTask extends ConditionalTask {
 					}
 				}
 			}
-		} else if (GrowlNotifier.isGrowlAvailable()) {
-			GrowlNotifier.publish("J2ME Polish Finished", buildFinishedMessage.toString());
-		} else if (LinuxNotifier.isNotifyAvailable()) {
-			LinuxNotifier.publish("J2ME Polish Finished", buildFinishedMessage.toString());
 		}
+                Notify.publish("J2ME Polish Finished", buildFinishedMessage.toString());
 	}
 
 	/**
@@ -605,7 +601,7 @@ public class PolishTask extends ConditionalTask {
 	 * 
 	 * @param device the current device
 	 * @param locale the current locale, can be null
-	 * @param hasExtensions true when there are <java>-extensions
+	 * @param hasExtensions true when there are &lt;java&gt;-extensions
 	 */
 	protected void execute(Device device, Locale locale, boolean hasExtensions) {
 		initialize( device, locale );
@@ -932,10 +928,10 @@ public class PolishTask extends ConditionalTask {
 		}
 		// add all ant properties if desired: 
 		if (this.buildSetting.includeAntProperties()) {
-			Set keySet = buildProperties.keySet();
-			for (Iterator iter = keySet.iterator(); iter.hasNext();) {
-				String key = (String) iter.next();
-				this.polishProject.addDirectCapability( key, (String) buildProperties.get(key) );
+			Set entrySet = buildProperties.entrySet();
+			for (Iterator iter = entrySet.iterator(); iter.hasNext();) {
+				Map.Entry entry = (Map.Entry) iter.next();
+				this.polishProject.addDirectCapability( (String) entry.getKey(), (String) entry.getValue() );
 			}
 		}
 		// add all variables from the build.xml:
@@ -1335,6 +1331,13 @@ public class PolishTask extends ConditionalTask {
 	 * @return true when the J2ME Polish UI should be activated
 	 */
 	protected boolean usePolishGui( Device device ) {
+                //Basically if use device defaults unless we have "always"
+                // suports gui enabled.
+                if (!this.buildSetting.alwaysUsePolishGui() &&
+                    ( device != null && !device.supportsPolishGui())){
+                    return false;
+                }
+
 		String usePolishGuiVariable;
 		if (this.environment == null) {
 			usePolishGuiVariable = getProject().getProperty("polish.usePolishGui");
@@ -1348,7 +1351,7 @@ public class PolishTask extends ConditionalTask {
 				&& ( device == null || device.supportsPolishGui() || this.buildSetting.alwaysUsePolishGui()))
 				|| (( "true".equals( usePolishGuiVariable) || "yes".equals( usePolishGuiVariable ) || "always".equals( usePolishGuiVariable )) );
 		//		System.out.println("enabling J2ME Polish UI=" + usePolishGui);
-		return usePolishGui;
+                return usePolishGui;
 	}
 
 	/**
@@ -1571,8 +1574,11 @@ public class PolishTask extends ConditionalTask {
 		// check if a preprocessing variable is set for using the Polish GUI:
 		boolean usePolishGui = usePolishGui(device);
 		if ( usePolishGui) {
-			this.environment.addSymbol("polish.usePolishGui");
-		}
+                    this.environment.addSymbol("polish.usePolishGui");
+		}else {
+                    this.environment.removeSymbol("polish.usePolishGui");
+                    this.environment.removeVariable("polish.usePolishGui");
+                }
 
 		// set conditional variables:
 		BooleanEvaluator evaluator = this.environment.getBooleanEvaluator();
@@ -1640,13 +1646,12 @@ public class PolishTask extends ConditionalTask {
 		}
 
 		// set support for the J2ME Polish GUI, part 2:
-		if (usePolishGui(device)) {
-			usePolishGui = true;					
+		if ( usePolishGui(device)) {
 			this.environment.addSymbol("polish.usePolishGui");
-		} else {
-			usePolishGui = false;					
-			this.environment.removeSymbol("polish.usePolishGui");
-		}
+		}else {
+                    this.environment.removeSymbol("polish.usePolishGui");
+                    this.environment.removeVariable("polish.usePolishGui");
+                }
 
 		// set the temporary build path used for preprocessing, compilation, preverification, etc:
 		String deviceSpecificBuildPath = File.separatorChar + device.getVendorName() 
@@ -1745,6 +1750,9 @@ public class PolishTask extends ConditionalTask {
 			}
 		}
 		 */
+		
+		prepareJadAttributes(device);
+		prepareManifestProperties(device);
 	}
 
 	/**
@@ -1780,6 +1788,7 @@ public class PolishTask extends ConditionalTask {
 
 			this.numberOfChangedFiles = 0;
 			String targetDir = device.getSourceDir();
+                        boolean usePolishGui = this.environment.hasSymbol("polish.usePolishGui");
 
 			notifyPolishBuildListeners( PolishBuildListener.EVENT_PREPROCESS_SOURCE_DIR, new File( targetDir ) );
 			// initialise the preprocessor (other initialisation is done in the initialized() method):
@@ -1822,8 +1831,8 @@ public class PolishTask extends ConditionalTask {
 					+ File.separatorChar + "build.xml" );
 			long buildXmlLastModified = buildXml.lastModified();
 			// check if the polish gui is used at all:
-			boolean usePolishGui = this.environment.hasSymbol("polish.usePolishGui");
-			//this.preprocessor.setUsePolishGui(usePolishGui);
+			
+			//this.preprocessor.setUsePolishGui(useP;olishGui);
 			long lastCssModification = lastLocaleModification;
 			StyleSheet cssStyleSheet = null;
 			if (usePolishGui) {
@@ -1832,8 +1841,9 @@ public class PolishTask extends ConditionalTask {
 				if (cssStyleSheet.lastModified() > lastLocaleModification) {
 					lastCssModification = cssStyleSheet.lastModified();
 				}
+                                this.preprocessor.setSyleSheet( cssStyleSheet, device );
 			}
-			this.preprocessor.setSyleSheet( cssStyleSheet, device );
+			
 			this.preprocessor.notifyDevice(device, usePolishGui);
 			this.preprocessor.notifyLocale( locale );
 			// preprocess each source file:
@@ -2396,12 +2406,12 @@ public class PolishTask extends ConditionalTask {
 							"Please try a clean rebuild by either calling \"ant clean j2mepolish\"" +
 							" or by removing the working directory \"" 
 							+ this.buildSetting.getWorkDir().getAbsolutePath() + "\".");
-					System.out.println("When an API-class was not found, you might need " +
+					System.out.println("If an API-class was not found, you might need " +
 							"to define where to find the device-APIs. Following classpath " +
 							"has been used: [" + completePath + "].");
 					throw new BuildException( "Unable to compile source code for device [" + device.getIdentifier() + "]: " + e.getMessage(), e );
 				} else {
-					System.out.println("When an API-class was not found, you might need to define where to find the device-APIs. Following classpath has been used: [" + completePath + "].");
+					System.out.println("If an API-class was not found, you might need to define where to find the device-APIs. Following classpath has been used: [" + completePath + "].");
 					throw new BuildException( "Unable to compile source code for device [" + device.getIdentifier() + "]: " + e.getMessage(), e );
 				}
 			} else {
@@ -2897,6 +2907,56 @@ public class PolishTask extends ConditionalTask {
 		}
 
 		// create manifest:
+
+		try {
+			if (jarFile.exists()) {
+				boolean success = jarFile.delete();
+				if (!success) {
+					throw new BuildException("Unable to delete the existing JAR-file [" + jarFile.getAbsolutePath() + "], please call \"ant clean\" or remove the folder \"" + jarFile.getParent() + "\"-folder manually." );
+				}
+			}
+//			System.out.println("creating JAR file ["+ jarFile.getAbsolutePath() + "].");
+			// writing manifest:
+			String creatorName = this.environment.getVariable( "polish.build.ManifestCreator" );
+			if (creatorName == null ) {
+				creatorName = "default";
+			}
+			this.extensionManager.executeTemporaryExtension(ExtensionManager.TYPE_MANIFEST_CREATOR, creatorName, this.environment );
+			//			Manifest manifest = new Manifest( this.environment, this.buildSetting.getEncoding() );
+			//			manifest.setAttributes( manifestAttributes );
+			//			File manifestFile = new File( device.getClassesDir() 
+			//					+ File.separator + "META-INF" + File.separator + "MANIFEST.MF");
+			//			manifest.write(manifestFile);
+			//FileUtil.writeTextFile( manifestFile, jad.getContent(), this.buildSetting.getEncoding() );
+			// package all classes and resources:
+			Packager packager = (Packager) this.extensionManager.getActiveExtension( ExtensionManager.TYPE_PACKAGER, this.environment );
+			if (packager == null ) {
+				packager = new DefaultPackager();
+			}
+			System.out.println("Using "+packager);
+			this.environment.set( Packager.KEY_ENVIRONMENT, packager );
+			packager.createPackage(classesDir, jarFile, device, locale, this.environment );
+			// Check if created jar file exceeds MaxJarSize capability setting. 
+			String maxJarSize = device.getCapability("MaxJarSize");
+			if (maxJarSize != null) {
+				long jarSize = jarFile.length();
+				long maxSize = ConvertUtil.convertToBytes(maxJarSize);
+				if (jarSize > maxSize && maxSize != -1) {
+					// Maybe we should throw a BuildException here but its unclear to me how reliable the MaxJarSize capability really is.
+					System.err.println("Warning: Generated jar file exceeds max jar size for device: " + jarSize + " > " + maxSize);
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new BuildException("Unable to create final JAR file: " + e.getMessage(), e );
+		}
+
+	}
+
+	/**
+	 * @param device
+	 */
+	private void prepareManifestProperties(Device device) {
 		HashMap attributesByName = new HashMap();
 		attributesByName.put( "Manifest-Version", new Attribute( "Manifest-Version", "1.0" ) ); 
 		// set MicroEdition-Profile:
@@ -2919,7 +2979,7 @@ public class PolishTask extends ConditionalTask {
 				config = InfoSetting.CLDC1_0;
 			}
 		}
-		attributesByName.put( InfoSetting.MICRO_EDITION_CONFIGURATION, new  Attribute(InfoSetting.MICRO_EDITION_CONFIGURATION, config) );
+		attributesByName.put( InfoSetting.MICRO_EDITION_CONFIGURATION, new Attribute(InfoSetting.MICRO_EDITION_CONFIGURATION, config) );
 
 		// add info attributes:
 		Attribute[] jadAttributes = this.infoSetting.getManifestAttributes( this.environment );
@@ -2974,52 +3034,6 @@ public class PolishTask extends ConditionalTask {
 		}
 		this.environment.set( ManifestCreator.MANIFEST_ATTRIBUTES_KEY, manifestAttributes );
 		this.environment.set( ManifestCreator.MANIFEST_ENCODING_KEY, this.buildSetting.getEncoding() );
-		//		Jad jad = new Jad( this.environment );
-		//		jad.setAttributes(manifestAttributes);
-
-		try {
-			if (jarFile.exists()) {
-				boolean success = jarFile.delete();
-				if (!success) {
-					throw new BuildException("Unable to delete the existing JAR-file [" + jarFile.getAbsolutePath() + "], please call \"ant clean\" or remove the folder \"" + jarFile.getParent() + "\"-folder manually." );
-				}
-			}
-//			System.out.println("creating JAR file ["+ jarFile.getAbsolutePath() + "].");
-			// writing manifest:
-			String creatorName = this.environment.getVariable( "polish.build.ManifestCreator" );
-			if (creatorName == null ) {
-				creatorName = "default";
-			}
-			this.extensionManager.executeTemporaryExtension(ExtensionManager.TYPE_MANIFEST_CREATOR, creatorName, this.environment );
-			//			Manifest manifest = new Manifest( this.environment, this.buildSetting.getEncoding() );
-			//			manifest.setAttributes( manifestAttributes );
-			//			File manifestFile = new File( device.getClassesDir() 
-			//					+ File.separator + "META-INF" + File.separator + "MANIFEST.MF");
-			//			manifest.write(manifestFile);
-			//FileUtil.writeTextFile( manifestFile, jad.getContent(), this.buildSetting.getEncoding() );
-			// package all classes and resources:
-			Packager packager = (Packager) this.extensionManager.getActiveExtension( ExtensionManager.TYPE_PACKAGER, this.environment );
-			if (packager == null ) {
-				packager = new DefaultPackager();
-			}
-			System.out.println("Using "+packager);
-			this.environment.set( Packager.KEY_ENVIRONMENT, packager );
-			packager.createPackage(classesDir, jarFile, device, locale, this.environment );
-			// Check if created jar file exceeds MaxJarSize capability setting. 
-			String maxJarSize = device.getCapability("MaxJarSize");
-			if (maxJarSize != null) {
-				long jarSize = jarFile.length();
-				long maxSize = ConvertUtil.convertToBytes(maxJarSize);
-				if (jarSize > maxSize && maxSize != -1) {
-					// Maybe we should throw a BuildException here but its unclear to me how reliable the MaxJarSize capability really is.
-					System.err.println("Warning: Generated jar file exceeds max jar size for device: " + jarSize + " > " + maxSize);
-				}
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new BuildException("Unable to create final JAR file: " + e.getMessage(), e );
-		}
-
 	}
 
 	/**
@@ -3030,6 +3044,30 @@ public class PolishTask extends ConditionalTask {
 	 */
 	protected void jad(Device device, Locale locale) {		
 		// now create the JAD file:
+		// prepare once more, since we now should have the JAR file:
+		prepareJadAttributes(device);
+		String creatorName = this.environment.getVariable( "polish.build.DescriptorCreator" );
+		if (creatorName == null ) {
+			creatorName = "default";
+		}
+		this.extensionManager.executeTemporaryExtension( ExtensionManager.TYPE_DESCRIPTOR_CREATOR, creatorName, this.environment );
+		//		Jad jad = new Jad( this.environment );
+		//		jad.setAttributes( filteredAttributes );
+		//		
+		//		String jadPath = this.environment.getVariable("polish.jadPath");
+		//		File jadFile = new File( jadPath );
+		//		try {
+		//			System.out.println("creating JAD file [" + jadFile.getAbsolutePath() + "].");
+		//			FileUtil.writeTextFile(jadFile, jad.getContent(), this.buildSetting.getEncoding() );
+		//		} catch (IOException e) {
+		//			throw new BuildException("Unable to create JAD file [" + jadFile.getAbsolutePath() +"] for device [" + device.getIdentifier() + "]: " + e.getMessage() );
+		//		}
+	}
+
+	/**
+	 * @param device
+	 */
+	private void prepareJadAttributes(Device device) {
 		HashMap attributesByName = new HashMap();
 		// add info attributes:
 		Attribute[] jadAttributes = this.infoSetting.getJadAttributes( this.environment );
@@ -3062,11 +3100,15 @@ public class PolishTask extends ConditionalTask {
 		//		}
 
 		// add size of jar:
-		long size = device.getJarFile().length();
-		attributesByName.put(InfoSetting.MIDLET_JAR_SIZE,
-				new Attribute( InfoSetting.MIDLET_JAR_SIZE, "" + size ) );
-		this.environment.setVariable( InfoSetting.MIDLET_JAR_SIZE, "" + size );
-
+		if (device.getJarFile() == null) {
+			attributesByName.put(InfoSetting.MIDLET_JAR_SIZE,
+					new Attribute( InfoSetting.MIDLET_JAR_SIZE, "0") );
+		} else {
+			long size = device.getJarFile().length();
+			attributesByName.put(InfoSetting.MIDLET_JAR_SIZE,
+					new Attribute( InfoSetting.MIDLET_JAR_SIZE, "" + size ) );
+			this.environment.setVariable( InfoSetting.MIDLET_JAR_SIZE, "" + size );
+		}
 		// add user-defined attributes:
 		if (this.buildSetting.getJadAttributes() != null) {
 			Attribute[] attributes = this.buildSetting.getJadAttributes().getAttributes( this.environment );
@@ -3091,23 +3133,6 @@ public class PolishTask extends ConditionalTask {
 		this.environment.set( DescriptorCreator.DESCRIPTOR_ATTRIBUTES_KEY, filteredAttributes );
 		this.environment.set( DescriptorCreator.DESCRIPTOR_ENCODING_KEY, this.buildSetting.getEncoding() );
 		// writing JAD:
-
-		String creatorName = this.environment.getVariable( "polish.build.DescriptorCreator" );
-		if (creatorName == null ) {
-			creatorName = "default";
-		}
-		this.extensionManager.executeTemporaryExtension( ExtensionManager.TYPE_DESCRIPTOR_CREATOR, creatorName, this.environment );
-		//		Jad jad = new Jad( this.environment );
-		//		jad.setAttributes( filteredAttributes );
-		//		
-		//		String jadPath = this.environment.getVariable("polish.jadPath");
-		//		File jadFile = new File( jadPath );
-		//		try {
-		//			System.out.println("creating JAD file [" + jadFile.getAbsolutePath() + "].");
-		//			FileUtil.writeTextFile(jadFile, jad.getContent(), this.buildSetting.getEncoding() );
-		//		} catch (IOException e) {
-		//			throw new BuildException("Unable to create JAD file [" + jadFile.getAbsolutePath() +"] for device [" + device.getIdentifier() + "]: " + e.getMessage() );
-		//		}
 	}
 
 	/**
@@ -3241,7 +3266,7 @@ public class PolishTask extends ConditionalTask {
 	 * </pre>
 	 * @author Robert Virkus, robert@enough.de
 	 */
-	class CssFileFilter implements FileFilter {
+	private static class CssFileFilter implements FileFilter {
 
 		/* (non-Javadoc)
 		 * @see java.io.FileFilter#accept(java.io.File)
@@ -3264,7 +3289,7 @@ public class PolishTask extends ConditionalTask {
 		}
 	}
 
-	class FailureInfo {
+	private static class FailureInfo {
 		private final Date time;
 		private final Device device;
 		private final Locale locale;

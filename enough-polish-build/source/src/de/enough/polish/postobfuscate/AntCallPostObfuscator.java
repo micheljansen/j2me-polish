@@ -26,7 +26,6 @@
 package de.enough.polish.postobfuscate;
 
 import java.io.File;
-import java.util.List;
 
 import de.enough.polish.BuildException;
 

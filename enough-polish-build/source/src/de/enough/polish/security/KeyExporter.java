@@ -69,7 +69,8 @@ public class KeyExporter {
 		char[] passPhrase = "passphrase".toCharArray();
 	 
 		File certificateFile = new File(fileName);
-		ks.load(new FileInputStream(certificateFile), passPhrase);
+		FileInputStream fis = new FileInputStream(certificateFile);
+		ks.load(fis, passPhrase);
 	 
 		KeyPair kp = getPrivateKey(ks, "duke", passPhrase);
 			
@@ -80,6 +81,8 @@ public class KeyExporter {
 		System.out.println("-----BEGIN PRIVATE KEY-----");
 		System.out.println(b64);
 		System.out.println("-----END PRIVATE KEY-----");	 
+
+		fis.close();
 	}
 	 
 //	 From http://javaalmanac.com/egs/java.security/GetKeyFromKs.html
@@ -99,13 +102,15 @@ public class KeyExporter {
                 return new KeyPair(publicKey, (PrivateKey)key);
             }
         } catch (UnrecoverableKeyException e) {
+            // Ignore error.
         } catch (NoSuchAlgorithmException e) {
+            // Ignore error.
         } catch (KeyStoreException e) {
+            // Ignore error.
         }
         return null;
     }
 	
-
 	/**
 	 * @param args
 	 */
@@ -113,5 +118,4 @@ public class KeyExporter {
 		// TODO rv implement main
 
 	}
-
 }

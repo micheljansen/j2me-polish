@@ -59,7 +59,7 @@ import java.util.zip.ZipOutputStream;
  */
 public final class JarUtil {
 	
-	private final static boolean IS_WINDOWS = (File.separatorChar == '\\');
+	private final static boolean IS_WINDOWS = File.separatorChar == '\\';
 	
 	/**
 	 * Writes all files of the given directory to the specified jar-file.

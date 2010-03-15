@@ -89,7 +89,7 @@
 			>
 		<j2mepolish>
 		    <!-- general settings -->
-			<info copyright="Copyright 2009 Enough Software. All rights reserved." 
+			<info copyright="Copyright 2010 Enough Software. All rights reserved." 
 				name="RSS" 
 				description="Using RSS in J2ME Polish." 
 				infoUrl="http://www.enough.de" 
@@ -125,6 +125,8 @@
 					<variable name="polish.TextField.supportSymbolsEntry" value="true" />
 					<variable name="polish.MenuBar.useExtendedMenuBar" value="true" />
 					<variable name="polish.useScrollBar" value="true" />
+					<variable name="polish.handleEvents" value="true" />
+					<variable name="polish.Item.ShowCommandsOnHold" value="true" />
 				</variables>
 				<!-- obfuscator settings: do not obfuscate when the test-property is true -->
 				<obfuscator name="ProGuard" unless="test or polish.blackberry">

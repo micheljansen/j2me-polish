@@ -93,7 +93,7 @@
 			>
 		<j2mepolish>
 		    <!-- general settings -->
-			<info copyright="Copyright 2009 Enough Software. All rights reserved." 
+			<info copyright="Copyright 2010 Enough Software. All rights reserved." 
 				description="A demonstration of the Java 5 Syntax Support Framework." 
 				infoUrl="http://www.enough.de" 
 				jarName="${ nospace(polish.vendor) }-${ nospace(polish.name) }-java5.jar" 

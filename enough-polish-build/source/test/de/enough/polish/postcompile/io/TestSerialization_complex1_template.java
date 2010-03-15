@@ -18,6 +18,22 @@ public class TestSerialization_complex1_template
     this.rgb = 1;
   }
 
+
+	public int getRgb()
+	{
+		return rgb;
+	}
+
+	public int[] getBuffer()
+	{
+		return buffer;
+	}
+
+	public int getWidth()
+	{
+		return width;
+	}
+	
   public void read(DataInputStream input)
 	  throws IOException
 	{

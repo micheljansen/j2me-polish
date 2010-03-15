@@ -48,6 +48,10 @@ import de.enough.polish.util.TextFileManager;
 
 public class ImportPreprocessor extends CustomPreprocessor {
 	
+	/**
+	 * Constant for retrieving imports
+	 */
+	public final static String KEY_IMPORT_MAP = "import.Map";
 	protected static final Pattern IMPORT_PATTERN = Pattern.compile( "import\\s+[\\w|\\.|\\*]+\\s*;" );
 	private final Map mappingsByCondition;
 	private String[] conditions;
@@ -115,6 +119,9 @@ public class ImportPreprocessor extends CustomPreprocessor {
 		super.notifyDevice(device, usesPolishGui);
 		this.currentImportMappings = getImportMappings();
 		this.useDefaultPackage = this.environment.hasSymbol("polish.useDefaultPackage");
+		
+		device.getEnvironment().set( KEY_IMPORT_MAP, this.currentImportMappings );
+
 	}
 
 	public void processClass(StringList sourceCode, String className) {

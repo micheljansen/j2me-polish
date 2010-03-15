@@ -178,12 +178,21 @@ When the plugin is not installed correctly, please start eclipse with "-clean" c
         </pack>
         
         <pack name="Fisheye Sample Application" required="no" preselected="yes">
-            <description>A simple application demonstrating the fisheye view-type..</description>
+            <description>A simple application demonstrating the fisheye view-type.</description>
             <file src="samples/fisheye" targetdir="$INSTALL_PATH/samples"/>
             <parsable targetfile="$INSTALL_PATH/samples/fisheye/build.xml" type="shell" /> 
             <parsable targetfile="$INSTALL_PATH/samples/fisheye/build-netbeans.xml" type="shell" /> 
             <parsable targetfile="$INSTALL_PATH/samples/fisheye/.classpath" type="shell" /> 
             <parsable targetfile="$INSTALL_PATH/samples/fisheye/nbproject/project.properties" type="shell" /> 
+        </pack>
+
+        <pack name="RGB Filter Sample Application" required="no" preselected="yes">
+            <description>A simple application demonstrating RGB filter.</description>
+            <file src="samples/rgbfilter" targetdir="$INSTALL_PATH/samples"/>
+            <parsable targetfile="$INSTALL_PATH/samples/rgbfilter/build.xml" type="shell" /> 
+            <parsable targetfile="$INSTALL_PATH/samples/rgbfilter/build-netbeans.xml" type="shell" /> 
+            <parsable targetfile="$INSTALL_PATH/samples/rgbfilter/.classpath" type="shell" /> 
+            <parsable targetfile="$INSTALL_PATH/samples/rgbfilter/nbproject/project.properties" type="shell" /> 
         </pack>
         
         <pack name="Java 5 Syntax Sample Application" required="no" preselected="yes">

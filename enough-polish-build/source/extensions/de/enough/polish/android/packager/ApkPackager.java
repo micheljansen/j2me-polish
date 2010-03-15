@@ -93,7 +93,7 @@ public class ApkPackager extends Packager{
 	 * Returns the default arguments for executable
 	 * @param executable the executable
 	 * @param env the environment
-	 * @param signApplication true if the application should be signed with a real signature. The applciation will not be signed with the default debug signature.
+	 * @param signApplication true if the application should be signed with a real signature. The application will not be signed with the default debug signature.
 	 * @return the ArrayList
 	 */
 	static ArrayList getDefaultArguments(String executable, Environment env, boolean signApplication)

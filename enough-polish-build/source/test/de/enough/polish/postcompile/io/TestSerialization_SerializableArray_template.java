@@ -38,8 +38,7 @@ public class TestSerialization_SerializableArray_template
 			
 			for (int i = 0; i < length; i++)
 			{
-				this.fields[i] = new InnerSerializable();
-				this.fields[i].read(input);
+				this.fields[i] = (InnerSerializable) Serializer.deserialize(input);
 			}
 		  }
 	}

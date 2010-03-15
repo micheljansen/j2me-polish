@@ -37,7 +37,7 @@ package de.enough.polish.swing;
  * @see de.enough.polish.swing.OkCancelApplyPanel
  */
 public interface OkCancelApplyListener {
-	public void okSelected();
-	public void applySelected();
-	public void cancelSelected();
+	void okSelected();
+	void applySelected();
+	void cancelSelected();
 }

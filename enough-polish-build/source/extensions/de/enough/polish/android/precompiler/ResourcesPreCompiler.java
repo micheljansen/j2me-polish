@@ -26,9 +26,12 @@
 package de.enough.polish.android.precompiler;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 
 import org.apache.tools.ant.BuildException;
@@ -39,9 +42,13 @@ import org.jdom.Namespace;
 import org.jdom.input.SAXBuilder;
 import org.jdom.output.XMLOutputter;
 
+import de.enough.polish.Attribute;
 import de.enough.polish.Device;
 import de.enough.polish.Environment;
+import de.enough.polish.ant.Jad;
 import de.enough.polish.ant.android.ArgumentHelper;
+import de.enough.polish.descriptor.DescriptorCreator;
+import de.enough.polish.manifest.ManifestCreator;
 import de.enough.polish.precompile.PreCompiler;
 import de.enough.polish.propertyfunctions.VersionFunction;
 import de.enough.polish.util.FileUtil;
@@ -72,8 +79,11 @@ public class ResourcesPreCompiler extends PreCompiler {
 
 		System.out.println("aapt: Copying resources to " + ArgumentHelper.getRaw(env) + "...");		
 		try {
+			// generate jadprops.txt:
+			storeJadProperties( new File( ArgumentHelper.getRaw(env)), env);
 			copyResources(device, env);
 		} catch (IOException e) {
+			e.printStackTrace();
 			throw new BuildException("Unable to copy resources: " + e);
 		}
 
@@ -99,6 +109,7 @@ public class ResourcesPreCompiler extends PreCompiler {
 		File manifestFile = new File(manifestPath);
 		try {
 			document = builder.build(manifestFile);
+			//System.out.println("Got MANIFEST " + print(document));
 		} catch (JDOMException e) {
 			throw new BuildException("Could not parse file '"+manifestPath+"'",e);
 		} catch (IOException e) {
@@ -133,18 +144,39 @@ public class ResourcesPreCompiler extends PreCompiler {
 		}
 		
 		Element usesSdkElement = new Element("uses-sdk");
-		usesSdkElement.setAttribute("minSdkVersion", "3",namespace);
+		String minSdkVersion = env.getVariable("android.minSdkVersion");
+		if(minSdkVersion == null || minSdkVersion.length() == 0) {
+			minSdkVersion = "3";
+		}
+		usesSdkElement.setAttribute("minSdkVersion", minSdkVersion,namespace);
+		
+		String targetSdkVersion = env.getVariable("android.targetSdkVersion");
+		if(targetSdkVersion != null && targetSdkVersion.length() > 0) {
+			usesSdkElement.setAttribute("targetSdkVersion", targetSdkVersion,namespace);
+		}
+		
+		String maxSdkVersion = env.getVariable("android.maxSdkVersion");
+		if(maxSdkVersion != null && maxSdkVersion.length() > 0) {
+			usesSdkElement.setAttribute("maxSdkVersion", maxSdkVersion,namespace);
+		}
+		
 		rootElement.addContent(usesSdkElement);
 		
 		String version = env.getVariable("MIDlet-Version");
 		if(version == null || version.length() == 0) {
 			version = "1";
 		}
-		int versionCodeNumber = computeVersionCode(version);
-		String versionCode = String.valueOf(versionCodeNumber);
+		String versionCode = env.getVariable("android.versionCode");
+		if (versionCode == null || versionCode.length() == 0) {
+			int versionCodeNumber = computeVersionCode(version);
+			versionCode = String.valueOf(versionCodeNumber);
+		}
 		rootElement.setAttribute("versionCode", versionCode,namespace);
 		
-		String versionName = version;
+		String versionName = env.getVariable("android.versionName");
+		if(versionName == null || versionName.length() == 0) {
+			versionName = version;
+		}
 		rootElement.setAttribute("versionName", versionName,namespace);
 		
 		String midletName = env.getBuildSetting().getMidlets(env)[0].name;
@@ -168,7 +200,7 @@ public class ResourcesPreCompiler extends PreCompiler {
 				activityElement.setAttribute("icon","@raw"+iconUrl,namespace);
 			}
 		} else {
-			System.err.println("No icon was defined in this build. You will not be able to deploy this application in the Android Market. Please define an icon with the attribte 'icon' in the 'info' tag of the build.xml file.");
+			System.err.println("Warning: No icon was defined in this build. You will not be able to deploy this application in the Android Market. Please define an icon with the attribte \"icon\" in the <info> tag of the build.xml file.");
 		}
 		
 		// TODO: This does not work. Instead we need to alter the file res/values/string.xml, add the description as a string resource
@@ -189,9 +221,71 @@ public class ResourcesPreCompiler extends PreCompiler {
 		try {
 			xmlOutputter.output(document,fileWriter);
 		} catch (IOException e) {
-			throw new BuildException("Could not write to file file '"+manifestPath+"'",e);
+			throw new BuildException("Could not write the android manifest to file  '"+manifestPath+"'",e);
 		}
 		
+	}
+	
+//	private String print(Document document) {
+//		StringBuffer buffer = new StringBuffer();
+//		Element e = document.getRootElement();
+//		add( e, "", buffer );
+//		return buffer.toString();
+//	}
+//
+//	private void add(Element e, String start, StringBuffer buffer) {
+//		buffer.append(start).append('<').append( e.getName() );
+//		List l = e.getAttributes();
+//		for (Iterator iterator = l.iterator(); iterator.hasNext();) {
+//			org.jdom.Attribute attr = (org.jdom.Attribute) iterator.next();
+//			buffer.append(' ').append(attr.getName()).append("=\"").append( attr.getValue() + "\"");
+//		}
+//		buffer.append(">\n");
+//		if (e.getTextTrim() != null) {
+//			buffer.append( start ).append( e.getTextTrim() );
+//		}
+//		String st = start + "  ";
+//		l = e.getChildren();
+//		for (Iterator iterator = l.iterator(); iterator.hasNext();) {
+//			Element child = (Element)iterator.next();
+//			add( child, st, buffer );
+//		}
+//		buffer.append(start).append("</").append( e.getName() ).append(">\n");
+//		
+//	}
+
+	/**
+	 * Writes the JAD properties in a way so that the MIDlet can load them.
+	 * 
+	 * @param jadFile the JAD file
+	 * @param classesDir the classes directory to which the JAD properties should be saved
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 * @throws UnsupportedEncodingException
+	 */
+	private void storeJadProperties(File targetDir, Environment env) 
+	throws FileNotFoundException, IOException, UnsupportedEncodingException
+	{
+		File txtJadFile = new File( targetDir, "jadprops.txt");
+		if (!targetDir.exists()) {
+			targetDir.mkdirs();
+		}
+		Attribute[] descriptorAttributes = (Attribute[]) env.get(ManifestCreator.MANIFEST_ATTRIBUTES_KEY);
+		Jad jad = new Jad( env );
+		jad.setAttributes( descriptorAttributes );
+		descriptorAttributes = (Attribute[]) env.get(DescriptorCreator.DESCRIPTOR_ATTRIBUTES_KEY);
+		jad.addAttributes( descriptorAttributes );
+		String[] jadPropertiesLines = jad.getContent();
+		StringBuffer buffer = new StringBuffer();
+		for (int i = 0; i < jadPropertiesLines.length; i++)
+		{
+			String line = jadPropertiesLines[i];
+			buffer.append(line).append('\n');
+		}
+		FileOutputStream fileOut = new FileOutputStream(  txtJadFile );
+		fileOut.write( buffer.toString().getBytes("UTF-8") );
+		fileOut.flush();
+		fileOut.close();
 	}
 
 	/**

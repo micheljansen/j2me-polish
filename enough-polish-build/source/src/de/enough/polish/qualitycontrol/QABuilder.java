@@ -308,7 +308,7 @@ implements OutputFilter
 
 	private boolean getBooleanPermuationValue(int permutationIndex, int variableIndex ) 
 	{
-		return ((permutationIndex & (1 << variableIndex)) != 0);
+		return (permutationIndex & (1 << variableIndex)) != 0;
 	}
 
 

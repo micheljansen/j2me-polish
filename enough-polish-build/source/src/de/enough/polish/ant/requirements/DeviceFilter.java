@@ -47,5 +47,5 @@ public interface DeviceFilter {
 	 * @param device the device which should be tested against this filter.
 	 * @return true when this filter is satisfied by the given device.
 	 */
-	public boolean isMet( Device device );
+	boolean isMet( Device device );
 }

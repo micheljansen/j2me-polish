@@ -70,6 +70,7 @@ public class CssBlock {
 	 */
 	public CssBlock( String cssCode ) {
 		//System.out.println("CssBlock for block \n\"" + cssCode + "\"...");
+		String original = cssCode;
 		this.declarationsByName = new HashMap();
 		this.groupsByNames = new HashMap();
 		this.groups = new ArrayList();
@@ -107,7 +108,7 @@ public class CssBlock {
 			}
 			int end = cssCode.indexOf('}', parenthesisPos );
 			if (end == -1) {
-				throw new BuildException("Invalid CSS code: unable to parse [" + cssCode + "] - at least one closing parenthesis '}' is missing.");
+				throw new BuildException("Invalid CSS code: unable to parse \"" + cssCode + "\" - at least one closing parenthesis '}' is missing in \"" + original +" \".");
 			}
 			String innerBlock = cssCode.substring( start, end + 1);
 			parseInnerBlock( innerBlock );
@@ -115,13 +116,38 @@ public class CssBlock {
 		}
 		// now read the rest of the definitions:
 		String[] declarations = StringUtil.splitAndTrim(cssCode, ';');
+		String startDeclaration = "";
 		for (int i = 0; i < declarations.length; i++) {
 			String declaration = declarations[i];
 			if (declaration.length() > 0) {
 				try {
-					addDeclaration( declaration );
+					int openIndex = declaration.indexOf('{');
+					int endIndex = -1;
+					if (openIndex != -1) {
+						if (startDeclaration.length() > 0) {
+							startDeclaration += "-" + declaration.substring(0, openIndex).trim();
+						} else {
+							startDeclaration = declaration.substring(0, openIndex).trim();
+						}
+						declaration = declaration.substring(openIndex);
+					} else {
+						endIndex = declaration.indexOf('}');
+						if (endIndex != -1) {
+							int separatorIndex = startDeclaration.lastIndexOf('-', startDeclaration.length() - 1);
+							if (separatorIndex != -1) {
+								startDeclaration = startDeclaration.substring(0, separatorIndex);
+							} else {
+								startDeclaration = "";
+							}
+							declaration = declaration.substring(0, endIndex).trim();
+							if (declaration.length() == 0) {
+								continue;
+							}
+						}
+					}
+					addDeclaration( startDeclaration + declaration );
 				} catch (BuildException e) {
-					System.err.println("Invalid CSS code in black \"" + cssCode + "\":");
+					System.err.println("Invalid CSS code in block \"" + cssCode + "\", complete chunk=\"" + original + "\":" + e.toString());
 					throw e;
 				}
 			}
@@ -136,6 +162,7 @@ public class CssBlock {
 	private void addDeclaration(String declaration) {
 		int colonPos = declaration.indexOf(':');
 		if (colonPos == -1) {
+			try { throw new RuntimeException(); }catch(Exception e) { e.printStackTrace(); }
 			throw new BuildException("Invalid CSS code: unable to parse declaration \"" + declaration + ";\" - found no colon between attribute and value.");
 		}
 		String attribute = declaration.substring(0, colonPos).trim();
@@ -144,6 +171,10 @@ public class CssBlock {
 	}
 	
 	private void addDeclaration( String attribute, String value ) {
+		//System.out.println("adding " + attribute + ": " + value);
+		if (attribute.indexOf('{') != -1) {
+			try { throw new BuildException(); } catch (Exception e) { e.printStackTrace(); }
+		}
 		String groupName = attribute;
 		String subAttribute = attribute;
 		int hyphenPos = attribute.indexOf('-');
@@ -176,10 +207,34 @@ public class CssBlock {
 			this.declarationBlocks.add( cssDeclarationBlock);
 			blockName += '-';
 			String[] attributes = cssDeclarationBlock.getAttributes();
+			String startDeclaration = "";
 			for (int i = 0; i < attributes.length; i++)
 			{
 				String attribute = attributes[i];
-				String value = cssDeclarationBlock.getValue(i);
+				int openIndex = attribute.indexOf('{');
+				int endIndex = -1;
+				if (openIndex != -1) {
+					if (startDeclaration.length() > 0) {
+						startDeclaration += "-" + attribute.substring(0, openIndex).trim();
+					} else {
+						startDeclaration = attribute.substring(0, openIndex).trim();
+					}
+					continue;
+				} else {
+					endIndex = attribute.indexOf('}');
+					if (endIndex != -1) {
+						int separatorIndex = startDeclaration.lastIndexOf('-', startDeclaration.length() - 1);
+						if (separatorIndex != -1) {
+							startDeclaration = startDeclaration.substring(0, separatorIndex);
+						} else {
+							startDeclaration = "";
+						}
+						attribute = attribute.substring(0, endIndex).trim();
+						if (attribute.length() == 0) {
+							continue;
+						}
+					}
+				}				String value = cssDeclarationBlock.getValue(i);
 				addDeclaration( blockName + attribute, value);
 			}
 		} catch (BuildException e ) {

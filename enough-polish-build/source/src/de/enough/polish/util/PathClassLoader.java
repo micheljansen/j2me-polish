@@ -62,7 +62,7 @@ import java.util.zip.ZipFile;
  */
 public class PathClassLoader extends ClassLoader {
 	
-	private class EmptyEnumeration implements Enumeration {
+	private static class EmptyEnumeration implements Enumeration {
 
 		public boolean hasMoreElements() {
 			return false;
@@ -131,7 +131,7 @@ public class PathClassLoader extends ClassLoader {
         	if (!this.isInitialized) {
         		findNextResource();
         	}
-            return (this.nextResource != null);
+            return this.nextResource != null;
         }
 
         /**

@@ -62,9 +62,6 @@ public class SizeMatcher implements Matcher {
 		if (parts.length != 2) {
 			throw new BuildException("The device-property [" + deviceValue + "]  is not valid. It meeds to be in the form \"[width] x [height]\".");
 		}
-		return (  this.widthMatcher.matches( parts[0] )
-				&& this.heightMatcher.matches( parts[1] ) );
-
+		return this.widthMatcher.matches( parts[0] ) && this.heightMatcher.matches( parts[1] );
 	}
-
 }

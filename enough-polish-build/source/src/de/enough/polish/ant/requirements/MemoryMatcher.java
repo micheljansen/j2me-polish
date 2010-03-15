@@ -62,7 +62,7 @@ implements Matcher
 	 */
 	public MemoryMatcher( String value ) {
 		this.bytes = getBytes( value );
-		this.equalsOrGreater = (value.indexOf('+') != -1);
+		this.equalsOrGreater = value.indexOf('+') != -1;
 	}
 	
 	/**

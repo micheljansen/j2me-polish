@@ -214,7 +214,8 @@
 		<capability name="OS" value="Symbian OS 8.0a" />
 		<capability name="JavaPlatform" value="MIDP/2.0, JTWI/1.0" />
 		<capability name="JavaConfiguration" value="CLDC/1.1" />
-		<capability name="JavaPackage" value="m3g, pdaapi, videoControlBeforePlayer" />		
+		<capability name="JavaPackage" value="m3g, pdaapi" />		
+		<capability name="Bugs" value="videoControlBeforePlayer" />
 	</group>
 
 	<group>
@@ -238,7 +239,7 @@
 		<capability name="JavaConfiguration" value="CLDC/1.1" />
 		<capability name="JavaPackage" value="m3g, pdaapi, webservice, sipapi, svgapi, securityapi" />		
 		<capability name="build.Emulator.Skin" value="S60_3rd_MIDP_SDK" />
-		<capability name="Bugs" value="needsBottomOrientiationForStringDrawing, NoBacklight, videoControlBeforePlayer" />
+		<capability name="Bugs" value="needsBottomOrientiationForStringDrawing" />
 	</group>
 
 	<group>
@@ -263,6 +264,8 @@
 		<capability name="JavaConfiguration" value="CLDC/1.1" />
 		<capability name="JavaPackage" value="m3g, pdaapi, webservice, sipapi, svgapi, securityapi" />		
 		<capability name="build.Emulator.Skin" value="S60_5th_MIDP_SDK" />
+		<capability name="Bugs" value="" />
+		<capability name="Bugs" value="GaugeNoProgessIndicatorOnAlerts, GameCanvasGetGraphicsNotInConstructor, ExitCommandAlwaysPresent, drawRgbOrigin, TransparencyNotWorkingInNokiaUiApi, displaySetCurrentFlickers, requiresHardcodedCanvasDimensionsInFullScreenMode, OverrideGetWidthGetHeightInFullCanvas" />
 		<capability name="Bugs" value="needsBottomOrientiationForStringDrawing, NoBacklight, videoControlBeforePlayer" />
 	</group>
 

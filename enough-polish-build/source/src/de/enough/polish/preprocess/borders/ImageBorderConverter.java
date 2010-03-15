@@ -75,7 +75,7 @@ public class ImageBorderConverter
 		int borderWidth = parseInt("border-width", borderWidthStr);
 		image = getUrl(image);
 
-		return ("new " + BORDERS_PACKAGE + "ImageBorder(" + borderWidth +
-				", \"" + image + "\")");
+		return "new " + BORDERS_PACKAGE + "ImageBorder(" + borderWidth +
+				", \"" + image + "\")";
 	}
 }

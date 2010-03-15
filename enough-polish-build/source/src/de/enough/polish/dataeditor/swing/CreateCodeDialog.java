@@ -107,7 +107,7 @@ public class CreateCodeDialog extends JDialog implements ActionListener {
 	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 	 */
 	public void actionPerformed(ActionEvent e) {
-		this.okPressed = (e.getSource() == this.okButton);
+		this.okPressed = e.getSource() == this.okButton;
 		setVisible(false);
 	}
 	

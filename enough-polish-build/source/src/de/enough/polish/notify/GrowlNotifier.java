@@ -1,5 +1,6 @@
-package de.enough.polish.growl;
+package de.enough.polish.notify;
 
+import de.enough.polish.Notify;
 import de.enough.polish.util.StringUtil;
 
 /**
@@ -9,7 +10,7 @@ import de.enough.polish.util.StringUtil;
  * @author Robert Virkus
  *
  */
-public class GrowlNotifier {
+public class GrowlNotifier extends Notify {
 	
 	private final static String APPLE_SCRIPT = "tell application \"GrowlHelperApp\"\n"
 		+ "-- Make a list of all the notification types\n" 
@@ -38,7 +39,7 @@ public class GrowlNotifier {
 	 * @param text the text
 	 * @return true when the publishing succeeded
 	 */
-	public static boolean publish( String title, String text ) {
+	protected boolean publishInternal( String title, String text ) {
 		String script = StringUtil.replace( APPLE_SCRIPT, "${title}", title );
 		script = StringUtil.replace( script, "${description}", text );
 		String[] cmd = new String[]{"/usr/bin/osascript", "-e",  script };
@@ -73,11 +74,12 @@ public class GrowlNotifier {
 	public static void main(String[] args) {
 		if (args.length < 2) {
 			System.out.println("usage:");
-			System.out.println("java de.enough.polish.growl.GrowlNotifier [title] [description]");
+			System.out.println("java de.enough.polish.notify.GrowlNotifier [title] [description]");
 			System.exit(1);
 		}
 		if (isGrowlAvailable()) {
-			publish( args[0], args[1]);
+                    GrowlNotifier in = new GrowlNotifier();
+			in.publishInternal( args[0], args[1]);
 		}
 		System.exit(0);
 	}

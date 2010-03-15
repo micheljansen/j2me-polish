@@ -92,6 +92,7 @@ public class DexPostCompiler extends PostCompiler{
 			arguments.add("-JXmx512m");
 		}
 		arguments.add("--dex");
+		//TODO add --debug only for test builds?
 		arguments.add("--debug");
 		arguments.add("--output=" + ArgumentHelper.getDex(env));
 		arguments.add(ArgumentHelper.getClasses(env));

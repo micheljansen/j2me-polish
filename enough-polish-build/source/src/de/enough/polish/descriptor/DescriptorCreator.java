@@ -49,7 +49,7 @@ import de.enough.polish.Extension;
 public abstract class DescriptorCreator extends Extension {
 
 	public static final String DESCRIPTOR_ENCODING_KEY = "key.descriptor.encoding";
-	public static String DESCRIPTOR_ATTRIBUTES_KEY = "key.descriptor.attributes";
+	public static final String DESCRIPTOR_ATTRIBUTES_KEY = "key.descriptor.attributes";
 
 	/**
 	 * Creates a new instance

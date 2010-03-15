@@ -50,11 +50,16 @@ extends AndRelation
 {
 	
 	ConditionalElement condition;
+	private String message;
 	/**
 	 * Creates a new device requirements list.
 	 */
 	public Requirements() {
 		this( null );
+	}
+	
+	public void setMessage(String message) {
+		this.message = message;
 	}
 	
 	//TODO rob addConfiguredGroup( OrRelation orRelation )
@@ -113,7 +118,11 @@ extends AndRelation
 	 * @return true when this element is valid
 	 */
 	public boolean isActive( Project project ) {
-		return this.condition.isActive( project );
+		boolean active = this.condition.isActive( project );
+		if (active && this.message != null) {
+			System.out.println(this.message);
+		}
+		return active;
 	}
 
 	/**
@@ -123,7 +132,11 @@ extends AndRelation
 	 * @return true when this element is valid
 	 */
 	public boolean isActive(BooleanEvaluator evaluator) {
-		return this.condition.isActive( evaluator );
+		boolean active = this.condition.isActive( evaluator );
+		if (active && this.message != null) {
+			System.out.println(this.message);
+		}
+		return active;
 	}
 
 	

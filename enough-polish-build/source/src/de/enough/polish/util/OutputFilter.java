@@ -45,6 +45,6 @@ public interface OutputFilter {
 	 * @param message the message
 	 * @param output the output stream to which the message can be written.
 	 */
-	public void filter( String message, PrintStream output );
+	void filter( String message, PrintStream output );
 
 }

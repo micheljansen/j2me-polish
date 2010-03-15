@@ -27,7 +27,9 @@ package de.enough.polish.ant;
 
 import de.enough.polish.util.FileUtil;
 
-import org.apache.tools.ant.*;
+import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.DirectoryScanner;
+import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.FileSet;
 
 import java.io.File;

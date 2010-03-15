@@ -25,16 +25,20 @@
  */
 package de.enough.polish.preprocess.css;
 
-import java.util.*;
-
 import de.enough.polish.Device;
 import de.enough.polish.preprocess.css.attributes.StyleCssAttribute;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * <p>Represents a CSS-style-definition.</p>
  *
  * <p>Copyright Enough Software 2004, 2005</p>
-
+ * 
  * <pre>
  * history
  *        01-Mar-2004 - rob creation
@@ -370,7 +374,7 @@ public class Style {
 	 * @param group the group
 	 */
 	public void addGroup(String groupName, Map group) {
-		boolean addName = (this.groupsByName.get( groupName ) == null);
+		boolean addName = this.groupsByName.get( groupName ) == null;
 		this.groupsByName.put( groupName, group );
 		if (addName) {
 			this.groupNamesList.add( groupName );

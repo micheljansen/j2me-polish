@@ -29,9 +29,11 @@ package de.enough.polish.preprocess.backgrounds;
 import java.util.Map;
 
 import de.enough.polish.BuildException;
+import de.enough.polish.Environment;
 import de.enough.polish.preprocess.css.BackgroundConverter;
 import de.enough.polish.preprocess.css.Style;
 import de.enough.polish.preprocess.css.StyleSheet;
+import de.enough.polish.preprocess.css.attributes.DimensionCssAttribute;
 
 /**
  * <p>Converts a mask background</p>
@@ -89,7 +91,8 @@ public class MaskBackgroundConverter extends BackgroundConverter
 		if (opacity == null) {
 			opacity = "255";
 		} else {
-			opacity = Integer.toString( parseInt("opacity", opacity) );
+			DimensionCssAttribute attribute = new DimensionCssAttribute();
+			opacity = attribute.getValue(opacity, Environment.getInstance() ); //Integer.toString( parseInt("opacity", opacity) );
 		}
 		String result = "new " + BACKGROUNDS_PACKAGE + "MaskBackground(" 
 		+ maskReference + ", " + maskColor + ", " + backgroundReference  + ", " + opacity + ")";

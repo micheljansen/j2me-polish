@@ -80,7 +80,7 @@ extends ExtensionSetting
 	}
 		
 	public boolean hasKeepDefinitions() {
-		return (this.keeps.size() > 0);
+		return this.keeps.size() > 0;
 	}
 	
 	/**

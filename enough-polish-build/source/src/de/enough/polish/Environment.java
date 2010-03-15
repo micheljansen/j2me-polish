@@ -59,17 +59,17 @@ import de.enough.polish.util.StringUtil;
 public class Environment {
 	private static Environment INSTANCE;
 
-	private final static String PROPERTY_CHARS_STR = "\\w|\\.|\\-|,|\\(|\\)|\\s|/|\\\\";
+	private static final String PROPERTY_CHARS_STR = "\\w|\\.|\\-|,|\\(|\\)|\\s|/|\\\\";
 
-	private final static String PROPERTY_PATTERN_STR = "\\$\\{\\s*[" + PROPERTY_CHARS_STR + "]+\\s*\\}";
+	private static final String PROPERTY_PATTERN_STR = "\\$\\{\\s*[" + PROPERTY_CHARS_STR + "]+\\s*\\}";
 
-	protected final static Pattern PROPERTY_PATTERN = Pattern.compile(PROPERTY_PATTERN_STR);
+	protected static final Pattern PROPERTY_PATTERN = Pattern.compile(PROPERTY_PATTERN_STR);
 
-	private final static String PROPERTY_FUNCTION_CHARS_STR = "\\w|\\.|\\-|,|\\s|/|\\s|,|\\+|\\*|:|\\\\";
+	private static final String PROPERTY_FUNCTION_CHARS_STR = "\\w|\\.|\\-|,|\\s|/|\\s|,|\\+|\\*|:|\\\\";
 
-	private final static String FUNCTION_PATTERN_STR = "\\w+\\s*\\(\\s*[" + PROPERTY_FUNCTION_CHARS_STR + "]+\\s*\\)";
+	private static final String FUNCTION_PATTERN_STR = "\\w+\\s*\\(\\s*[" + PROPERTY_FUNCTION_CHARS_STR + "]+\\s*\\)";
 
-	protected final static Pattern FUNCTION_PATTERN = Pattern.compile(FUNCTION_PATTERN_STR);
+	protected static final Pattern FUNCTION_PATTERN = Pattern.compile(FUNCTION_PATTERN_STR);
 
 	private final Map symbols;
 
@@ -348,8 +348,7 @@ public class Environment {
 		this.symbols.remove(name);
 		this.temporarySymbols.remove(name);
 		name = name.toLowerCase();
-		boolean removed = ((this.symbols.remove(name) != null) | (this.temporarySymbols
-				.remove(name) != null));
+		boolean removed = this.symbols.remove(name) != null || this.temporarySymbols.remove(name) != null;
 		return removed;
 	}
 
@@ -374,7 +373,7 @@ public class Environment {
 
 	public boolean removeTemporarySymbol(String name) {
 		name = name.toLowerCase();
-		return (this.temporarySymbols.remove(name) != null);
+		return this.temporarySymbols.remove(name) != null;
 	}
 
 	public Locale getLocale() {
@@ -632,9 +631,10 @@ public class Environment {
 	 * @param vars
 	 */
 	public void addVariables(Map vars) {
-		for (Iterator iter = vars.keySet().iterator(); iter.hasNext();) {
-			String name = (String) iter.next();
-			String value = (String) vars.get(name);
+		for (Iterator iter = vars.entrySet().iterator(); iter.hasNext();) {
+			Map.Entry entry = (Map.Entry) iter.next();
+			String name = (String) entry.getKey();
+			String value = (String) entry.getValue();
 			addVariable(name, value);
 		}
 	}
@@ -755,7 +755,7 @@ public class Environment {
 	 * @return true when the variable is defined
 	 */
 	public boolean hasVariable(String name) {
-		return (getVariable(name) != null);
+		return getVariable(name) != null;
 	}
 
 	/**

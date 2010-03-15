@@ -369,7 +369,7 @@ public class WtkEmulator extends Emulator {
 		for (int i = 0; i < parameters.length; i++) {
 			Variable parameter = parameters[i];
 			String name = parameter.getName();
-			if ( (xDeviceParameterGiven) &&  ("-xDevice".equals(parameter.getName()) ) ) {
+			if ( xDeviceParameterGiven && "-xDevice".equals(parameter.getName() ) ) {
 				continue;
 			}
 			String value = parameter.getValue();

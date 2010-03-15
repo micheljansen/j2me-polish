@@ -214,15 +214,15 @@ public class Translation {
 	 * @return true when this value has no parameters at all.
 	 */
 	public boolean isPlain() {
-		return (this.type == PLAIN);
+		return this.type == PLAIN;
 	}
 	
 	public boolean hasOneParameter() {
-		return (this.type == SINGLE_PARAMETER);
+		return this.type == SINGLE_PARAMETER;
 	}
 	
 	public boolean hasSeveralParameters() {
-		return (this.type == MULTIPLE_PARAMETERS);
+		return this.type == MULTIPLE_PARAMETERS;
 	}
 
 	/**

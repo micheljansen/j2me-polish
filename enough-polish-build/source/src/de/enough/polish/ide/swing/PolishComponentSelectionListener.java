@@ -43,6 +43,6 @@ public interface PolishComponentSelectionListener {
 	 * 
 	 * @param event the event data
 	 */
-	public void notifySelection( PolishComponentSelectionEvent event );
+	void notifySelection( PolishComponentSelectionEvent event );
 
 }

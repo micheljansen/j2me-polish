@@ -63,7 +63,7 @@ public class ImportConversionMap extends HashMap
 
 		public String toString()
 		{
-			return value;
+			return this.value;
 		}
 	}
 

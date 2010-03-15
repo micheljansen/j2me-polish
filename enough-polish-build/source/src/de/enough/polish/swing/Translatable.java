@@ -39,5 +39,5 @@ import de.enough.polish.util.Translations;
  */
 public interface Translatable {
 
-	public void setTranslations( Translations translations );
+	void setTranslations( Translations translations );
 }

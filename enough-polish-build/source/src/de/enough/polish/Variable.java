@@ -29,8 +29,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-import de.enough.polish.BuildException;
-
 import de.enough.polish.preprocess.Preprocessor;
 import de.enough.polish.util.CastUtil;
 import de.enough.polish.util.FileUtil;
@@ -168,7 +166,7 @@ public class Variable {
 	 * @see #getUnlessCondition()
 	 */
 	public boolean hasCondition(){
-		return (this.ifCondition != null || this.unlessCondition != null);
+		return this.ifCondition != null || this.unlessCondition != null;
 	}
 	
 	/**
@@ -190,7 +188,7 @@ public class Variable {
 	 * @return true when this variable contains several variable-definitions.
 	 */
 	public boolean containsMultipleVariables() {
-		return (this.fileName != null);
+		return this.fileName != null;
 	}
 	
 	/**

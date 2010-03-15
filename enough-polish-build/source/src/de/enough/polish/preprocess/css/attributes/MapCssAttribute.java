@@ -48,16 +48,12 @@ public class MapCssAttribute extends CssAttribute {
 	
 	private char separator = '|';
 
-
-
 	/**
 	 * Creates a new instance.
 	 */
 	public MapCssAttribute() {
 		super();
 	}
-	
-	
 	
 	/* (non-Javadoc)
 	 * @see de.enough.polish.preprocess.css.CssAttribute#setDefinition(org.jdom.Element)
@@ -71,15 +67,8 @@ public class MapCssAttribute extends CssAttribute {
 		}
 	}
 
-
-
-	/**
-	 * Checks and transforms the given CSS value for this attribute.
-	 * 
-	 * @param value the attribute value
-	 * @param environment the environment
-	 * @return the transformed value or the same value if no transformation is required.
-	 * @throws BuildException when a condition is not met or when the value contains conflicting values
+	/* (non-Javadoc)
+	 * @see de.enough.polish.preprocess.css.CssAttribute#getValue(java.lang.String, de.enough.polish.Environment)
 	 */
 	public String getValue(String value, Environment environment ) {
 		if (this.requiresMapping && this.mappingsByName == null) {
@@ -152,8 +141,6 @@ public class MapCssAttribute extends CssAttribute {
 //				}
 		}
 	}
-	
-	
 
 //	/* (non-Javadoc)
 //	 * @see de.enough.polish.preprocess.css.CssAttribute#getAllowedValues()
@@ -166,7 +153,5 @@ public class MapCssAttribute extends CssAttribute {
 //			return (String[]) this.mappingsByName.keySet().toArray( new String[ this.mappingsByName.size() ] );
 //		}
 //	}
-	
-	
 
 }

@@ -13,6 +13,11 @@ public class TestSerialization_static_template
   
   private int i;
 
+	public int getValue()
+	{
+		return i;
+	}
+
 	public void read(DataInputStream input)
 	  throws IOException
 	{

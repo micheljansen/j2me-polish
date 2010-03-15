@@ -87,8 +87,8 @@ public class TextFileManager {
 		if ( multipleIndex != -1 ) {
 			importName = importName.substring( 0, multipleIndex );
 		}
-		boolean result = (this.filesByClassName.containsKey(importName)
-				|| this.packagesByName.containsKey(importName));
+		boolean result = this.filesByClassName.containsKey(importName)
+				         || this.packagesByName.containsKey(importName);
 //		System.out.println("contains import [" + importName + "]: " + result + ", stored classes: " + this.filesByClassName.size() );		
 		return result;
 	}

@@ -193,7 +193,7 @@ public class ResourceManager {
 				ResourceCopierSetting setting = copierSettings[i];
 				ResourceCopier resourceCopier = ResourceCopier.getInstance( setting, this.extensionManager, this.environment );
 				File tempTargetDir;
-				boolean lastRound = (i == copierSettings.length - 1); 
+				boolean lastRound = i == copierSettings.length - 1; 
 				if ( lastRound ) {
 					tempTargetDir = targetDir;
 				} else {
@@ -372,7 +372,7 @@ public class ResourceManager {
 			return directories;
 		}
 		if (this.resourceDirectories == null) {
-			System.out.println("Error: resourceDirectories == null, resourceSetting=" + this.resourceSetting + ", resourceSetting.getRootDirs=" +  (this.resourceSetting == null ? "null" : "" + this.resourceSetting.getRootDirectories(this.environment)));
+			System.out.println("Error: resourceDirectories == null, resourceSetting=" + this.resourceSetting + ", resourceSetting.getRootDirs=" +  (this.resourceSetting == null ? "null" : this.resourceSetting.getRootDirectories(this.environment).toString()));
 			this.resourceDirectories = this.resourceSetting.getRootDirectories(this.environment);
 		}
 		ArrayList dirs = new ArrayList();

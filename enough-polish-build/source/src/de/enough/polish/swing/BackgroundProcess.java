@@ -41,12 +41,12 @@ public interface BackgroundProcess {
 	 * 
 	 * @return the number of steps of this process, -1 when the number is not known.
 	 */
-	public int getSteps();
+	int getSteps();
 	
 	/**
 	 * Executes the long-going process.
 	 * 
 	 * @param progressFrame the progress frame used for showing the progress.
 	 */
-	public void runBackgroundProcess( ProgressFrame progressFrame );
+	void runBackgroundProcess( ProgressFrame progressFrame );
 }

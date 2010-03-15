@@ -86,7 +86,7 @@
 				icon="/nutiteq.png" 
 				jarUrl="${polish.jarName}" 
 				version="1.0.0"
-				copyright="Nutiteq 2009"
+				copyright="Nutiteq 2010"
 			/>
 			<!-- selection of supported devices -->
             <deviceRequirements if="config.active:defined and (test or enableCompilerMode)" >		

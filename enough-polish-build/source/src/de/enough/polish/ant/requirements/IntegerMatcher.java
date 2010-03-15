@@ -65,9 +65,9 @@ implements Matcher
 	public boolean matches(String deviceValue) {
 		int value = Integer.parseInt( deviceValue );
 		if (this.equalsOrGreater) {
-			return ( value >= this.number );
+			return value >= this.number;
 		} else {
-			return (value == this.number );
+			return value == this.number;
 		}
 	}
 

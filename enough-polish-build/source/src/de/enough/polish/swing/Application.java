@@ -39,9 +39,9 @@ import java.io.File;
  */
 
 public interface Application {
-	public void quit();
-	public void about();
-	public void preferences();
-	public void openApplication();
-	public void openDocument( File file );
+	void quit();
+	void about();
+	void preferences();
+	void openApplication();
+	void openDocument( File file );
 }

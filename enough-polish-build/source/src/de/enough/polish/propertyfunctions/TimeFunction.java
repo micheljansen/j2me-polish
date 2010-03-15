@@ -51,7 +51,10 @@ public class TimeFunction extends PropertyFunction {
 	 */
 	public String process(String input, String[] arguments,	Environment env) 
 	{
-		return Long.toString( ConvertUtil.convertToMilliseconds(input) );
+		if (input.equals("Long.MAX_VALUE")) {
+			return Long.toString(Long.MAX_VALUE) + "L";
+		}
+		return Long.toString( ConvertUtil.convertToMilliseconds(input) ) + "L";
 	}
 
 }

@@ -50,7 +50,7 @@ public class TermRequirement extends Requirement {
 	/**
 	 * Creates a new requirement for a device feature.
 	 * 
-	 * @param term the preprocessing term, e.g. "polish.supportsPolishGui && !polish.isVirtual" 
+	 * @param term the preprocessing term, e.g. "polish.supportsPolishGui &amp;&amp; !polish.isVirtual" 
 	 */
 	public TermRequirement(String term ) {
 		super(term, "Term");
@@ -78,7 +78,11 @@ public class TermRequirement extends Requirement {
 		} else {
 			this.booleanEvaluator.setEnvironment( device );
 		}
-		return this.booleanEvaluator.evaluate( this.term, "build.xml", 0 );
+		boolean termIsTrue = this.booleanEvaluator.evaluate( this.term, "build.xml", 0 );
+//		if (termIsTrue && device.getIdentifier().startsWith("Motorola")) {
+//			System.out.println("adding " + device.getIdentifier() );
+//		}
+		return termIsTrue;
 		/*
 		if (result) {
 			//System.out.println("device " + device.getIdentifier() + " is virtual: " + device.hasFeature("polish.isVirtual") );

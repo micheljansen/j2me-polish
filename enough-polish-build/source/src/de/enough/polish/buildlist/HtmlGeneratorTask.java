@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
 
@@ -150,11 +151,12 @@ public class HtmlGeneratorTask
 		BufferedWriter writer = new BufferedWriter(new FileWriter("dist/" + vendorName + ".html"));
 		writeVendorFileHeader(writer);
 
-		Iterator it = deviceList.keySet().iterator();
+		Iterator it = deviceList.entrySet().iterator();
 
 		while (it.hasNext()) {
-			String deviceName = (String) it.next();
-			String jadName = (String) deviceList.get(deviceName);
+			Map.Entry entry = (Map.Entry) it.next();
+			String deviceName = (String) entry.getKey();
+			String jadName = (String) entry.getValue();
 			writeVendorFileEntry(writer, deviceName, jadName);
 		}
 

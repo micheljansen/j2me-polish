@@ -50,21 +50,41 @@ public class VersionFunction extends PropertyFunction
 	 */
 	public String process(String input, String[] arguments, Environment env)
 	{
-		return doProcess(input, arguments);
+		String versionIdentifier = null;
+		if (arguments != null && arguments.length > 0) {
+			versionIdentifier = arguments[0];
+		}
+		return doProcess(input, versionIdentifier);
 	}
-	
+
+	/**
+	 * Processes a simple version like 3.2.1
+	 * @param version the version
+	 * @return the processed version, e.g. 3200100
+	 */
 	public static String process(String version) {
 		return doProcess(version, null);
 	}
+	
+	/**
+	 * Processes a simple version like 'MIDP/2.0, BlackBerry/4.7'
+	 * @param version the version
+	 * @param versionIdentifier the version identifier, e.g. BlackBerry
+	 * @return the processed version, e.g. 4700000
+	 */
+	public static String process(String version, String versionIdentifier) {
+		return doProcess(version, versionIdentifier);
+	}
 
-	private static String doProcess(String input, String[] arguments) {
-		if (arguments != null && arguments.length > 0) {
-			String start = arguments[0].toLowerCase().trim();
+
+	private static String doProcess(String input, String versionIdentifier) {
+		if (versionIdentifier != null) {
+			versionIdentifier = versionIdentifier.toLowerCase().trim();
 			String[] inputs = StringUtil.splitAndTrim(input, ',');
 			boolean found = false;
 			for (int i = 0; i < inputs.length; i++) {
 				String value = inputs[i];
-				if (value.toLowerCase().startsWith(start)) {
+				if (value.toLowerCase().startsWith(versionIdentifier)) {
 					found = true;
 					input = value;
 					break;

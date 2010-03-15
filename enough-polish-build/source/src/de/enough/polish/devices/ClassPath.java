@@ -144,7 +144,7 @@ public class ClassPath {
                                 importFolderString = importFolder.getAbsolutePath();
                             }
 							System.err.println("WARNING: unable to resolve boot classpath library [" + pathElement + "] of device [" + this.device.identifier +"]: file not found! default-dir=[" + 
-                                                     polishHomeString + "], api-dir=[" + importFolderString + "]. When this leads to problems, please add those libraries to ${polish.home}/import.");
+                                                     polishHomeString + "], api-dir=[" + importFolderString + "]. If this leads to problems, please add those libraries to ${polish.home}/import.");
 							lib = null;
 						}
 					}

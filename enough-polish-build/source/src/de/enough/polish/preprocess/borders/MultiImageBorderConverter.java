@@ -90,7 +90,7 @@ public class MultiImageBorderConverter
 		bottomCenter = getUrl(bottomCenter);
 		bottomRight = getUrl(bottomRight);
 
-		return ("new " + BORDERS_PACKAGE + "MultiImageBorder(" + borderWidth +
+		return "new " + BORDERS_PACKAGE + "MultiImageBorder(" + borderWidth +
 				", \"" + topLeft +
 				"\", \"" + topCenter +
 				"\", \"" + topRight +
@@ -99,6 +99,6 @@ public class MultiImageBorderConverter
 				"\", \"" + bottomLeft +
 				"\", \"" + bottomCenter +
 				"\", \"" + bottomRight +
-				"\")");
+				"\")";
 	}
 }

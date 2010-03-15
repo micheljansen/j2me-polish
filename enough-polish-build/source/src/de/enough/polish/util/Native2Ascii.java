@@ -209,7 +209,7 @@ public class Native2Ascii {
             	}
             	precedingBackslash = false;
             } else {
-            	precedingBackslash = (c == '\\');
+            	precedingBackslash = c == '\\';
             }
             if (!precedingBackslash) {
                 buffer.append(c);
@@ -217,6 +217,5 @@ public class Native2Ascii {
         }
 		return buffer.toString();
 	}
-
 
 }

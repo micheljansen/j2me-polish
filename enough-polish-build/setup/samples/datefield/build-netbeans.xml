@@ -80,7 +80,7 @@
 			>
 		<j2mepolish>
 		    <!-- general settings -->
-			<info copyright="Copyright 2009 Enough Software. All rights reserved." 
+			<info copyright="Copyright 2010 Enough Software. All rights reserved." 
 				description="A demonstration of the ChartItem." 
 				infoUrl="http://www.j2mepolish.org" 
 				jarName="${polish.vendor}-${polish.name}-${polish.locale}-chartitem.jar" 

@@ -96,7 +96,7 @@ implements TreeCellEditor {
 	 */
 	public Object getCellEditorValue() {
 		if (this.currentItem != null) {
-			return new Boolean( this.currentItem.isSelected() );
+			return Boolean.valueOf( this.currentItem.isSelected() );
 		}
 		return null;
 	}

@@ -54,9 +54,9 @@ public class ResourcesPackager extends Packager{
 	/* (non-Javadoc)
 	 * @see de.enough.polish.jar.Packager#createPackage(java.io.File, java.io.File, de.enough.polish.Device, java.util.Locale, de.enough.polish.Environment)
 	 */
-	public void createPackage(File sourceDir, File targetFile, Device device,
-			Locale locale, Environment env) throws IOException, BuildException {
-	
+	public void createPackage(File sourceDir, File targetFile, Device device, Locale locale, Environment env) 
+	throws IOException, BuildException 
+	{
 		String aapt = ArgumentHelper.aapt(env);
 		if (aapt != null) {
 			ArrayList arguments = getDefaultArguments(aapt,env);

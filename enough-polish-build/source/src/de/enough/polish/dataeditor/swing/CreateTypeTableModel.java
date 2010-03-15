@@ -94,7 +94,7 @@ public class CreateTypeTableModel extends AbstractTableModel {
 	 * @see javax.swing.table.TableModel#isCellEditable(int, int)
 	 */
 	public boolean isCellEditable(int rowIndex, int columnIndex) {
-		return (columnIndex == 1);
+		return columnIndex == 1;
 	}
 	
 	/* (non-Javadoc)

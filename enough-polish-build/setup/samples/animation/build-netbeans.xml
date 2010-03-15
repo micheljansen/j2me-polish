@@ -97,7 +97,7 @@
 				icon="dot.png"
 				jarName="${polish.vendor}-${polish.name}-${polish.locale}-menu.jar" 
 				jarUrl="${deploy-url}${polish.jarName}"
-				copyright="Copyright 2005 - 2009 Enough Software. All rights reserved."
+				copyright="Copyright 2005 - 2010 Enough Software. All rights reserved."
 				deleteConfirm="Do you really want to kill me?" 
 			/>
 			<!-- selection of supported devices -->

@@ -38,10 +38,10 @@ import de.enough.polish.preprocess.css.StyleSheet;
  * <p>Converts CSS code into a CircleBorder instantiation.</p>
  * <p>Following CSS-attributes are supported:</p>
  * <ul>
- * 	<li><b>type<b>: the type of the border, needs to be "circle".</li>
- * 	<li><b>color<b>: the color of the border, defaults to "black".</li>
- * 	<li><b>width<b>: the width of the border, defaults to "1" pixel.</li>
- * 	<li><b>stroke-style<b>: the stroke-style, either "dotted" or "solid". Defaults to "solid". </li>
+ * 	<li><b>type</b>: the type of the border, needs to be "circle".</li>
+ * 	<li><b>color</b>: the color of the border, defaults to "black".</li>
+ * 	<li><b>width</b>: the width of the border, defaults to "1" pixel.</li>
+ * 	<li><b>stroke-style</b>: the stroke-style, either "dotted" or "solid". Defaults to "solid". </li>
  * </ul>
  *
  * <p>Copyright Enough Software 2004, 2005</p>

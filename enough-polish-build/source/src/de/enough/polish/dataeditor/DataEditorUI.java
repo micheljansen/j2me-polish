@@ -38,12 +38,12 @@ package de.enough.polish.dataeditor;
  */
 public interface DataEditorUI {
 	
-	public void signalChangedData();
+	void signalChangedData();
 	
-	public void signalChangedDefinition();
+	void signalChangedDefinition();
 	
-	public void signalUnchangedData();
+	void signalUnchangedData();
 	
-	public void signalUnchangedDefinition();
+	void signalUnchangedDefinition();
 
 }

@@ -37,9 +37,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import de.enough.polish.BuildException;
-
 import org.apache.tools.ant.Project;
+
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;

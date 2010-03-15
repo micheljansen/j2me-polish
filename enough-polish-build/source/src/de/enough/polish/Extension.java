@@ -32,7 +32,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.apache.tools.ant.AntClassLoader;
-import de.enough.polish.BuildException;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.CallTarget;
 import org.apache.tools.ant.taskdefs.Property;

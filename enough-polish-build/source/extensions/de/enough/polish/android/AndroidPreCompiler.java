@@ -30,6 +30,7 @@ import java.io.File;
 import de.enough.polish.BuildException;
 import de.enough.polish.Device;
 import de.enough.polish.android.precompiler.ActivityPreCompiler;
+import de.enough.polish.android.precompiler.LibraryCopierPreCompiler;
 import de.enough.polish.android.precompiler.ResourcesPreCompiler;
 import de.enough.polish.precompile.PreCompiler;
 
@@ -51,8 +52,13 @@ public class AndroidPreCompiler extends PreCompiler{
 	public void preCompile(File classesDir, Device device)
 			throws BuildException
 	{
+		boolean usePolishGui = device.getEnvironment().getBuildSetting().usePolishGui();
+		if( ! usePolishGui) {
+			throw new BuildException("In order to build for android devices, the Polish GUI must be used. Please set the property 'usePolishGui' in the 'build' tag of your 'build.xml' file to 'true'.");
+		}
 		new ActivityPreCompiler().preCompile(classesDir, device);
 		new ResourcesPreCompiler().preCompile(classesDir, device);
+		new LibraryCopierPreCompiler().preCompile(classesDir, device);
 	}
 
 }

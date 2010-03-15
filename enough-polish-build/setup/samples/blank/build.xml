@@ -29,7 +29,7 @@
 	<!-- the device for the test mode - you can define it on the command-line
 	     using the -D switch, e.g. ant -Ddevice=Generic/midp2 emulator -->
 	<property name="device" value="Generic/AnyPhone"/>
-	<property name="devices" value="${device},Generic/jtwi,Generic/Midp2Cldc11,Nokia/Series40E3,Nokia/Series60E2,Nokia/Series60E3,Sony-Ericsson/JavaPlatform7,,Sony-Ericsson/JavaPlatform8"/>
+	<property name="devices" value="${device},Generic/AnyMsaPhone,Nokia/Series40E3,Nokia/Series60E3,Sony-Ericsson/JavaPlatform7,Sony-Ericsson/JavaPlatform8"/>
 	
 	
 
@@ -75,7 +75,7 @@
 				infoUrl="http://www.j2mepolish.org"
 				jarName="${polish.vendor}-${polish.name}-${polish.locale}-blank.jar" 
 				jarUrl="${deploy-url}${polish.jarName}"
-				copyright="Copyright 2009 Your Company. All rights reserved."
+				copyright="Copyright 2010 Your Company. All rights reserved."
 			/>
 			<!-- selection of supported devices -->
 			<deviceRequirements if="test">

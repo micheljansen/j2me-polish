@@ -32,14 +32,16 @@ import de.enough.polish.preprocess.Preprocessor;
 import de.enough.polish.util.FileUtil;
 import de.enough.polish.util.StringList;
 
-import java.io.*;
+import java.io.File;
+import java.io.InputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 
 /**
  * <p>Reads CSS files and combines the found style-definitions.</p>
  *
  * <p>Copyright Enough Software 2004, 2005</p>
-
+ *
  * <pre>
  * history
  *        01-Mar-2004 - rob creation
@@ -146,10 +148,29 @@ public final class CssReader {
 		String[] cssBlocks = split( buffer );
 		for (int i = 0; i < cssBlocks.length; i++) {
 			String cssBlock = cssBlocks[i];
-			addCssBlock( new CssBlock( cssBlock ) );
+			if (cssBlock.startsWith("@media")) {
+				addMediaQuery( cssBlock );
+			} else {
+				addCssBlock( new CssBlock( cssBlock ) );
+			}
 		}
 	}
 	
+	protected void addMediaQuery(String block) {
+		StyleSheet mediaQuery = new StyleSheet();
+		int startIndex = block.indexOf('{');
+		String condition = block.substring("@media ".length(), startIndex).trim();
+		int endIndex = block.lastIndexOf('}');
+		block = block.substring(startIndex+1, endIndex).trim();
+		String[] cssBlocks = split( block );
+		mediaQuery.setMediaQueryCondition( condition );
+		for (int i = 0; i < cssBlocks.length; i++) {
+			String cssBlock = cssBlocks[i];
+			mediaQuery.addCssBlock( new CssBlock( cssBlock ) );
+		}
+		this.styleSheet.addMediaQuery( mediaQuery );
+	}
+
 	/**
 	 * Adds the given CSS-block.
 	 * 
@@ -200,7 +221,7 @@ public final class CssReader {
 	 * @param buffer the CSS declarations
 	 * @return the CSS declarations without comments.
 	 */
-	public final static StringBuffer removeCssComments( StringBuffer buffer ) {
+	public static StringBuffer removeCssComments( StringBuffer buffer ) {
 		StringBuffer clean = new StringBuffer( buffer.length() );
 		char[] chars = buffer.toString().toCharArray();
 		boolean inComment = false;
@@ -238,11 +259,23 @@ public final class CssReader {
 	 * @param buffer the raw buffer containing the CSS definitions
 	 * @return the buffer split into chunks.
 	 */
-	public static final String[] split(StringBuffer buffer) {
+	public static String[] split(StringBuffer buffer) {
+		return split( buffer.toString() );
+	}
+	
+	/**
+	 * Splits a CSS-StringBuffer into chunks.
+	 * Each chunk will start with the name of class and end with
+	 * the appropriate closing parenthesis '}'.
+	 * 
+	 * @param str the raw string containing the CSS definitions
+	 * @return the string split into chunks.
+	 */
+	public static String[] split(String str) {
 		int parenthesisCount = 0;
 		ArrayList chunksList = new ArrayList();
 		int blockStart = 0;
-		char[] chars = buffer.toString().toCharArray();
+		char[] chars = str.toCharArray();
 		for (int i = 0; i < chars.length; i++) {
 			char c = chars[i];
 			if (c == '{') {
@@ -250,15 +283,15 @@ public final class CssReader {
 			} else if (c == '}') {
 				parenthesisCount--;
 				if (parenthesisCount == 0) {
-					chunksList.add( buffer.substring(blockStart, i + 1) );
+					chunksList.add( str.substring(blockStart, i + 1) );
 					blockStart = i+ 1;
 				} else if (parenthesisCount < 0) {
-					throw new BuildException("Invalid CSS - there is at least one closing parenthesis '}' too much in this CSS code: " + buffer.toString() );
+					throw new BuildException("Invalid CSS - there is at least one closing parenthesis '}' too much in this CSS code: " + str.toString() );
 				}
 			}
 		}
 		if (parenthesisCount > 0) {
-			throw new BuildException("Invalid CSS - there is at least one opening parenthesis '{' too much in this CSS code: " + buffer.toString() );
+			throw new BuildException("Invalid CSS - there is at least one opening parenthesis '{' too much in this CSS code: " + str.toString() );
 		}
 		return (String[]) chunksList.toArray( new String[ chunksList.size()]);
 	}

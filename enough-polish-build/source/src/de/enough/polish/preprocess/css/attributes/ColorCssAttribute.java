@@ -58,8 +58,6 @@ public class ColorCssAttribute extends CssAttribute {
 		super();
 	}
 	
-	
-	
 	/* (non-Javadoc)
 	 * @see de.enough.polish.preprocess.css.CssAttribute#setDefinition(org.jdom.Element)
 	 */
@@ -79,15 +77,8 @@ public class ColorCssAttribute extends CssAttribute {
 		}
 	}
 
-
-
-	/**
-	 * Checks and transforms the given CSS value for this attribute.
-	 * 
-	 * @param value the attribute value
-	 * @param environment the environment
-	 * @return the transformed value or the same value if no transformation is required.
-	 * @throws BuildException when a condition is not met or when the value contains conflicting values
+	/* (non-Javadoc)
+	 * @see de.enough.polish.preprocess.css.CssAttribute#getValue(java.lang.String, de.enough.polish.Environment)
 	 */
 	public String getValue(String value, Environment environment ) {
 		ColorConverter colorConverter = (ColorConverter) environment.get( ColorConverter.ENVIRONMENT_KEY );

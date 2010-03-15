@@ -10,7 +10,7 @@ public class OsUtil {
 	 */
 	public static boolean isRunningWindows()
 	{
-		return (File.separatorChar == '\\' );
+		return File.separatorChar == '\\';
 	}
 	
 
@@ -21,7 +21,7 @@ public class OsUtil {
 	public static boolean isRunningWindowsVista()
 	{
 		String os = System.getProperty("os.name").toLowerCase();
-		return (os.indexOf("windows") != -1 && os.indexOf("vista") != -1);
+		return os.indexOf("windows") != -1 && os.indexOf("vista") != -1;
 	}
 	
 	/**
@@ -31,7 +31,6 @@ public class OsUtil {
 	public static boolean isRunningMacOSX()
 	{
 		String os = System.getProperty("os.name").toLowerCase();
-		return (os.indexOf("mac os x") != -1);
+		return os.indexOf("mac os x") != -1;
 	}
-
 }

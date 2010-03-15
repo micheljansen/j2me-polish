@@ -238,3 +238,121 @@ scrollbar {
 	scrollbar-slider-width: 3;
 	background-color: white;
 }
+
+/* KEYBOARD STYLES *******************************************************************/
+
+keyDimension {
+	min-height: 15%;
+	min-width: 15%;
+}
+
+keySpaceDimension extends keyDimension {
+	min-width: 45%;
+}
+
+key extends keyDimension{
+	margin: 1%;
+	
+	border-color: black;
+	border-width: 1;
+	
+	font-color: black;
+	font-size: large;
+	
+	text-layout: center | vcenter;
+	layout: center | vcenter;
+}
+
+key:pressed {
+	font-color: white;
+	background-color: black;
+}
+
+key:hover{}
+
+keySpace extends keySpaceDimension {
+	margin: 1%;
+	
+	border-color: black;
+	border-width: 1;
+	
+	font-color: black;
+	font-size: large;
+	
+	layout: center | vcenter;
+}
+
+keySpace:pressed {
+	font-color: white;
+	background-color: black;
+}
+
+keySpace:hover{}
+
+keyShift extends key {}
+
+keyDelete extends key {}
+
+keyClear extends key {}
+
+keyAbc extends key {}
+
+key123 extends key {}
+
+keyBlank extends keyDimension{}
+
+keyrow {
+	view-type: horizontal;
+	padding: 0;
+	layout: center;
+}
+
+keyrow:hover{}
+
+keyboard {
+	margin-top: 3%;
+	margin-bottom: 3%;
+	padding: 0;
+}
+
+
+keyboardView {
+	padding: 0;
+	
+	background-color: white;
+		
+	layout: vcenter | hcenter;
+}
+
+keyboardViewHeader {
+	columns: 2;
+	padding: 0;
+	align-heights: true;
+}
+
+keyboardViewSubmit {
+	margin: 1%;
+	min-height: 15%;
+	min-width: 15%;
+	border-color: black;
+	border-width: 1;
+	text-layout: center | vcenter;
+	layout: vcenter;
+}
+
+keyboardViewSubmit:hover {}
+
+keyboardViewSubmit:pressed {}
+
+keyboardViewDisplay {
+	margin: 1%;
+	text-layout: left | vcenter;
+	layout: expand | vcenter;
+	border-color: black;
+	border-width: 1;
+	max-lines: 1;
+	max-lines-appendix-position: before;
+}
+
+keyboardViewDisplay:hover{
+}

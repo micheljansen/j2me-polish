@@ -335,7 +335,7 @@ public class ArgumentHelper {
 	 */
 	public static boolean isAndroidVersionHigherOrEquals15(Environment env) {
 		if (!isAndroidVersionResolved) {
-			isAndroidVersionHigherOrEquals15 = (android(env) != null);
+			isAndroidVersionHigherOrEquals15 = android(env) != null;
 			isAndroidVersionResolved = true;
 		}
 		return isAndroidVersionHigherOrEquals15;

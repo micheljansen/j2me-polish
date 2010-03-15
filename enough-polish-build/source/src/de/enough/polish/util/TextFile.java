@@ -25,8 +25,8 @@
  */
 package de.enough.polish.util;
 
-import java.io.*;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 /**
@@ -229,7 +229,7 @@ public class TextFile {
 	/**
 	 * Resets the file.
 	 */
-	private final void updateFile() {
+	private void updateFile() {
 		int index = this.filePath.lastIndexOf( '/' );
 		if (index == -1) {
 			index = this.filePath.lastIndexOf( '\\' );

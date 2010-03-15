@@ -25,7 +25,13 @@
  */
 package de.enough.polish.util;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -57,7 +63,7 @@ public final class ResourceUtil {
 	 * @return the InputStream for the specified resource.
 	 * @throws FileNotFoundException when the specified resource could not be found
 	 */
-	public final InputStream open( String baseDir, String url ) 
+	public InputStream open( String baseDir, String url ) 
 	throws FileNotFoundException 
 	{
 		File baseDirFile = null;

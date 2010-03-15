@@ -79,7 +79,7 @@ implements DeviceFilter
 	}
 	
 	/**
-	 * Adds the (possibly nested) <identifier> requirements. 
+	 * Adds the (possibly nested) &lt;identifier&gt; requirements. 
 	 * When there is a filter that is neither a Requirement nor a RequirementsContainer, the 
 	 * requiredIdentifiers field is set to null.
 	 * 

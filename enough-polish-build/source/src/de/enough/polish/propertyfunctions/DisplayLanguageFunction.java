@@ -54,7 +54,7 @@ public class DisplayLanguageFunction extends PropertyFunction {
 	 * @see de.enough.polish.propertyfunctions.PropertyFunction#process(java.lang.String, java.lang.String[], de.enough.polish.Environment)
 	 */
 	public String process(String input, String[] arguments, Environment env) {
-		input.replace( '-', '_' );
+		input = input.replace( '-', '_' );
 		String[] elements = StringUtil.split( input, '_' );
 		Locale locale;
 		if (elements.length == 3) {

@@ -36,7 +36,16 @@ import de.enough.polish.Variable;
 
 /**
  * <p>Call another Ant target for obfuscating.</p>
- *
+ * <p>Within the target you can use following Ant properties:</p>
+ * <ul>
+ *  <li><code>polish.obfuscate.source</code>: the source JAR file (which is not obfuscated)</li>
+ *  <li><code>polish.obfuscate.target</code>: the target JAR file (which should be generated)</li>
+ *  <li><code>polish.obfuscate.bootclasspath</code>: the boot class path</li>
+ *  <li><code>polish.obfuscate.classpath</code>: the class path</li>
+ *  <li><code>polish.obfuscate.keepcount</code>: the number of classes that should be kept</li>
+ *  <li><code>polish.obfuscate.keep</code>: a comma separated list of classnames that should be kept/not obfuscated</li>
+ *  <li><code>polish.obfuscate.keep.0..polish.obfuscate.keep.[keepcount-1]</code>: each class name that should be kept in a single Ant property</li>
+ * </ul>
  * <p>Copyright Enough Software 2005</p>
  * <pre>
  * history

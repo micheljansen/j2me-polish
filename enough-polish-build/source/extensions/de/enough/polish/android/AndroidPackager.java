@@ -51,9 +51,10 @@ public class AndroidPackager extends Packager{
 	/* (non-Javadoc)
 	 * @see de.enough.polish.jar.Packager#createPackage(java.io.File, java.io.File, de.enough.polish.Device, java.util.Locale, de.enough.polish.Environment)
 	 */
-	public void createPackage(File sourceDir, File targetFile, Device device,
-			Locale locale, Environment env) throws IOException, BuildException {
-		
+	public void createPackage(File sourceDir, File targetFile, Device device, Locale locale, Environment env) 
+	throws IOException, BuildException 
+	{
+	
 		new ResourcesPackager().createPackage(sourceDir, targetFile, device, locale, env);
 		
 		new ApkPackager().createPackage(sourceDir, targetFile, device, locale, env);

@@ -47,7 +47,7 @@ public interface LicenseLoader {
 	 * @return a map containing all license attributes, null when the licenseFile does not exist.
 	 * @throws SecurityException when the license is not valid
 	 */
-	public Map verifyLicense( File licenseFile )
+	Map verifyLicense( File licenseFile )
 	throws SecurityException;
 
 }

@@ -667,16 +667,21 @@ public class HtmlExporterTask extends Task {
 			cssStyle = CSS_TABLE_ROW_CLASSES[ row % 2 ];
 			row++;
 			String[] formats = StringUtil.splitAndTrim(soundFormat.toLowerCase(), ',');
-			String rowText = "<tr class=\"" + cssStyle + "\"><td>Supported Audio Formats</td><td>" + soundFormat + "</td><td>polish.SoundFormat, ";
+			StringBuffer rowText = new StringBuffer();
+			rowText.append("<tr class=\"");
+			rowText.append(cssStyle);
+			rowText.append("\"><td>Supported Audio Formats</td><td>");
+			rowText.append(soundFormat + "</td><td>polish.SoundFormat, ");
 			for (int i = 0; i < formats.length; i++) {
 				String format = formats[i];
-				rowText += "polish.audio." + format;
+				rowText.append("polish.audio.");
+				rowText.append(format);
 				if (i != formats.length - 1) {
-					rowText += ", ";
+					rowText.append(", ");
 				}
 			}
-			rowText += "</td></tr>"; 
-			lines.add( rowText );
+			rowText.append("</td></tr>"); 
+			lines.add( rowText.toString() );
 		}
 		if (videoFormat != null) {
 			cssStyle = CSS_TABLE_ROW_CLASSES[ row % 2 ];

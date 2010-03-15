@@ -26,12 +26,15 @@
 package de.enough.polish.emulator;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
 import de.enough.polish.Device;
 import de.enough.polish.Environment;
 import de.enough.polish.ant.emulator.EmulatorSetting;
+import de.enough.polish.util.OutputFilter;
+import de.enough.polish.util.ProcessUtil;
 
 /**
  * <p>Uses the microemulator for emulation.</p>
@@ -45,6 +48,7 @@ public class MicroEmulator extends Emulator {
 	private String microemulatorPlayerPath;
 	private String microemulatorHomePath;
 	private String librariesPath;
+	private EmulatorSetting setting;
 
 	/**
 	 * Creates a new emulator launcher.
@@ -57,6 +61,7 @@ public class MicroEmulator extends Emulator {
 	 * @see de.enough.polish.emulator.Emulator#init(de.enough.polish.Device, de.enough.polish.ant.emulator.EmulatorSetting, de.enough.polish.Environment, org.apache.tools.ant.Project, de.enough.polish.BooleanEvaluator, java.lang.String)
 	 */
 	public boolean init(Device dev, EmulatorSetting setting, Environment env) {
+		this.setting = setting;
 		String microemulatorHome = env.getVariable("microemulator.home");
 		if (microemulatorHome == null) {
 			microemulatorHome = env.getVariable("polish.home") + "/lib/microemulator";
@@ -100,18 +105,19 @@ public class MicroEmulator extends Emulator {
 				screenHeight = "320";
 			}
 		}
-
-		return new String[] {
-			"java",
-			"-cp",
-			this.microemulatorPlayerPath + File.pathSeparatorChar + this.microemulatorHomePath + "/devices/microemu-device-resizable.jar" + File.pathSeparatorChar + this.librariesPath,
-			"org.microemu.app.Main",
-			"--resizableDevice", screenWidth, screenHeight,
-			"--device",  "org/microemu/device/resizable/device.xml",
-			//"--classpath", this.librariesPath,
-			"--appclasspath", this.librariesPath,
-			this.environment.getVariable("polish.jadPath")
-		};
+		ArrayList args = new ArrayList();
+		args.add( "java");
+		if (this.setting.enableProfiler() || this.setting.enableMemoryMonitor()) {
+			args.add( "-Dcom.sun.management.jmxremote" );
+		}
+		args.add( "-cp");
+		args.add( this.microemulatorPlayerPath + File.pathSeparatorChar + this.microemulatorHomePath + "/devices/microemu-device-resizable.jar" + File.pathSeparatorChar + this.librariesPath );
+		args.add( "org.microemu.app.Main" );
+		args.add( "--resizableDevice" ); args.add( screenWidth); args.add( screenHeight );
+		args.add( "--device" ); args.add( "org/microemu/device/resizable/device.xml" );
+		args.add( "--appclasspath" ); args.add( this.librariesPath );
+		args.add( this.environment.getVariable("polish.jadPath") );
+		return (String[]) args.toArray( new String[args.size()] );
 	}
 	
 	/**
@@ -139,6 +145,20 @@ public class MicroEmulator extends Emulator {
 	protected File getExecutionDir() {
 		return new File( this.microemulatorHomePath );
 	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.emulator.Emulator#exec(java.lang.String[], java.lang.String, boolean, de.enough.polish.util.OutputFilter, java.io.File)
+	 */
+	protected int exec( String[] arguments, String info, boolean wait, OutputFilter filter, File executionDir ) 
+	throws IOException 
+	{
+		if (this.setting.enableProfiler() || this.setting.enableMemoryMonitor()) {
+			ProcessUtil.exec(new String[]{"jvisualvm"}, "jvisualvm: ", false );
+		}
+		return super.exec(arguments, info, wait, filter, executionDir);
+	}
+	
 
 
 }

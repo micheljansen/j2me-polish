@@ -400,7 +400,7 @@ public class Device extends PolishComponent {
 			if (bitsPerPixelDef != null) {
 				try {
 					int bitsPerPixel = Integer.parseInt(bitsPerPixelDef);
-					this.supportsPolishGui = (bitsPerPixel >= POLISH_GUI_MIN_BITS_PER_PIXEL);
+					this.supportsPolishGui = bitsPerPixel >= POLISH_GUI_MIN_BITS_PER_PIXEL;
 				} catch (NumberFormatException e) {
 					throw new InvalidComponentException(
 							"The device ["
@@ -535,7 +535,7 @@ public class Device extends PolishComponent {
 	 * @return true when this device supports the MIDP/1.0 API.
 	 */
 	public boolean isMidp1() {
-		return (this.midpVersion == MIDP_1);
+		return this.midpVersion == MIDP_1;
 	}
 
 	/**
@@ -544,7 +544,7 @@ public class Device extends PolishComponent {
 	 * @return true when this device supports the MIDP/2.0 API.
 	 */
 	public boolean isMidp2() {
-		return (this.midpVersion == MIDP_2);
+		return this.midpVersion == MIDP_2;
 	}
 
 	/**

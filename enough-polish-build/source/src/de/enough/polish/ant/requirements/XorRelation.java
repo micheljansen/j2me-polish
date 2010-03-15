@@ -62,6 +62,6 @@ public class XorRelation extends RequirementContainer {
 				}
 			}
 		}
-		return (numberOfMetRequirements == 1);
+		return numberOfMetRequirements == 1;
 	}
 }

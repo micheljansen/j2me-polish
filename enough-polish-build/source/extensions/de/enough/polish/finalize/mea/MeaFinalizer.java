@@ -45,7 +45,10 @@ import de.enough.polish.util.FileUtil;
 import de.enough.polish.util.StringUtil;
 
 /**
- * Creates a MEdia Archive from all build applications.
+ * Creates a Media Archive file (.mea) from all applications which are build.
+ * The process has two stages. The first stage is to collect all information about
+ * the created jar/jad files. The second stages is triggered at the end of the build
+ * to create the actual media archive.
  * 
  * <br>Copyright Enough Software 2005-2007
  * <pre>
@@ -328,8 +331,7 @@ public class MeaFinalizer extends Finalizer{
     	}
     	File polishHome = new File( polishHomeDir );
     	DeviceDatabase deviceDb = DeviceDatabase.getInstance(polishHome);
-		Environment env = new Environment( polishHome
-				);
+		Environment env = new Environment(polishHome);
 		MeaFinalizer mea = new MeaFinalizer();
 		// add args to environment:
 		int lastNonFileArgumentIndex = -1;

@@ -42,12 +42,12 @@ public interface UserAgentStorage
 	 * @param userAgent the user agent
 	 * @param device the corresponding found device
 	 */
-	public void notifyDeviceResolved( String userAgent, Device device );
+	void notifyDeviceResolved( String userAgent, Device device );
 	
 	/**
 	 * Is called whenever a device could not be resolved.
 	 * @param userAgent the user agent
 	 */
-	public void notifyDeviceUnresolved( String userAgent );
+	void notifyDeviceUnresolved( String userAgent );
 
 }

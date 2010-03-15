@@ -112,7 +112,7 @@ implements Comparator
 	throws IOException
 	{
 		this.localizationSetting = localizationSetting;
-		this.isDynamic = (localizationSetting == null ? false : localizationSetting.isDynamic() );
+		this.isDynamic = localizationSetting == null ? false : localizationSetting.isDynamic();
 		this.locale = locale;
 		this.device = device;
 		this.environment = environment;
@@ -222,8 +222,11 @@ implements Comparator
 		if ( dateFormat != null) {
 			// maybe the dateformat needs to be changed:
 			if (dateFormat.length() == 2) {
-				String separator = environment.getVariable("polish.DateFormatSeparator");
 				String emptyText = environment.getVariable("polish.DateFormatEmptyText");
+				String separator = environment.getVariable("polish.DateFormatSeparator");
+				if ("YYYY-MM-DD".equals(emptyText)) {
+					emptyText = null;
+				}
 				if ("de".equals(dateFormat)) {
 					dateFormat = "dmy";
 					if (separator == null) {
@@ -248,6 +251,15 @@ implements Comparator
 					if (emptyText == null) {
 						emptyText = "MM-DD-YYYY";
 					}
+				}
+				if (emptyText == null) {
+					emptyText = "YYYY-MM-DD";
+				} else {
+					Translation translation = getTranslation("polish.DateFormatEmptyText");
+					if (translation != null) {
+						translation.setValue(emptyText);
+					}
+					this.preprocessingVariablesByKey.put("polish.DateFormatEmptyText", emptyText);
 				}
 				environment.addVariable( "polish.DateFormat", dateFormat );
 				environment.addVariable( "polish.DateFormatSeparator", separator );

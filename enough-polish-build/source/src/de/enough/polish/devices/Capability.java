@@ -134,6 +134,21 @@ public class Capability {
 		return this.description;
 	}
 
+	/**
+	 * Determines whether extensions should be prepended.
+	 * @return true when new values should be placed in front
+	 */
+	public boolean prependExtensions() {
+		return this.prependValues;
+	}
+	
+	/**
+	 * Checks if values should be overwritten.
+	 * @return true when values should be overwritten.
+	 */
+	public boolean overwrite() {
+		return !(this.appendValues || this.prependValues);
+	}
 
 	/**
 	 * @return true if this capability will concatinate several occurences of a capability definition

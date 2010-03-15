@@ -25,9 +25,18 @@
  */
 package de.enough.polish.http;
 
-import java.net.*;
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Date;
+import java.util.StringTokenizer;
 
 /**
  * <p>Simple HTTP Server based loosely on http://www.devpapers.com/article/99</p>

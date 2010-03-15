@@ -90,7 +90,7 @@ public class SimpleBorderConverter extends BorderConverter {
 			if (rightWidthStr == null) {
 				rightWidthStr = this.width;
 			} else {
-				leftWidthStr = Integer.toString( parseInt("right-width", rightWidthStr) );
+				rightWidthStr = Integer.toString( parseInt("right-width", rightWidthStr) );
 			}
 			return "new " + BORDERS_PACKAGE + "TopBottomLeftRightBorder( " + this.color 
 				+ ", " + topWidthStr 

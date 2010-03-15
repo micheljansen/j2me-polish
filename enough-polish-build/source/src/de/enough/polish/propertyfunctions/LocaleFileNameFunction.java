@@ -51,7 +51,7 @@ public class LocaleFileNameFunction extends PropertyFunction {
 	 * @see de.enough.polish.propertyfunctions.PropertyFunction#process(java.lang.String, java.lang.String[], de.enough.polish.Environment)
 	 */
 	public String process(String input, String[] arguments, Environment env) {
-		input.replace( '-', '_' );
+		input = input.replace( '-', '_' );
 		return "/" + input + ".loc";
 	}
 

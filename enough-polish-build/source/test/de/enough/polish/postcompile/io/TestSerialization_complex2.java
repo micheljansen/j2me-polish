@@ -18,6 +18,14 @@ public class TestSerialization_complex2
 		this.time = System.currentTimeMillis();
 	}
 
+	public TestSerialization_complex2()
+	{
+		super();
+		this.text = null;
+		this.date = null;
+		this.time = 0;
+	}
+
 	public String getText()
 	{
 		return text;

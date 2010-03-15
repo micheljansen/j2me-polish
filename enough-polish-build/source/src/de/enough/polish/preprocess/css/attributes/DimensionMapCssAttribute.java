@@ -25,16 +25,11 @@
  */
 package de.enough.polish.preprocess.css.attributes;
 
-import org.jdom.Element;
-
-import de.enough.polish.BooleanEvaluator;
 import de.enough.polish.BuildException;
 import de.enough.polish.Environment;
 import de.enough.polish.preprocess.css.CssAnimationSetting;
-import de.enough.polish.preprocess.css.CssAttribute;
 import de.enough.polish.preprocess.css.CssMapping;
 import de.enough.polish.preprocess.css.Style;
-import de.enough.polish.util.StringUtil;
 
 /**
  * <p>An attribute that consists of a mapped value or a combination.</p>
@@ -48,10 +43,6 @@ import de.enough.polish.util.StringUtil;
  */
 public class DimensionMapCssAttribute extends MapCssAttribute {
 	
-	private char separator = '|';
-
-
-
 	/**
 	 * Creates a new instance.
 	 */
@@ -59,15 +50,8 @@ public class DimensionMapCssAttribute extends MapCssAttribute {
 		super();
 	}
 	
-	
-	
-	/**
-	 * Checks and transforms the given CSS value for this attribute.
-	 * 
-	 * @param value the attribute value
-	 * @param environment the environment
-	 * @return the transformed value or the same value if no transformation is required.
-	 * @throws BuildException when a condition is not met or when the value contains conflicting values
+	/* (non-Javadoc)
+	 * @see de.enough.polish.preprocess.css.attributes.MapCssAttribute#getValue(java.lang.String, de.enough.polish.Environment)
 	 */
 	public String getValue(String value, Environment environment ) {
 		if (this.requiresMapping && this.mappingsByName == null) {
@@ -85,7 +69,6 @@ public class DimensionMapCssAttribute extends MapCssAttribute {
 		}
 
 	}
-	
 
 	/**
 	 * Checks and transforms the given dimension CSS value for this attribute.
@@ -163,7 +146,4 @@ public class DimensionMapCssAttribute extends MapCssAttribute {
 	{
 		return generateAnimationSourceCode("DimensionMapCssAnimation", cssAnimation, style, environment);
 	}
-	
-	
-
 }

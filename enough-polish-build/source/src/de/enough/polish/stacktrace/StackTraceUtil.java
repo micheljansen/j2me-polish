@@ -102,7 +102,7 @@ public final class StackTraceUtil {
 	 * Retrieves the position of the decompiled code in the source code.
 	 * @param className the name of the class
 	 * @param methodName the name of the method.
-	 * @param searchForConstructor when the <init>-method is looked for
+	 * @param searchForConstructor when the &lt;init&gt;-method is looked for
 	 * @param sourceCode
 	 * @param preprocessedSourcePath
 	 * @param sourceDirs
@@ -320,7 +320,7 @@ public final class StackTraceUtil {
 	 * @return array of decompiled lines of the class, null when the class is not found
 	 * @throws DecompilerNotInstalledException
 	 */
-	private static final String[] decompile(String className, String classPath, Environment environment ) 
+	private static String[] decompile(String className, String classPath, Environment environment ) 
 	throws DecompilerNotInstalledException
 	{
 		className = StringUtil.replace( className, '.', File.separatorChar );
@@ -359,7 +359,7 @@ public final class StackTraceUtil {
 			InputStream input = process.getInputStream();
 			// the error stream needs to be read, so that
 			// the process is not blocked under windows:
-			(INSTANCE.new EmptyInputStreamThread( process.getErrorStream() )).start();
+			new EmptyInputStreamThread( process.getErrorStream() ).start();
 			//BufferedInputStream input = new BufferedInputStream( process.getInputStream() );
 			// using careful reading, because
 			// in windows the input.read() got stuck otherwise:
@@ -384,7 +384,7 @@ public final class StackTraceUtil {
 		}
 	}
 	
-	public final static BinaryStackTrace translateStackTrace( String message, String classPath, String preprocessedSourcePath, File[] sourceDirs , Environment environment )
+	public static BinaryStackTrace translateStackTrace( String message, String classPath, String preprocessedSourcePath, File[] sourceDirs , Environment environment )
 	throws DecompilerNotInstalledException
 	{
 		Matcher matcher = STACK_TRACE_PATTERN.matcher(message);
@@ -407,7 +407,7 @@ public final class StackTraceUtil {
 		return utility.translateStackTrace(message, classPath, preprocessedSourcePath, sourceDirs, environment, className, methodName, offset);
 	}
 	
-	class EmptyInputStreamThread extends Thread {
+	private static class EmptyInputStreamThread extends Thread {
 
 		private final InputStream input;
 		
@@ -427,7 +427,7 @@ public final class StackTraceUtil {
 			
 	}
 	
-	class CodeSequence {
+	private static class CodeSequence {
 		private final String[] chunks;
 		private final String code;
 		
@@ -456,7 +456,7 @@ public final class StackTraceUtil {
 		
 		public boolean matches( String line ) {
 			if (this.chunks.length == 0) {
-				return (line.indexOf( this.code ) != -1);
+				return line.indexOf( this.code ) != -1;
 			}
 			int minPos = 0; 
 			int newPos;

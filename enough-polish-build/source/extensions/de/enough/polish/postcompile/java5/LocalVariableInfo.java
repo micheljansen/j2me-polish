@@ -68,9 +68,9 @@ public class LocalVariableInfo
 
   public boolean equals(LocalVariableInfo other)
   {
-    return (this.owner.equals(other.owner)
-            && this.method.equals(other.method)
-            && this.index == other.index);
+    return this.owner.equals(other.owner)
+           && this.method.equals(other.method)
+           && this.index == other.index;
   }
 
   public int hashCode()

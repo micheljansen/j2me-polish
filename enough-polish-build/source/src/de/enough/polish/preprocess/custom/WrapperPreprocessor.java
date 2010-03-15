@@ -121,7 +121,7 @@ public class WrapperPreprocessor extends CustomPreprocessor {
 	 */
 	public void notifyDevice(Device device, boolean usesPolishGui) {
 		try {
-			this.notifyDeviceMethod.invoke(this.lineProcessor, new Object[]{ device, new Boolean( usesPolishGui) } );
+			this.notifyDeviceMethod.invoke(this.lineProcessor, new Object[]{ device, Boolean.valueOf( usesPolishGui) } );
 		} catch (BuildException e) {
 			throw e;
 		} catch (Exception e) {
@@ -129,6 +129,7 @@ public class WrapperPreprocessor extends CustomPreprocessor {
 			throw new BuildException("Unable to invoke notifyDevice-method of preprocessor [" + this.lineProcessor.getClass().getName() + "]: " + e.toString() );
 		}
 	}
+
 	/* (non-Javadoc)
 	 * @see de.enough.polish.preprocess.LineProcessor#notifyPolishPackageStart()
 	 */

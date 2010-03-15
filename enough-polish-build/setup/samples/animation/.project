@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>accessible</name> 
-        <comment>Demonstrates UiAccess.setAccessible()</comment>
+	<name>j2mepolish-animation</name> 
+        <comment>Demonstrates the animation framework</comment>
 	<projects>
-		<project>accessible</project>
+		<project>j2mepolish-animation</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

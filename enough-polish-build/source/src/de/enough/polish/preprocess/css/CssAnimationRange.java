@@ -102,7 +102,7 @@ public class CssAnimationRange
 	public static CssAnimationRange parseRange(String range)
 	{
 		String[] ranges = StringUtil.splitAndTrim(range, "..");
-		if (ranges.length != -2){
+		if (ranges.length != 2){
 			throw new BuildException("Invalid CSS animation range: \"" + range + "\": use two dots (..) to separate from and to value. Check your polish.css file." );
 		}
 		return new CssAnimationRange( ranges[0], ranges[1] );

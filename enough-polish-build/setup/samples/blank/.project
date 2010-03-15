@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>blank</name> 
+	<name>j2mepolish-blank</name> 
         <comment>A sample blank project without sources.</comment>
 	<projects>
-		<project>blank</project>
+		<project>j2mepolish-blank</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

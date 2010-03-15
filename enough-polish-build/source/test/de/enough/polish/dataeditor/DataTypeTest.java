@@ -45,7 +45,7 @@ public class DataTypeTest extends TestCase {
 	}
 	
 	public void testDataFile() throws IOException {
-		Test test = new Test( new FileInputStream("/home/enough/J2ME-Polish/bin/test" ));
+		Test test = new Test( getClass().getResourceAsStream("test.raw") );
 		assertEquals( 110, test.byteValue );
 		assertEquals( 1265, test.shortValue );
 		assertEquals( 51, test.posY );

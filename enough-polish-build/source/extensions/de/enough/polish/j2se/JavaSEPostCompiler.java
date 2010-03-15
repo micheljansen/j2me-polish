@@ -32,14 +32,7 @@ import de.enough.polish.postcompile.PostCompiler;
 import de.enough.polish.util.JarUtil;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
 public class JavaSEPostCompiler
 extends PostCompiler

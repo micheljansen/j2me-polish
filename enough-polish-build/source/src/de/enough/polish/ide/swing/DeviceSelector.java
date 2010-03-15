@@ -29,12 +29,12 @@ import java.util.Map;
 
 public interface DeviceSelector {
 
-	public String[] getSelectedDeviceIdentifiers();
+	String[] getSelectedDeviceIdentifiers();
 
-	public Map getSelectedDeviceProperties();
+	Map getSelectedDeviceProperties();
 
-	public String[] getSelectedDeviceClassPaths();
+	String[] getSelectedDeviceClassPaths();
 	
-	public Map getDeviceProperties( String identifier );
+	Map getDeviceProperties( String identifier );
 
 }

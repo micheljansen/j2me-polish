@@ -8,7 +8,7 @@
 	<!-- You can call Ant from the command line with another      -->
 	<!-- device like this: ant -Ddevice=Generic/midp2 emulator    -->
 	<property name="device" value="Generic/AnyPhone"/>
-	<property name="devices" value="${device},Generic/jtwi,Generic/Midp2Cldc11,Nokia/Series40E3,Nokia/Series60E2,Nokia/Series60E3,Sony-Ericsson/JavaPlatform7,,Sony-Ericsson/JavaPlatform8"/>
+	<property name="devices" value="${device},Generic/AnyMsaPhone,Nokia/Series40E3,Nokia/Series60E3,Sony-Ericsson/JavaPlatform7,Sony-Ericsson/JavaPlatform8"/>
 
 	<!-- The polish.home property needs to point to the directory -->
 	<!-- containing the J2ME Polish installation.                 -->
@@ -49,9 +49,9 @@
 				name="RoadRunner" 
 				vendorName="Enough Software" 
 				version="1.0.1"
-				copyright="Copyright 2005 - 2009 Enough Software. All rights reserved." 
+				copyright="Copyright 2005 - 2010 Enough Software. All rights reserved." 
 				description="A frogger clone." 
-				icon="dot.png"
+				icon="icon.png"
 				infoUrl="http://www.enough.de" 
 				jarName="${polish.vendor}-${polish.name}-${polish.locale}-roadrunner.jar" 
 				jarUrl="${deploy-url}${polish.jarName}" 

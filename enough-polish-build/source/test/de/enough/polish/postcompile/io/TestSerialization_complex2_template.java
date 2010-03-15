@@ -40,8 +40,18 @@ public class TestSerialization_complex2_template
 		output.writeLong(this.time);
 	}
 
+	public String getText()
+	{
+		return text;
+	}
+
 	public Date getDate()
 	{
 		return date;
+	}
+
+	public long getTime()
+	{
+		return time;
 	}
 }

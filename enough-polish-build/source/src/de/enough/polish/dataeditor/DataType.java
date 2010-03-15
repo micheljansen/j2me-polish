@@ -96,7 +96,7 @@ public class DataType {
 		this.numberOfBytes = numberOfBytes;
 		this.subtypes = null;
 		this.name = name;
-		this.isDynamic = (numberOfBytes == -1);
+		this.isDynamic = numberOfBytes == -1;
 	}
 
 	/**
@@ -170,7 +170,7 @@ public class DataType {
 	}
 	
 	public boolean isUserDefined() {
-		return (this.type == USER_DEFINED_ID);
+		return this.type == USER_DEFINED_ID;
 	}
 	
 	public int getNumberOfBytes() {

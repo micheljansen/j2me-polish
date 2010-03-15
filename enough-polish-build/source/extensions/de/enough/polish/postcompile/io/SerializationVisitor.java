@@ -34,11 +34,11 @@ public class SerializationVisitor
   public static final String DATAOUTPUTSTREAM = "java/io/DataOutputStream";
   public static final String IOEXCEPTION = "java/io/IOException";
 
-  public static int READ_MODIFIERS = Opcodes.ACC_PUBLIC;
+  public static final int READ_MODIFIERS = Opcodes.ACC_PUBLIC;
   public static final String READ_NAME = "read";
   public static final String READ_SIGNATURE = "(Ljava/io/DataInputStream;)V";
 
-  public static int WRITE_MODIFIERS = Opcodes.ACC_PUBLIC;
+  public static final int WRITE_MODIFIERS = Opcodes.ACC_PUBLIC;
   public static final String WRITE_NAME = "write";
   public static final String WRITE_SIGNATURE = "(Ljava/io/DataOutputStream;)V";
 
@@ -81,7 +81,7 @@ public class SerializationVisitor
   
   protected static String getSerializableClassName( ASMClassLoader loader, Environment env ) {
 	  String className = getClassName( SERIALIZABLE, env);
-	  if (env.hasSymbol("polish.Bugs.ReservedKeywordSerializable")) 
+	  if (env != null && env.hasSymbol("polish.Bugs.ReservedKeywordSerializable")) 
 	  {
 		  try
 		{

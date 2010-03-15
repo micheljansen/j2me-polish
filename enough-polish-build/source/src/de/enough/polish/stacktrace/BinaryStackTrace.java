@@ -84,7 +84,7 @@ public class BinaryStackTrace {
 	}
 	
 	public boolean couldBeResolved() {
-		return (this.sourceCodeMessage != null);
+		return this.sourceCodeMessage != null;
 	}
 	
 	public String getDecompiledCodeSnippet(){

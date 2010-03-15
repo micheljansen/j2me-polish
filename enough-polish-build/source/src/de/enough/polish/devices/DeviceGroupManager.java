@@ -186,7 +186,7 @@ public class DeviceGroupManager {
 	 */
 	public boolean hasGroup(String name, boolean mustNotBeVirtual) {
 		DeviceGroup group = (DeviceGroup) this.groups.get( name );
-		return group != null && (!mustNotBeVirtual || group.isVirtual == false );
+		return group != null && (!mustNotBeVirtual || !group.isVirtual );
 	}
 	
 	

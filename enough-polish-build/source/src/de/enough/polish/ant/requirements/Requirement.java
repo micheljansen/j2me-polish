@@ -89,7 +89,7 @@ implements DeviceFilter
 	public boolean isMet( Device device ) {
 		String property = getProperty(device);
 		if (this.needsToBeUndefined) {
-			return (property == null);
+			return property == null;
 		}
 		if (property == null) {
 			return false;

@@ -98,14 +98,12 @@
 			<mapping from="javax.microedition.midlet.*" to="de.enough.polish.blackberry.midlet.*" />
 			<mapping from="javax.microedition.midlet.MIDlet" to="de.enough.polish.blackberry.midlet.MIDlet" />
 			<mapping from="javax.microedition.midlet.MIDletStateChangeException" to="de.enough.polish.blackberry.midlet.MIDletStateChangeException" />
-			<mapping from="javax.microedition.lcdui.AlertType" to="de.enough.polish.blackberry.ui.AlertType" />
 			<mapping from="javax.microedition.lcdui.Font" to="de.enough.polish.blackberry.ui.Font" />
 			<mapping from="javax.microedition.lcdui.Graphics" to="de.enough.polish.blackberry.ui.Graphics" />
 			<mapping from="javax.microedition.lcdui.Image" to="de.enough.polish.blackberry.ui.Image" />
 			<mapping from="javax.microedition.lcdui.*">
 				<to>
-					de.enough.polish.blackberry.ui.AlertType;
-					import de.enough.polish.blackberry.ui.Font;
+					de.enough.polish.blackberry.ui.Font;
 					import de.enough.polish.blackberry.ui.Graphics;
 					import de.enough.polish.blackberry.ui.Image; 
 					import de.enough.polish.ui.*
@@ -117,13 +115,11 @@
 			<mapping from="javax.microedition.midlet.*" to="de.enough.polish.doja.midlet.*" />
 			<mapping from="javax.microedition.midlet.MIDlet" to="de.enough.polish.doja.midlet.MIDlet" />
 			<mapping from="javax.microedition.midlet.MIDletStateChangeException" to="de.enough.polish.doja.midlet.MIDletStateChangeException" />
-			<mapping from="javax.microedition.lcdui.AlertType" to="de.enough.polish.doja.ui.AlertType" />
 			<mapping from="javax.microedition.lcdui.Font" to="de.enough.polish.doja.ui.Font" />
 			<mapping from="javax.microedition.lcdui.Graphics" to="de.enough.polish.doja.ui.Graphics" />
 			<mapping from="javax.microedition.lcdui.Image" to="de.enough.polish.doja.ui.Image" />
 			<mapping from="javax.microedition.lcdui.*">
 				<to>
-					import de.enough.polish.doja.ui.AlertType;
 					import de.enough.polish.doja.ui.Font;
 					import de.enough.polish.doja.ui.Graphics;
 					import de.enough.polish.doja.ui.Image; 
@@ -134,7 +130,6 @@
 			<mapping from="javax.microedition.io.*" to="com.nttdocomo.io.HttpConnection; import javax.microedition.io.*" />
 			<mapping from="javax.microedition.rms.*" to="de.enough.polish.doja.rms.*" />
 			<mapping from="javax.microedition.rms.RecordComparator" to="de.enough.polish.doja.rms.RecordComparator" />
-			<mapping from="javax.microedition.rms.RecordEnumeration" to="de.enough.polish.doja.rms.RecordEnumeration" />
 			<mapping from="javax.microedition.rms.RecordEnumeration" to="de.enough.polish.doja.rms.RecordEnumeration" />
 			<mapping from="javax.microedition.rms.RecordListener" to="de.enough.polish.doja.rms.RecordListener" />
 			<mapping from="javax.microedition.rms.RecordStore" to="de.enough.polish.doja.rms.RecordStore" />
@@ -153,14 +148,12 @@
 			<mapping from="javax.microedition.midlet.*" to="de.enough.polish.android.midlet.*" />
 			<mapping from="javax.microedition.midlet.MIDlet" to="de.enough.polish.android.midlet.MIDlet" />
 			<mapping from="javax.microedition.midlet.MIDletStateChangeException" to="de.enough.polish.android.midlet.MIDletStateChangeException" />
-			<mapping from="javax.microedition.lcdui.AlertType" to="de.enough.polish.android.lcdui.AlertType" />
 			<mapping from="javax.microedition.lcdui.Font" to="de.enough.polish.android.lcdui.Font" />
 			<mapping from="javax.microedition.lcdui.Graphics" to="de.enough.polish.android.lcdui.Graphics" />
 			<mapping from="javax.microedition.lcdui.Image" to="de.enough.polish.android.lcdui.Image" />
 			<mapping from="javax.microedition.lcdui.*">
 				<to>
-					de.enough.polish.android.lcdui.AlertType;
-					import de.enough.polish.android.lcdui.Font;
+					de.enough.polish.android.lcdui.Font;
 					import de.enough.polish.android.lcdui.Graphics;
 					import de.enough.polish.android.lcdui.Image; 
 					import de.enough.polish.ui.*
@@ -168,7 +161,6 @@
 			</mapping>
 			<mapping from="javax.microedition.rms.*" to="de.enough.polish.android.rms.*" />
 			<mapping from="javax.microedition.rms.RecordComparator" to="de.enough.polish.android.rms.RecordComparator" />
-			<mapping from="javax.microedition.rms.RecordEnumeration" to="de.enough.polish.android.rms.RecordEnumeration" />
 			<mapping from="javax.microedition.rms.RecordEnumeration" to="de.enough.polish.android.rms.RecordEnumeration" />
 			<mapping from="javax.microedition.rms.RecordListener" to="de.enough.polish.android.rms.RecordListener" />
 			<mapping from="javax.microedition.rms.RecordFilter" to="de.enough.polish.android.rms.RecordFilter" />
@@ -187,7 +179,12 @@
 			<mapping from="javax.microedition.io.OutputConnection" to="de.enough.polish.android.io.OutputConnection" />
 			<mapping from="javax.microedition.io.SocketConnection" to="de.enough.polish.android.io.SocketConnection" />
 			<mapping from="javax.microedition.io.HttpConnection" to="de.enough.polish.android.io.HttpConnection" />
+			<mapping from="javax.microedition.io.HttpsConnection" to="de.enough.polish.android.io.HttpsConnection" />
 			<mapping from="javax.microedition.io.ConnectionNotFoundException" to="de.enough.polish.android.io.ConnectionNotFoundException" />
+			<mapping from="javax.microedition.io.SecurityInfo" to="de.enough.polish.android.io.SecurityInfo" />
+			<mapping from="javax.microedition.pki.*" to="de.enough.polish.android.pki.*" />
+			<mapping from="javax.microedition.pki.Certificate" to="de.enough.polish.android.pki.Certificate" />
+			<mapping from="javax.microedition.pki.CertificateException" to="de.enough.polish.android.pki.CertificateException" />
 			<!--  Fileconnection API -->
 			<mapping from="javax.microedition.io.file.*" to="de.enough.polish.android.io.file.*" />
 			<mapping from="javax.microedition.io.file.ConnectionClosedException" to="de.enough.polish.android.io.file.ConnectionClosedException" />
@@ -347,6 +344,12 @@
 		<name>lowercase</name>
 		<class>de.enough.polish.propertyfunctions.LowerCaseFunction</class>
 	</extension>
+	
+	<extension>
+		<type>propertyfunction</type>
+		<name>firstuppercase</name>
+		<class>de.enough.polish.propertyfunctions.FirstUpperCaseFunction</class>
+	</extension>
 
 	<extension>
 		<type>propertyfunction</type>
@@ -382,6 +385,12 @@
 		<type>propertyfunction</type>
 		<name>classname</name>
 		<class>de.enough.polish.propertyfunctions.ClassNameFunction</class>
+	</extension>
+
+	<extension>
+		<type>propertyfunction</type>
+		<name>package</name>
+		<class>de.enough.polish.propertyfunctions.PackageNameFunction</class>
 	</extension>
 
 	<extension>
@@ -589,38 +598,18 @@
 	</extension>
 
 	<!-- Library Processors -->
-	
-	<extension>
-		<type>libraryprocessor</type>
-		<name>polishimportresolver</name>
-		<class>de.enough.polish.libraryprocessor.PolishImportLibraryProcessor</class>
-		<autostart>
-			polish.usePolishGui 
-		</autostart>
-		<classpath>${polish.home}/lib/asm-all.jar:${polish.home}/lib/enough-bytecode.jar</classpath>
-	</extension>
-	
+
 
 	<extension>
 		<type>libraryprocessor</type>
-		<name>blackberryimportresolver</name>
-		<class>de.enough.polish.blackberry.ImportResolver</class>
+		<name>basic</name>
+		<class>de.enough.polish.libraryprocessor.DefaultLibraryProcessor</class>
 		<autostart>
 			polish.usePolishGui 
-			and polish.blackberry
 		</autostart>
 		<classpath>${polish.home}/lib/asm-all.jar:${polish.home}/lib/enough-bytecode.jar</classpath>
 	</extension>
-		
-	<extension>
-		<type>libraryprocessor</type>
-		<name>blackberryimportresolver</name>
-		<class>de.enough.polish.android.ImportResolver</class>
-		<autostart>
-			polish.android
-		</autostart>
-		<classpath>${polish.home}/lib/asm-all.jar:${polish.home}/lib/enough-bytecode.jar</classpath>
-	</extension>
+
 
 	<!-- Pre Compiler -->
 	
@@ -635,8 +624,7 @@
 		<name>AndroidPreCompiler</name>
 		<class>de.enough.polish.android.AndroidPreCompiler</class>
 		<autostart>
-			polish.usePolishGui 
-			and polish.android
+			polish.android
 		</autostart>
 		<classpath>${polish.home}/lib/asm-all.jar:${polish.home}/lib/enough-bytecode.jar</classpath>
 	</extension>
@@ -940,8 +928,8 @@
 	
 	<extension>
 		<type>finalizer</type>
-		<name>jar2cod</name>
-		<class>de.enough.polish.blackberry.JarToCodFinalizer</class>
+		<name>jdp</name>
+		<class>de.enough.polish.blackberry.JDPFinalizer</class>
 		<classpath>${polish.home}/bin/extensions</classpath>
 		<autostart>
 				polish.blackberry
@@ -950,8 +938,8 @@
 	
 	<extension>
 		<type>finalizer</type>
-		<name>jdp</name>
-		<class>de.enough.polish.blackberry.JDPFinalizer</class>
+		<name>jar2cod</name>
+		<class>de.enough.polish.blackberry.JarToCodFinalizer</class>
 		<classpath>${polish.home}/bin/extensions</classpath>
 		<autostart>
 				polish.blackberry

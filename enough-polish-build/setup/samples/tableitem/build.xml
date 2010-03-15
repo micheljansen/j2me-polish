@@ -88,7 +88,7 @@
 				infoUrl="http://www.j2mepolish.org"
 				jarName="${polish.vendor}-${polish.name}-${polish.locale}-tableitem.jar" 
 				jarUrl="${deploy-url}${polish.jarName}"
-				copyright="Copyright 2009 Enough Software. All rights reserved."
+				copyright="Copyright 2010 Enough Software. All rights reserved."
 			/>
 			<!-- selection of supported devices -->
 			<deviceRequirements if="test">

@@ -44,7 +44,7 @@ import de.enough.polish.util.ProcessUtil;
 import de.enough.polish.util.StringUtil;
 
 /**
- * <pRequests signatures using the BB SigTool.jar tool.></p>
+ * <p>Requests signatures using the BB SigTool.jar tool.</p>
  *
  * <p>Copyright Enough Software 2008</p>
  * @author Robert Virkus, j2mepolish@enough.de

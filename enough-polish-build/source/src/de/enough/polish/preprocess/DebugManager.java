@@ -219,7 +219,7 @@ public class DebugManager {
 	public boolean isDebugEnabled( String className, String levelName ) {
 		int level = getLevelOrder( levelName );
 		int classLevel = getClassLevel( className );
-		return (level >=  classLevel ); 
+		return level >= classLevel; 
 	}
 	
 	/**

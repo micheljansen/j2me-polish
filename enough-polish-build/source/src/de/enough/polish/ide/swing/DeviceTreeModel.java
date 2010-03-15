@@ -83,7 +83,7 @@ class DeviceTreeModel implements TreeModel {
 			return false;
 		}
 		DeviceTreeItem item = ((DeviceTreeCheckBox) node).getDeviceTreeItem();
-		return (item.getChildCount() == 0);
+		return item.getChildCount() == 0;
 	}
 
 	/* (non-Javadoc)

@@ -163,7 +163,7 @@ public abstract class CustomPreprocessor extends Extension {
 						// call the appropriate method:
 						directive.method.invoke(this, new Object[]{ line, lines, className });
 						// now check if the directive has been removed:
-						if (line == lines.getCurrent()) {
+						if (line.equals(lines.getCurrent())) {
 							// the line has not been changed
 							lines.setCurrent("// removed custom directive " + directive );
 						}
@@ -286,7 +286,7 @@ public abstract class CustomPreprocessor extends Extension {
 		// ignore...
 	}
 	
-	class Directive {
+	static class Directive {
 		String directive;
 		Method method;
 		public Directive( String directive, Method method ) {

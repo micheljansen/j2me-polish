@@ -194,7 +194,7 @@ public class SvgConverterResourceCopier extends ResourceCopier {
 	  		newWidth = iconSize.width;
 	  		newHeight = iconSize.height; 
 		} else if(file.getName().startsWith("bg")){
-	    	if(screenSize == null && this.scaleToFit != true){
+	    	if(screenSize == null && !this.scaleToFit){
 	    		  screenSize = new Dimension(128,160);
 	    	}
 			newWidth = screenSize.width;
@@ -225,7 +225,7 @@ public class SvgConverterResourceCopier extends ResourceCopier {
 //	  		System.out.println("sX: " + sX );
 //	  		System.out.println("sY: " +sY );
 //	  		System.out.println("breite: " + width * sX );
-//	  		System.out.println("h�he: " + height * sY );
+//	  		System.out.println("hoehe: " + height * sY );
 		try {
 			diagram.render(g);
 		} catch (SVGException e) {

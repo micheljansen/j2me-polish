@@ -44,6 +44,6 @@ public interface Matcher {
 	 * @param deviceValue the value of the device.
 	 * @return true when the value of the device matches the value of this matcher.
 	 */
-	public boolean matches( String deviceValue );
+	boolean matches( String deviceValue );
 
 }

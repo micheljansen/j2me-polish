@@ -52,7 +52,7 @@ public class DirectoryFileFilter implements FileFilter {
 	}
 
 	public boolean accept(File file) {
-		return (file.isDirectory() == this.acceptDirs);
+		return file.isDirectory() == this.acceptDirs;
 	}
 
 }

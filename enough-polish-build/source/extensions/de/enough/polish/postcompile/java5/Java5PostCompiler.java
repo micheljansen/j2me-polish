@@ -162,8 +162,8 @@ public class Java5PostCompiler extends BytecodePostCompiler {
     ASMClassLoader asmLoader = new ASMClassLoader(loader);
     EnumManager manager = EnumManager.getInstance();
     
-    String enumClass = (this.environment != null && this.environment.hasSymbol(POLISH_USE_DEFAULT_PACKAGE)
-                        ? CLASS_ENUM_DEFAULT : CLASS_ENUM);
+    String enumClass = this.environment != null && this.environment.hasSymbol(POLISH_USE_DEFAULT_PACKAGE)
+                       ? CLASS_ENUM_DEFAULT : CLASS_ENUM;
     
     // Clear global EnumManager instance.
     manager.clear();

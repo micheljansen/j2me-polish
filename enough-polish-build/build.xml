@@ -32,7 +32,7 @@
 	<taskdef name="setAttribute" classname="de.enough.polish.ant.SetAttributeTask" classpath=".:bin/classes:build/bootstrapclasses" onerror="report" />
 	<taskdef resource="genjar.properties" classpath="import/GenJar.jar" />
 	<taskdef resource="proguard/ant/task.properties" classpath="lib/proguard.jar" />	
-	<taskdef resource="checkstyletask.properties" classpath="lib/checkstyle-4.1.jar:lib/commons-beanutils-core.jar:lib/commons-logging.jar:lib/antlr.jar" />
+	<taskdef resource="checkstyletask.properties" classpath="lib/checkstyle-all-5.0.jar" />
 	
 	<!-- build targets, each target can be called via "ant [name]", e.g. "ant clean" -->
 	
@@ -144,6 +144,7 @@
 			 index="true"
 			 manifest="META-INF/MANIFEST.MF"
 		     >
+			<fileset dir="build/clientdummy" includes="ThemeContainer.class" />
 			<fileset dir="." includes="capabilities.xml,configurations.xml,platforms.xml,extensions.xml,custom-extensions.xml,custom-devices.xml,apis.xml,vendors.xml,groups.xml,devices.xml,bugs.xml,css-attributes.xml,build/j2mepolish.index.txt,translations.txt,default.css" />
 			<fileset dir="../enough-polish-j2me/source" includes="src/**/*.java" />
 			<fileset dir="setup" includes="icons/*.*" />
@@ -723,8 +724,8 @@
 		depends="tmpsetup" >
 		<!-- copy blank application -->
 		<mkdir dir="tmp/samples/blank/source/src" />
-		<copy todir="tmp/samples/menu/source/src">
-			<fileset dir="../enough-polish-sample-localization/source/src" includes="**/*.java, **/*.txt" />
+		<copy todir="tmp/samples/blank/source/src">
+			<fileset dir="../enough-polish-sample-blank/source/src" includes="**/*.java, **/*.txt" />
 		</copy>
 		<copy todir="tmp/samples/blank/" 
 			>
@@ -793,6 +794,16 @@
 			>
 			<fileset dir="setup/samples/serialization" excludes="**/macosx/**,**/CVS" />
 			<fileset dir="../enough-polish-sample-serialization" includes="resources/**/*.*" excludes="CVS"/>
+		</copy>
+		<!-- copy rgbfilter sample application -->
+		<mkdir dir="tmp/samples/rgbfilter/source" />
+		<copy todir="tmp/samples/rgbfilter/source">
+			<fileset dir="../enough-polish-sample-rgbfilter/source" includes="**/*.java,**/*.xml" excludes="**/macosx/**,**/CVS" />
+		</copy>
+		<copy todir="tmp/samples/rgbfilter/" 
+			>
+			<fileset dir="setup/samples/rgbfilter" excludes="**/macosx/**,**/CVS" />
+			<fileset dir="../enough-polish-sample-rgbfilter" includes="resources/**/*.*" excludes="**/CVS"/>
 		</copy>
 		<!-- copy rmi sample application -->
 		<mkdir dir="tmp/samples/rmi/source" />
@@ -992,7 +1003,7 @@
 		</convertToWindowsLineEndings>
 	</target>
 
-	<target name="installer" 
+	<target name="installer"
 			 depends="bin-dist, copyfiles, convertWindowsLineEndings"
 			 description="creates the j2mepolish-installer." 
 		>
@@ -1041,7 +1052,7 @@
 		    	nodeprecated="false" 
 		    	packagenames="de.enough.*" 
 		    	sourcepath="source/src" 
-		    	classpath="bin/classes:lib/ant.jar:lib/junit.jar"
+		    	classpath="bin/classes:../enough-polish-j2me/bin/classes:build/clientdummy:lib/ant.jar:lib/junit.jar:lib/jdom.jar:lib/AppleJavaExtensions.jar:lib/bluecove-2.0.3.jar:lib/javax.servlet.jar:lib/osgi-3.0.1.jar"
 		    	doctitle="The J2ME Polish Build Framework, Version ${Version}"
 		/>	
 		<javadoc 
@@ -1058,9 +1069,11 @@
 		    	nodeprecated="false" 
 		    	packagenames="de.enough.*" 
 		    	sourcepath="../enough-polish-j2me/source/src" 
-		    	classpath="../enough-polish-j2me/bin/classes:import/cldc-1.1.jar:import/midp-2.0.jar" 
+		    	classpath="../enough-polish-j2me/bin/classes:import/cldc-1.1.jar:import/midp-2.0.jar:import/windows.jar:import/advancedmultimedia-1.0.jar:import/android-1.5.jar:import/blackberry-5.0.0.jar:import/doja-2.5.jar:import/m3g.jar:import/nokia-ui.jar:import/sensor.jar:import/siemens-extension-api.jar"
 		    	doctitle="The J2ME Polish Client Framework, Version ${Version}"
-		/>	
+		>
+			<link href="http://java.sun.com/javame/reference/apis/jsr118/" />
+		</javadoc>
 		<!-- copy the whole website to the documentation -->
 		<echo message="starting webprocessor (1/2)" />
 		<webprocessor 
@@ -1162,17 +1175,10 @@
 		  </tstamp>
 
 		<echo message="Finished J2ME Polish installer on ${builddate} at ${buildtime}." />
-		<exec executable="java" osfamily="mac">
+		<exec executable="java">
 			<arg line="-cp" />
 			<arg line="dist/enough-j2mepolish-build.jar" />
-			<arg line="de.enough.polish.growl.GrowlNotifier" />
-			<arg line="&quot;Build Finished&quot;" />
-			<arg line="&quot;Finished J2ME Polish installer on ${builddate} at ${buildtime}.&quot;" />
-		</exec>
-		<exec executable="java" osfamily="unix">
-			<arg line="-cp" />
-			<arg line="dist/enough-j2mepolish-build.jar" />
-			<arg line="de.enough.polish.linuxnotify.LinuxNotifier" />
+			<arg line="de.enough.polish.Notify" />
 			<arg line="&quot;Build Finished&quot;" />
 			<arg line="&quot;Finished J2ME Polish installer on ${builddate} at ${buildtime}.&quot;" />
 		</exec>
@@ -1303,16 +1309,95 @@
 		</j2mepolish>
 	</target>
 
+	<target name="check-build">
+		<mkdir dir="build/testclasses" />
+		<javac
+			srcdir="source/test"
+			destdir="build/testclasses"
+			debug="true"
+			source="1.4"
+			target="1.4">
+			<classpath>
+				<pathelement location="lib/asm-all.jar" />
+				<pathelement location="lib/enough-bytecode.jar" />
+				<pathelement location="lib/junit.jar" />
+				<pathelement location="build/clientclasses" />
+				<pathelement location="build/coreclasses" />
+				<pathelement location="build/extensionsclasses" />
+			</classpath>
+		</javac>
+
+		<junit printsummary="yes" fork="yes" haltonfailure="no" showoutput="no">
+			<classpath>
+				<pathelement location="source/test" />
+				<pathelement location="lib/asm-all.jar" />
+				<pathelement location="lib/enough-bytecode.jar" />
+				<pathelement location="lib/jdom.jar" />
+				<pathelement location="lib/junit.jar" />
+				<pathelement location="build/clientclasses" />
+				<pathelement location="build/coreclasses" />
+				<pathelement location="build/extensionsclasses" />
+				<pathelement location="build/testclasses" />
+			</classpath>
+			<formatter type="plain" />
+			<batchtest>
+				<fileset dir="source/test">
+					<!-- Never test these classes directly. They are used by SerializationVisitorTest. -->
+					<exclude name="**/TestSerialization_*.java" />
+				</fileset>
+			</batchtest>
+		</junit>
+	</target>
+
+	<target name="check-client">
+		<mkdir dir="build/clienttestclasses" />
+		<javac
+			srcdir="../enough-polish-j2me/source/test"
+			encoding="latin1"
+			destdir="build/clienttestclasses"
+			debug="true"
+			source="1.5"
+			target="1.5">
+			<classpath>
+				<pathelement location="import/cldc-1.1.jar" />
+				<pathelement location="import/midp-2.1.jar" />
+				<pathelement location="lib/junit.jar" />
+				<pathelement location="build/clientclasses" />
+			</classpath>
+			<exclude name="**/TestL2CapConnection.java" />
+			<exclude name="**/L2CapStreamTest.java" />
+			<exclude name="**/LayerManagerTest.java" />
+			<exclude name="**/HashMapTest.java" />
+		</javac>
+
+		<junit printsummary="yes" fork="yes" haltonfailure="no" showoutput="no">
+			<classpath>
+				<pathelement location="lib/junit.jar" />
+				<pathelement location="import/cldc-1.1.jar" />
+				<pathelement location="import/midp-2.1.jar" />
+				<pathelement location="build/clientclasses" />
+				<pathelement location="build/clienttestclasses" />
+				<pathelement location="../enough-polish-j2me" />
+			</classpath>
+			<formatter type="plain" />
+			<batchtest>
+				<fileset dir="../enough-polish-j2me/source/test">
+				</fileset>
+			</batchtest>
+		</junit>
+	</target>
+
 	<target name="checkstyle">
-		<checkstyle config="checkstyle-config.xml">
-			<!--
+		<checkstyle config="checkstyle-config.xml" failOnViolation="false">
 			<fileset dir="source/src" includes="**/*.java"/>
-			-->
+			<fileset dir="source/extensions" includes="**/*.java"/>
+			<formatter type="plain"/>
+			<formatter type="xml" toFile="build/checkstyle_errors.xml"/>
+		</checkstyle>
+		<checkstyle config="checkstyle-config-client.xml" failOnViolation="false">
 			<fileset dir="../enough-polish-j2me/source/src" includes="**/*.java"/>
 			<formatter type="plain"/>
-			<!--
-			<formatter type="xml" toFile="build/checkstyle_errors.xml"/>
-			-->
+			<formatter type="xml" toFile="build/checkstyle_errors_client.xml"/>
 		</checkstyle>
 	</target>
 

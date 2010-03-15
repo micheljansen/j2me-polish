@@ -48,13 +48,8 @@ public class BooleanCssAttribute extends CssAttribute {
 		super();
 	}
 	
-	/**
-	 * Checks and transforms the given CSS value for this attribute.
-	 * 
-	 * @param value the attribute value
-	 * @param environment the environment
-	 * @return the transformed value or the same value if no transformation is required.
-	 * @throws BuildException when a condition is not met or when the value contains conflicting values
+	/* (non-Javadoc)
+	 * @see de.enough.polish.preprocess.css.CssAttribute#getValue(java.lang.String, de.enough.polish.Environment)
 	 */
 	public String getValue(String value, Environment environment ) {
 		if ("true".equals( value ) || "yes".equals( value )) {
@@ -102,7 +97,4 @@ public class BooleanCssAttribute extends CssAttribute {
 //		}
 //		return super.instantiateValue(sourceCode);
 	}
-	
-	
-
 }

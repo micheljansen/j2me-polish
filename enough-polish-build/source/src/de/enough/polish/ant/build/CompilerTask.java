@@ -41,7 +41,7 @@ import de.enough.polish.ant.ConditionalElement;
 import de.enough.polish.util.ReflectionUtil;
 
 /**
- * <p>Allows the setting of any <javac>-settings.</p>
+ * <p>Allows the setting of any &lt;javac&gt;-settings.</p>
  *
  * <p>Copyright Enough Software 2005</p>
  * <pre>

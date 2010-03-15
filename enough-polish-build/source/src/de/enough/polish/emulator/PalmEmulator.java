@@ -27,6 +27,8 @@ public class PalmEmulator extends Emulator {
 		if (palmHomeStr == null) {
 			propertyName = "palm.home";
 			palmHomeStr = env.getVariable( propertyName );
+		}
+		if (palmHomeStr == null) {
 			System.err.println("Unable to start Palm simulator: Neither the Ant property \"palm.simulator.home\" nor \"palm.home\" is set." );
 			return false;
 		}

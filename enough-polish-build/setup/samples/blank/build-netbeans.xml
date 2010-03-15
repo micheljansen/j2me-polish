@@ -69,7 +69,7 @@
 			>
 		<j2mepolish>
 		    <!-- general settings -->
-			<info copyright="Copyright 2009 Your Company. All rights reserved." 
+			<info copyright="Copyright 2010 Your Company. All rights reserved." 
 				description="Please describe me." 
 				infoUrl="http://www.j2mepolish.org" 
 				jarName="${polish.vendor}-${polish.name}-${polish.locale}-blank.jar" 

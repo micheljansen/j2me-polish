@@ -27,6 +27,7 @@ package de.enough.polish.ant.build;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -127,7 +128,9 @@ public class MidletSetting extends ConditionalElement {
 	 * </pre>
 	 * @author Robert Virkus, robert@enough.de
 	 */
-	class MidletComparator implements Comparator {
+	static class MidletComparator implements Comparator, Serializable {
+
+		private static final long serialVersionUID = 4908901995318110248L;
 
 		/* (non-Javadoc)
 		 * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)

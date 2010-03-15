@@ -43,23 +43,15 @@ import de.enough.polish.preprocess.css.Style;
  */
 public class IntegerCssAttribute extends CssAttribute {
 	
-	
 	/**
 	 * Creates a new instance.
 	 */
 	public IntegerCssAttribute() {
 		super();
 	}
-	
 
-
-	/**
-	 * Checks and transforms the given CSS value for this attribute.
-	 * 
-	 * @param value the attribute value
-	 * @param environment the environment
-	 * @return the transformed value or the same value if no transformation is required.
-	 * @throws BuildException when a condition is not met or when the value contains conflicting values
+	/* (non-Javadoc)
+	 * @see de.enough.polish.preprocess.css.CssAttribute#getValue(java.lang.String, de.enough.polish.Environment)
 	 */
 	public String getValue(String value, Environment environment ) {
 		if (this.allowedValues == null) {
@@ -95,20 +87,22 @@ public class IntegerCssAttribute extends CssAttribute {
 					}
 				}
 			}
-			String message = "Invalid CSS: the attribute [" + this.name + "] needs to be one "
-						+ "of the following values: [";
+			StringBuffer sb = new StringBuffer();
+			sb.append("Invalid CSS: the attribute [");
+			sb.append(this.name);
+			sb.append("] needs to be one of the following values: [");
 			for (int i = 0; i < this.allowedValues.length; i++) {
-				message += this.allowedValues[i];
+				sb.append(this.allowedValues[i]);
 				if (i < this.allowedValues.length - 1) {
-					message += "], [";
+					sb.append("], [");
 				}
 			}		
-			message += "]. The value [" + value + "] is not supported.";
-			throw new BuildException( message );
+			sb.append("]. The value [");
+			sb.append(value);
+			sb.append("] is not supported.");
+			throw new BuildException( sb.toString() );
 		}
 	}
-
-
 
 	/**
 	 * @param value
@@ -123,8 +117,6 @@ public class IntegerCssAttribute extends CssAttribute {
 		return Integer.parseInt( value );
 	}
 
-
-
 	/* (non-Javadoc)
 	 * @see de.enough.polish.preprocess.css.CssAttribute#instantiateValue(java.lang.String)
 	 */
@@ -135,8 +127,6 @@ public class IntegerCssAttribute extends CssAttribute {
 		return super.instantiateValue(sourceCode);
 	}
 
-
-
 	/* (non-Javadoc)
 	 * @see de.enough.polish.preprocess.css.CssAttribute#generateAnimationSourceCode(de.enough.polish.preprocess.css.CssAnimationSetting, de.enough.polish.preprocess.css.Style, de.enough.polish.Environment)
 	 */
@@ -144,7 +134,5 @@ public class IntegerCssAttribute extends CssAttribute {
 	{
 		return generateAnimationSourceCode("IntegerCssAnimation", cssAnimation, style, environment);
 	}
-	
-	
 
 }

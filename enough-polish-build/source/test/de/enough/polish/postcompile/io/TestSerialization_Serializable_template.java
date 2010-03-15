@@ -5,6 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import de.enough.polish.io.Externalizable;
+import de.enough.polish.io.Serializer;
 
 public class TestSerialization_Serializable_template
 	implements Externalizable
@@ -30,24 +31,12 @@ public class TestSerialization_Serializable_template
 	public void read(DataInputStream input)
 		throws IOException
 	{
-		if (input.readBoolean())
-		{
-			this.field = new InnerSerializable();
-			this.field.read(input);
-		}
+		this.field = (InnerSerializable) Serializer.deserialize(input);
 	}
 
 	public void write(DataOutputStream output)
 		throws IOException
 	{
-		if (this.field != null)
-		{
-			output.writeBoolean(true);
-			this.field.write(output);
-		}
-		else
-		{
-			output.writeBoolean(false);
-		}
+		Serializer.serialize(this.field, output);
 	}
 }

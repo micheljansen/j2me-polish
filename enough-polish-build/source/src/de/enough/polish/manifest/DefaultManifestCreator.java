@@ -61,6 +61,13 @@ public class DefaultManifestCreator extends ManifestCreator {
 			Device device, Locale locale, Environment env) 
 	throws IOException 
 	{
+		for (int i = 0; i < manifestAttributes.length; i++) {
+			Attribute attribute = manifestAttributes[i];
+			String value = env.getVariable(attribute.getName());
+			if (value != null) {
+				attribute.setValue(value);
+			}
+		}
 		Manifest manifest = new Manifest( env, encoding );
 		manifest.setAttributes( manifestAttributes );
 		manifest.write(manifestFile);

@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>j2mepolish-tabbedform</name> 
-        <comment>Demonstrates the TabbedForm.</comment>
+	<name>j2mepolish-tabbedpane</name> 
+        <comment>Demonstrates the TabbedPane.</comment>
 	<projects>
-		<project>j2mepolish-tabbedform</project>
+		<project>j2mepolish-tabbedpane</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

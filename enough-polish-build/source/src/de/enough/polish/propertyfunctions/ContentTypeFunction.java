@@ -81,7 +81,7 @@ public class ContentTypeFunction extends PropertyFunction {
 		addTypes( new String[]{ "video/mng", "video/x-mng" } );
 	}
 	
-	private static final void addTypes( String[] types ) {
+	private static void addTypes( String[] types ) {
 		Map nestedMap = new HashMap();
 		for (int i = 0; i < types.length; i++) {
 			String type = types[i];

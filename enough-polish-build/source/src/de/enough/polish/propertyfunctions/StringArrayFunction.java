@@ -36,7 +36,7 @@ import de.enough.polish.util.StringUtil;
  * </pre>
  * </p>
  * <p>gives:
- * <pre>new String[]{"a","b","c","d");
+ * <pre>new String[]{"a","b","c","d");</pre>
  * </p>
  * <p>Example 2:
  * <pre>
@@ -44,7 +44,7 @@ import de.enough.polish.util.StringUtil;
  * </pre>
  * </p>
  * <p>gives:
- * <pre>new String[]{"ab","cd");
+ * <pre>new String[]{"ab","cd");</pre>
  * </p>
  *
  * <p>Copyright Enough Software 2007</p>

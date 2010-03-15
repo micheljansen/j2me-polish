@@ -144,9 +144,6 @@ implements Comparable
 			if (capValue == null) {
 				capValue = element.getChildTextTrim("capability-value");
 			}
-			if (capName == null) {
-				throw new InvalidComponentException("The component [" + componentName + "] has an invalid [capability] - every capability needs to define the attribute [value]. Please check you [" + fileName + "].");
-			}
 			// add the capability:
 			addCapability( capName, capValue );
 		} // end of reading all capabilties
@@ -218,7 +215,16 @@ implements Comparable
 		for (Iterator iter = caps.keySet().iterator(); iter.hasNext();) {
 			String name = (String) iter.next();
 			String componentValue = (String) caps.get( name );
-			addCapability( name, componentValue );
+			boolean add = (this.capabilities.get(name) == null);
+			if (!add) {
+				Capability capability = this.capabilityManager.getCapability(name);
+				if (capability != null && !capability.overwrite()) {
+					add = true;
+				}
+			}
+			if (add) {
+				addCapability( name, componentValue );
+			}
 		}
 		
 		// 2. set all features (overwriting will do no harm):

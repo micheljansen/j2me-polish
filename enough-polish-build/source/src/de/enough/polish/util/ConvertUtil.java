@@ -77,7 +77,7 @@ public final class ConvertUtil {
 	 * @param environment the environment with any defined variables
 	 * @return the converted value, e.g. new Long( 204800 )
 	 */
-	public final static Object convert( String value, String targetFunction, Map environment ) 
+	public static Object convert( String value, String targetFunction, Map environment ) 
 	{
 		Object function = FUNCTIONS.get( targetFunction ); 
 		if (function == null) {
@@ -125,7 +125,7 @@ public final class ConvertUtil {
 	 * @return the value in bytes as a long value, when the value is "dynamic",
 	 *         -1 will be returned.
 	 */
-	public final static long convertToBytes(String value) {
+	public static long convertToBytes(String value) {
 		if (value == null || value.startsWith("polish.")) {
 			return -1;
 		}
@@ -180,7 +180,7 @@ public final class ConvertUtil {
 	 * @param value the value, e.g. "200 kb"
 	 * @return the value in kilobytes as a double value
 	 */
-	public final static double convertToKiloBytes(String value) {
+	public static double convertToKiloBytes(String value) {
 		double bytes = convertToBytes( value );
 		if (bytes == -1) {
 			return -1D;
@@ -194,7 +194,7 @@ public final class ConvertUtil {
 	 * @param value the value, e.g. "200 kb"
 	 * @return the value in mega bytes as a double value
 	 */
-	public final static double convertToMegaBytes(String value) {
+	public static double convertToMegaBytes(String value) {
 		double bytes = convertToBytes( value );
 		if (bytes == -1) {
 			return -1D;
@@ -208,7 +208,7 @@ public final class ConvertUtil {
 	 * @param value the value, e.g. "200 kb"
 	 * @return the value in giga bytes as a double value
 	 */
-	public final static double convertToGigaBytes(String value) {
+	public static double convertToGigaBytes(String value) {
 		double bytes = convertToBytes( value );
 		if (bytes == -1) {
 			return -1D;
@@ -224,7 +224,7 @@ public final class ConvertUtil {
 	 * @param value the value
 	 * @return the string representation of that value
 	 */
-	public final static String toString( Object value ) {
+	public static String toString( Object value ) {
 		String valueStr = value.toString();
 		if (valueStr.endsWith(".0")) {
 			return valueStr.substring(0, valueStr.length() - 2);
@@ -233,7 +233,7 @@ public final class ConvertUtil {
 		}
 	}
 	
-	public final static long convertToMilliseconds( String value ) {
+	public static long convertToMilliseconds( String value ) {
 		long multiplier = 1;
 		if (value.endsWith("ms")) {
 			value = value.substring(0, value.length() - 2).trim();

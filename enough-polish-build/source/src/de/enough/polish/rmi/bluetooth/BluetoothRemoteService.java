@@ -42,18 +42,18 @@ public interface BluetoothRemoteService
 	 * Starts the service
 	 * @throws BluetoothStateException when the service cannot be started 
 	 */
-	public void start() throws BluetoothStateException;
+	void start() throws BluetoothStateException;
 	
 	/**
 	 * Stops the service
 	 */
-	public void stop();
+	void stop();
 	
 	/**
 	 * Initializes this service
 	 * @param serviceImplementation the service implementation
 	 * @param uuid the UUID, for generating a UUID you can visit http://www.famkruithof.net/uuid/uuidgen
 	 */
-	public void init( Remote serviceImplementation, String uuid );
+	void init( Remote serviceImplementation, String uuid );
 
 }

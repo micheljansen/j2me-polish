@@ -44,5 +44,5 @@ public interface DeviceTreeItemSelectionListener {
 	 * @param source the originating DeviceTreeItem
 	 * @param selected true when the GUI representation should have the selected state.
 	 */
-	public void notifySelected( DeviceTreeItem source, boolean selected );
+	void notifySelected( DeviceTreeItem source, boolean selected );
 }

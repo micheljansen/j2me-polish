@@ -100,7 +100,7 @@ public class Setting extends ConditionalElement {
 	 * @return true when there are parameters for this setting.
 	 */
 	public boolean hasParameters() {
-		return (this.variables != null);
+		return this.variables != null;
 	}
 	
 	/**

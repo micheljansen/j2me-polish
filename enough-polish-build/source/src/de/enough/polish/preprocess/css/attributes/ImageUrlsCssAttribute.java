@@ -25,11 +25,9 @@
  */
 package de.enough.polish.preprocess.css.attributes;
 
-import de.enough.polish.BuildException;
 import de.enough.polish.Environment;
 import de.enough.polish.preprocess.css.CssAttribute;
 import de.enough.polish.util.StringUtil;
-
 
 /**
  * <p>An attribute pointing to an image.</p>
@@ -49,13 +47,9 @@ public class ImageUrlsCssAttribute extends CssAttribute {
 	public ImageUrlsCssAttribute() {
 		super();
 	}
-	/**
-	 * Checks and transforms the given CSS value for this attribute.
-	 * 
-	 * @param value the attribute value
-	 * @param environment the environment
-	 * @return the transformed value or the same value if no transformation is required.
-	 * @throws BuildException when a condition is not met or when the value contains conflicting values
+
+	/* (non-Javadoc)
+	 * @see de.enough.polish.preprocess.css.CssAttribute#getValue(java.lang.String, de.enough.polish.Environment)
 	 */
 	public String getValue(String value, Environment environment ) {
 		if ("none".equals(value)) {

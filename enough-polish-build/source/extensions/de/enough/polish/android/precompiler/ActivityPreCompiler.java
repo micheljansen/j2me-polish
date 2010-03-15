@@ -36,6 +36,7 @@ import de.enough.polish.ant.android.ArgumentHelper;
 import de.enough.polish.precompile.PreCompiler;
 import de.enough.polish.util.FileUtil;
 import de.enough.polish.util.ProcessUtil;
+import de.enough.polish.util.StringUtil;
 
 /**
  * <p>Creates the stub directories for the activity and
@@ -96,6 +97,8 @@ public class ActivityPreCompiler extends PreCompiler{
 			
 			// Copy the preprocessed sources
 			FileUtil.copyDirectoryContents(new File(device.getSourceDir()), ArgumentHelper.getSrc(env), false);
+			// generate Activity:
+			generateActivityClass( ArgumentHelper.getSrc(env), env );
 
 			new File(ArgumentHelper.getClasses(env)).mkdir();
 		} catch (IOException e) {
@@ -104,6 +107,26 @@ public class ActivityPreCompiler extends PreCompiler{
 		}
 	}
 	
+	private void generateActivityClass(String src, Environment env) throws IOException {
+		String[] midlets = env.getBuildSetting().getMidletClassNames(env);
+		String midlet = midlets[0] + "Activity";
+		String packageName = "";
+		String className = midlet;
+		int packageEnd = midlet.lastIndexOf('.');
+		if (packageEnd != -1) {
+			packageName = midlet.substring(0, packageEnd);
+			className = midlet.substring( packageEnd + 1 );
+		}
+		String[] code = new String[]{
+			"package " + packageName + ";",
+			"public class " + className + " extends de.enough.polish.android.midlet.MidletBridge {",
+			"	public " + className + "(){ super(); }",
+			"}"
+		};
+		midlet = StringUtil.replace(midlet, '.', File.separatorChar );
+		FileUtil.writeTextFile( new File(src + File.separator + midlet + ".java"), code);
+	}
+
 	private ArrayList getAndroidArguments(String executable, Environment env) {
 		String[] midlets = env.getBuildSetting().getMidletClassNames(env);
 		String midlet = midlets[0];
@@ -111,8 +134,9 @@ public class ActivityPreCompiler extends PreCompiler{
 		int packageEnd = midlet.lastIndexOf('.');
 		if (packageEnd != -1) {
 			packageName = midlet.substring(0, packageEnd);
-			midlet = midlet.substring( packageEnd + 1 );
+			midlet = midlet.substring( packageEnd + 1 ) + "Activity";
 		}
+
 		String base = ArgumentHelper.getActivity(env);
 		ArrayList arguments = new ArrayList();
 		arguments.add(executable);
@@ -138,7 +162,7 @@ public class ActivityPreCompiler extends PreCompiler{
 	static ArrayList getActivityCreatorArguments(String executable, Environment env)
 	{
 		String[] midlets = env.getBuildSetting().getMidletClassNames(env);
-		String midlet = midlets[0];
+		String midlet = midlets[0] + "Activity";
 		String base = ArgumentHelper.getActivity(env);
 		ArrayList arguments = new ArrayList();
 		arguments.add(executable);

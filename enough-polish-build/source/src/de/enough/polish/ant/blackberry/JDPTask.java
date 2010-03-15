@@ -66,20 +66,20 @@ public class JDPTask extends Task {
 	String sources;
 	
 	public void execute() throws BuildException {
-		String sourceDir = this.sources.trim() + "/source";
+		String sourceDir = this.sources.trim() + File.separatorChar + "source";
 
-		String resourceDir = this.sources.trim() + "/classes";
+		String resourceDir = this.sources.trim() +File.separatorChar+ "classes";
 
 		try {
 			System.out.println("jdp: Reading template...");
 			
-			String fullPath = path.trim() + "\\" + this.name + ".jdp";
+			String fullPath = this.path.trim() + File.separatorChar + this.name + ".jdp";
 
 			String content;
 			
-			if(template != null)
+			if(this.template != null)
 			{
-				content = readFile(new File(template)).trim();
+				content = readFile(new File(this.template)).trim();
 			}
 			else
 			{
@@ -104,7 +104,7 @@ public class JDPTask extends Task {
 			String list = getFileList(sourceFiles, resourceFiles).trim();
 			
 			content = StringUtil.replace(content, FILES, list);
-			content = StringUtil.replace(content, NAME, name);
+			content = StringUtil.replace(content, NAME, this.name);
 			
 			writeFile(new File(fullPath),content);
 			
@@ -115,16 +115,16 @@ public class JDPTask extends Task {
 
 	private String readFile(File file) throws IOException {
 		FileInputStream stream = new FileInputStream(file);
-		
 		int len = stream.available();
-		
-		String result = " ";
+		StringBuffer sb = new StringBuffer();
+		sb.append(" ");
 
 		for (int i = 1; i <= len; i++) {
-			result = result + (char) stream.read();
+			sb.append((char) stream.read());
 		}
 
-		return result;
+		stream.close();
+		return sb.toString();
 	}
 	
 	private void writeFile(File file, String content) throws IOException
@@ -135,22 +135,20 @@ public class JDPTask extends Task {
 		}
 		
 		FileWriter writer = new FileWriter(file);
-
 		writer.write(content);
-		
 		writer.close();
 	}
 
 	private String getFileList(List classes, List resources) {
-		String result = "";
-		
 		String filename;
+		StringBuffer sb = new StringBuffer();
 
 		for (int i = 0; i < classes.size(); i++) {
 			File file = (File) classes.get(i);
 			if (file.getName().charAt(0) != '.') {
 				filename = file.getAbsolutePath().replace("\\", "\\\\");
-				result += filename + "\r\n";
+				sb.append(filename);
+				sb.append("\r\n");
 			}
 		}
 
@@ -158,15 +156,16 @@ public class JDPTask extends Task {
 			File file = (File) resources.get(i);
 			if (file.getName().charAt(0) != '.' && !file.getName().endsWith(".class")) {
 				filename = file.getAbsolutePath().replace("\\", "\\\\");
-				result += filename + "\r\n";
+				sb.append(filename);
+				sb.append("\r\n");
 			}
 		}
 
-		return result;
+		return sb.toString();
 	}
 
 	public String getproject() {
-		return path;
+		return this.path;
 	}
 
 	public void setPath(String path) {
@@ -174,7 +173,7 @@ public class JDPTask extends Task {
 	}
 
 	public String getSources() {
-		return sources;
+		return this.sources;
 	}
 
 	public void setSources(String sources) {
@@ -182,7 +181,7 @@ public class JDPTask extends Task {
 	}
 
 	public String getTemplate() {
-		return template;
+		return this.template;
 	}
 
 	public void setTemplate(String template) {
@@ -190,7 +189,7 @@ public class JDPTask extends Task {
 	}
 
 	public String getName() {
-		return name;
+		return this.name;
 	}
 
 	public void setName(String name) {

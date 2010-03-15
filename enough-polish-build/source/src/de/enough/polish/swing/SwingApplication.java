@@ -81,7 +81,7 @@ implements Application
 		super( title );
 		this.applicationName = title;
 		this.systemExitOnQuit = systemExitOnQuit;
-		this.isMacOsX = (System.getProperty("mrj.version") != null);
+		this.isMacOsX = System.getProperty("mrj.version") != null;
 		loadNativeIntegration();
 
 		// accept drop-events:
@@ -350,7 +350,7 @@ implements Application
 	 */
 	public boolean showYesNoDialog( String message, String title ) {
 		int result = JOptionPane.showConfirmDialog( this, message, title, JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE );
-		return (result == JOptionPane.YES_OPTION);
+		return result == JOptionPane.YES_OPTION;
 	}
 
 	/**

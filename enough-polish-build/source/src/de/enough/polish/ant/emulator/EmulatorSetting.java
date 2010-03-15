@@ -276,7 +276,7 @@ public class EmulatorSetting extends ExtensionSetting {
 		if (this.trace == null) {
 			return false;
 		}
-		return (this.trace.indexOf(string) != -1);
+		return this.trace.indexOf(string) != -1;
 	}
 	
 	/**

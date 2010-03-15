@@ -465,6 +465,46 @@ public class BooleanEvaluatorTest extends TestCase {
 		assertFalse( evaluator.evaluateTerm( term, "MyClass", 12) );
 	}
 	
+	public void testCompareNonNumeric() {
+		HashMap symbols = new HashMap();
+		symbols.put( "test1", Boolean.TRUE );
+		symbols.put( "test2", Boolean.TRUE );
+		symbols.put( "sym-1", Boolean.TRUE );
+		symbols.put( "sym-2", Boolean.TRUE );
+		symbols.put( "var-1:defined", Boolean.TRUE );
+		symbols.put( "var-2:defined", Boolean.TRUE );
+		symbols.put( "polish.midp1", Boolean.TRUE );
+		symbols.put( "polish.midp2", Boolean.TRUE );
+		HashMap variables = new HashMap();
+		variables.put("polish.Screen.Width", "100");
+		variables.put("polish.Screen.Height", "80");
+		variables.put("polish.BitsPerPixel", "8");
+		variables.put("polish.Identifier", "Nokia/6600");
+		variables.put("polish.JavaPlatform", "MIDP/2.0, BlackBerry/4.7");
+	
+		BooleanEvaluator evaluator = new BooleanEvaluator( symbols, variables );
+		String term = "polish.JavaPlatform >  BlackBerry/4.6";
+		assertTrue( evaluator.evaluateTerm( term, "MyClass", 12) );
+		
+		term = "polish.JavaPlatform >=  BlackBerry/4.6";
+		assertTrue( evaluator.evaluateTerm( term, "MyClass", 12) );
+
+		term = "polish.JavaPlatform <=  BlackBerry/4.6";
+		assertFalse( evaluator.evaluateTerm( term, "MyClass", 12) );
+
+		term = "polish.JavaPlatform ==  BlackBerry/4.6";
+		assertFalse( evaluator.evaluateTerm( term, "MyClass", 12) );
+
+		term = "polish.JavaPlatform >=  BlackBerry/4.7";
+		assertTrue( evaluator.evaluateTerm( term, "MyClass", 12) );
+
+		term = "polish.JavaPlatform <=  BlackBerry/4.7";
+		assertTrue( evaluator.evaluateTerm( term, "MyClass", 12) );
+
+		term = "polish.JavaPlatform ==  BlackBerry/4.7";
+		assertTrue( evaluator.evaluateTerm( term, "MyClass", 12) );
+}
+	
 	
 	public void testCompareWithFunctions() {
 		HashMap symbols = new HashMap();

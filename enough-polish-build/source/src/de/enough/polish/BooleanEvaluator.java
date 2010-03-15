@@ -29,14 +29,13 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import de.enough.polish.BuildException;
-
+import de.enough.polish.propertyfunctions.VersionFunction;
 import de.enough.polish.util.CastUtil;
 import de.enough.polish.util.PropertyUtil;
 import de.enough.polish.util.StringUtil;
 
 /**
- * <p>Evaluates boolean expressions based on defined (or undefined) symbols and the operators &&, ||, ! and ^.</p>
+ * <p>Evaluates boolean expressions based on defined (or undefined) symbols and the operators &amp;&amp;, ||, ! and ^.</p>
  *
  * <p>Copyright Enough Software 2004, 2005</p>
 
@@ -141,8 +140,8 @@ public class BooleanEvaluator {
 	/**
 	 * Evaluates the given expression.
 	 * 
-	 * @param expression the expression containing defined (or undefined) symbols and the operators &&, ||, ! and ^.
-	 *              A valid expression is for example "( symbol1 ||symbol2 ) && !symbol3" 
+	 * @param expression the expression containing defined (or undefined) symbols and the operators &amp;&amp;, ||, ! and ^.
+	 *              A valid expression is for example "( symbol1 ||symbol2 ) &amp;&amp; !symbol3" 
 	 * @param fileName the name of the source code file
 	 * @param line the line number in the source code file (first line is 1)
 	 * @return true when the expression yields to true
@@ -216,7 +215,7 @@ public class BooleanEvaluator {
 
 	/**
 	 * Evaluates the given simple term.
-	 * @param term the simple term without any paranthesis, e.g. "symbol1 && ! symbol2"
+	 * @param term the simple term without any paranthesis, e.g. "symbol1 &amp;&amp; ! symbol2"
 	 * @param fileName the name of the source file
 	 * @param line the line number of this term
 	 * @return true when the term represents true
@@ -248,7 +247,7 @@ public class BooleanEvaluator {
 			// evaluate symbol:
 			symbol = symbolMatcher.group();
 			int negatePos = term.indexOf( '!', lastSymbolEnd );
-			boolean negate = ( (negatePos != -1) && (negatePos < symbolMatcher.start()) );
+			boolean negate = negatePos != -1 && negatePos < symbolMatcher.start();
 			lastSymbolEnd = symbolMatcher.end();
 			boolean symbolResult = false;
 			if ("true".equals( symbol )) {
@@ -263,7 +262,7 @@ public class BooleanEvaluator {
 					symbolResult = this.device.hasFeature( symbol )  || "true".equals( this.device.getCapability(symbol) );
 				} else {
 					//System.out.println("BooleanEvaluator: checking symbol " + symbol + " directly...");
-					symbolResult = ( ( this.symbols.get( symbol ) != null) || "true".equals( this.variables.get(symbol) ) );
+					symbolResult = this.symbols.get( symbol ) != null || "true".equals( this.variables.get(symbol) );
 				}
 			}
 			if (negate) {
@@ -311,7 +310,7 @@ public class BooleanEvaluator {
 				if (lastVar == null) {
 					lastVar = lastSymbol;
 				}
-				if ( operator == EQUALS ) {
+				if ( operator == EQUALS || operator == NOT_EQUALS ) {
 					if ( (var.charAt( 0 ) == '\"') && (var.charAt( var.length() - 1 ) == '\"')) {
 						var = var.substring( 1, var.length() - 1 );
 					}
@@ -319,20 +318,60 @@ public class BooleanEvaluator {
 						lastVar = lastVar.substring( 1, lastVar.length() - 1 );
 					}
 					result = var.equals( lastVar );
+					if (!result && var.indexOf('.') != -1) {
+						// check if this is a version comparison:
+						int separatorIndex = var.indexOf('/');
+						String versionIdentifier = null;
+						if (separatorIndex != -1) {
+							versionIdentifier = var.substring(0, separatorIndex);
+							var = var.substring(separatorIndex+1);
+						}
+						var = VersionFunction.process(var);
+						try {
+							int numVar = Integer.parseInt(var);
+							// okay, a version could be parsed, continue with last value:
+							lastVar = VersionFunction.process(lastVar, versionIdentifier);
+							int numLastVar = Integer.parseInt( lastVar );
+							result = numVar == numLastVar;
+						} catch (Exception e2) {
+							// ignore
+						}
+					}
+					if ( operator == NOT_EQUALS ) {
+						result = !result;
+					}
 					//System.out.println( var + " == " + lastVar + " = " + result);
-				} else if ( operator == NOT_EQUALS ) {
-					result = ! var.equals( lastVar );
-					//System.out.println( var + " != " + lastVar + " = " + result);
 				} else {
 					// this is either >, <, >= or <= - so a numerical comparison is required
 					int numVar = -1;
 					int numLastVar = -1;
 					try {
+						boolean nonNumeric = false;
+						String versionIdentifier = null;
 						try {
 							numVar = CastUtil.getInt( var );
 						} catch (NumberFormatException e ) {
-							System.out.println("Warn: " + fileName + " line " + line + ": integer-variable [" + var + "] could not be parsed.");
+							nonNumeric = true;
+							int separatorIndex = var.indexOf('/');
+							if (separatorIndex != -1) {
+								versionIdentifier = var.substring(0, separatorIndex);
+								var = var.substring(separatorIndex+1);
+							}
+							if (var.indexOf('.') != -1) {
+								// assuming version:
+								var = VersionFunction.process(var);
+								try {
+									numVar = Integer.parseInt(var);
+								} catch (Exception e2) {
+									System.out.println("Warn: " + fileName + " line " + line + ": integer-variable [" + var + "] could not be parsed.");
+								}
+							} else {
+								System.out.println("Warn: " + fileName + " line " + line + ": integer-variable [" + var + "] could not be parsed.");
+							}
 						}
+						if (nonNumeric) {
+							lastVar = VersionFunction.process(lastVar, versionIdentifier);
+						} 
 						try {
 							numLastVar = CastUtil.getInt( lastVar );
 						} catch (NumberFormatException e ) {

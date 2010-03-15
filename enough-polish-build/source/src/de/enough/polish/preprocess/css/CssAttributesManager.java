@@ -170,7 +170,7 @@ public class CssAttributesManager {
 	/**
 	 * Loads type definitions from the css-attributes.xml file.
 	 * 
-	 * @param xmlList the list of <type> elements
+	 * @param xmlList the list of &lt;type&gt; elements
 	 */
 	private void registerTypes(List xmlList) {
 		for (Iterator iter = xmlList.iterator(); iter.hasNext();) {
@@ -268,7 +268,7 @@ public class CssAttributesManager {
 			}
 			for (int j = 0; j < classNames.length; j++) {
 				if ( attribute.appliesTo( classNames[j] ) || attribute.appliesTo( fullClassNames[j] ) ) {
-					System.out.println("attribute " + attribute.getName() + " applies to " + classNames[j] + ", j=" + j);
+					//System.out.println("attribute " + attribute.getName() + " applies to " + classNames[j] + ", j=" + j);
 					if (j == 0) {
 						firstClassAttributes.add( attribute );
 					} else {

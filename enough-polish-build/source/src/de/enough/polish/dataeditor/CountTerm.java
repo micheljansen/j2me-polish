@@ -40,10 +40,10 @@ import de.enough.polish.util.StringUtil;
  */
 public class CountTerm {
 	
-	public final static int OPERATION_ADD = 1; 
-	public final static int OPERATION_SUBTRACT = 2; 
-	public final static int OPERATION_MULTIPLY = 3; 
-	public final static int OPERATION_DEVIDE = 4; 
+	public static final int OPERATION_ADD = 1; 
+	public static final int OPERATION_SUBTRACT = 2; 
+	public static final int OPERATION_MULTIPLY = 3; 
+	public static final int OPERATION_DEVIDE = 4; 
 	
 	private final int operation;
 	private final DataEntry[] operants;

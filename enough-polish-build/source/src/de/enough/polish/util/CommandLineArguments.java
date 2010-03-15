@@ -48,7 +48,7 @@ public class CommandLineArguments {
 		parseArguments( args );
 	}
 	
-	private static final void populateMap( HashMap map, String[] keys ) {
+	private static void populateMap( HashMap map, String[] keys ) {
 		for (int i = 0; i < keys.length; i++) {
 			map.put( keys[i], Boolean.TRUE );
 		}

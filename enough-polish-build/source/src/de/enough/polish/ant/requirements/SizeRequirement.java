@@ -71,8 +71,8 @@ public class SizeRequirement extends Requirement {
 		if (parts.length != 2) {
 			throw new BuildException("The property [" + this.propertyName + "] of the device [" + device.getIdentifier() + "] is not valid. It meeds to be in the form \"[width] x [height]\".");
 		}
-		return (  this.widthMatcher.matches( parts[0] )
-				&& this.heightMatcher.matches( parts[1] ) );
+		return this.widthMatcher.matches( parts[0] )
+				&& this.heightMatcher.matches( parts[1] );
 	}
 
 }

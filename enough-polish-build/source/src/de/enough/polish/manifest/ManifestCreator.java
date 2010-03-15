@@ -49,7 +49,7 @@ import de.enough.polish.Extension;
 public abstract class ManifestCreator extends Extension {
 	
 	public static final String MANIFEST_ENCODING_KEY = "key.manifest.encoding";
-	public static String MANIFEST_ATTRIBUTES_KEY = "key.manifest.attributes";
+	public static final String MANIFEST_ATTRIBUTES_KEY = "key.manifest.attributes";
 
 	/**
 	 * Creates a new instance

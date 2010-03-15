@@ -26,8 +26,6 @@
 package de.enough.polish.postobfuscate;
 
 import java.io.File;
-import java.io.FilenameFilter;
-import java.util.ArrayList;
 import java.util.Locale;
 
 import de.enough.polish.BuildException;
@@ -36,9 +34,7 @@ import de.enough.polish.Device;
 import de.enough.polish.Environment;
 import de.enough.polish.Extension;
 import de.enough.polish.ExtensionManager;
-import de.enough.polish.ant.build.PostCompilerSetting;
 import de.enough.polish.ant.build.PostObfuscatorSetting;
-import de.enough.polish.util.FileUtil;
 
 /**
  * <p>Is the base class for any custom post obfuscators.</p>

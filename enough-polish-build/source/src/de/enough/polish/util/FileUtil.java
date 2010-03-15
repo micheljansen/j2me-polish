@@ -440,7 +440,7 @@ public final class FileUtil {
 	 * 
 	 * @param directory the directory containing files
 	 * @param targetDir the directory to which the files should be copied to
-	 * @param update is true when files should be only copied when the source files
+	 * @param update set to true when files should be only copied when the source files
 	 * 	are newer compared to the target files.
 	 * @throws IOException when a file could not be copied
 	 * @throws IllegalArgumentException when the directory is not a directory.

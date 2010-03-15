@@ -55,9 +55,9 @@ public final class CastUtil {
 			return ((Boolean)value).booleanValue();
 		}
 		String valueStr = value.toString();
-		return ( ("true".equalsIgnoreCase(valueStr))
+		return ("true".equalsIgnoreCase(valueStr))
 			  || ("yes".equalsIgnoreCase(valueStr)) 
-			  || ("on".equalsIgnoreCase(valueStr)) );
+			  || ("on".equalsIgnoreCase(valueStr));
 	}
 	
 	/**
@@ -84,13 +84,9 @@ public final class CastUtil {
 	 * @param value the byte value
 	 * @return the unsigned integer value
 	 */
-	public static final int toUnsignedInt( byte value ) {
+	public static int toUnsignedInt( byte value ) {
 		int intValue = value & 0x7F;
-		if ( value < 0 ) {
-			return ( intValue + 128 );
-		} else {
-			return intValue;
-		}
+		return value < 0 ? intValue + 128 : intValue;
 	}
 	
 	/**
@@ -99,7 +95,7 @@ public final class CastUtil {
 	 * @param value the integer value between 0 and 255
 	 * @return the byte value representing that number
 	 */
-	public static final byte toUnsignedByte( int value ) {
+	public static byte toUnsignedByte( int value ) {
 		if (value > 255 || value < 0) {
 			throw new IllegalArgumentException("Unsigned byte value range is between 0 and 255 - the value [" + value + "] is not valid." );
 		}

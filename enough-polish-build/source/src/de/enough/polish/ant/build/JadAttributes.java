@@ -96,7 +96,7 @@ public class JadAttributes extends Variables {
 		for (int i = 0; i < attributes.length; i++) {
 			Attribute attribute = attributes[i];
 			String value = environment.writeProperties( attribute.getValue() );
-			if (value != attribute.getValue()) {
+			if (!value.equals(attribute.getValue())) {
 				Attribute newAttribute = new Attribute( attribute );
 				newAttribute.setValue( value );
 				attributes[i] = newAttribute;

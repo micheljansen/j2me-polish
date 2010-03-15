@@ -97,7 +97,7 @@ public abstract class Debugger extends Extension {
 	 */
 	public void addDebugArguments(Environment env, List argsList) {
 		String line = env.getVariable("polish.debug.commandline");
-		DebuggerSetting setting = ((DebuggerSetting) this.extensionSetting);
+		DebuggerSetting setting = (DebuggerSetting) this.extensionSetting;
 		if ( line != null && line.length() > 1 ) {
 			int port = setting.getPort();
 			env.setVariable("polish.debug.port", "" + port );

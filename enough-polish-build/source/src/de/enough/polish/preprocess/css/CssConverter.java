@@ -354,6 +354,27 @@ public class CssConverter extends Converter {
 			System.out.println("Warning: CSS style [title] not found, you should define it for designing the titles of screens.");
 		}
 		
+		// add media queries:
+		StyleSheet[] mediaQueries = styleSheet.getMediaQueries();
+		if (mediaQueries != null) {
+			styleCodeList.clear();
+			codeList.add( "\tpublic static void showNotify(){" );
+			for (int i = 0; i < mediaQueries.length; i++) {
+				StyleSheet mediaQuery = mediaQueries[i];
+				Style[] mediaStyles = mediaQuery.getAllStyles();
+				codeList.add("\t\taddMediaQuery(\"" + mediaQuery.getMediaQueryCondition() + "\", new Style[]{");
+				for (int j = 0; j < mediaStyles.length; j++) {
+					Style style = mediaStyles[j];
+					processStyle( false, style, codeList, null, styleSheet, device, env );
+					if (j != mediaStyles.length-1) {
+						codeList.add("\t\t, ");
+					}
+				}
+				codeList.add("\t\t}); // end of media query " + mediaQuery.getMediaQueryCondition() );
+			}
+			codeList.add("\t} // end of showNotify()");
+		}
+		
 		
 		// now insert the created source code into the source of the polish-StyleSheet.java:
 		String[] code = (String[]) codeList.toArray( new String[ codeList.size()]);
@@ -377,8 +398,7 @@ public class CssConverter extends Converter {
 	protected void processDefaultStyle(boolean defaultFontDefined, boolean defaultBackgroundDefined, boolean defaultBorderDefined, ArrayList codeList, ArrayList staticCodeList, StyleSheet styleSheet, Device device, Environment environment ) {
 		//System.out.println("PROCESSSING DEFAULT STYLE " + styleSheet.getStyle("default").toString() );
 		Style copy = new Style( styleSheet.getStyle("default"));
-		HashMap group;
-//		group = copy.getGroup("font");
+		HashMap group = copy.getGroup("font");
 //		if (!defaultFontDefined) {
 //			if (group == null) {
 //				codeList.add( STANDALONE_MODIFIER + "int defaultFontColor = 0x000000;");
@@ -405,14 +425,11 @@ public class CssConverter extends Converter {
 		}
 		// set default values:
 		//copy.setSelector("defaultStyle");
-		if(copy.getGroup("font") == null) {
-    		group = new HashMap();
-    		if (defaultFontDefined) {
-    			group.put("font", "default");
-    		}
-    		copy.addGroup("font", group );
+		group = new HashMap();
+		if (defaultFontDefined) {
+			group.put("font", "default");
 		}
-		
+		copy.addGroup("font", group );
 		group = new HashMap();
 		group.put("background", "default");
 		copy.addGroup("background", group );
@@ -422,7 +439,6 @@ public class CssConverter extends Converter {
 		// now process the rest of the style completely normal:
 		processStyle(copy, codeList, staticCodeList, styleSheet, device, environment );
 	}
-
 
 	/**
 	 * Processes the give style and includes the generated code to the codeList.
@@ -434,12 +450,29 @@ public class CssConverter extends Converter {
 	 * @param environment the environment
 	 */
 	protected void processStyle(Style style, ArrayList codeList, ArrayList staticCodeList, StyleSheet styleSheet, Device device, Environment environment ) {
+		processStyle( true, style, codeList, staticCodeList, styleSheet, device, environment );
+	}
+
+	/**
+	 * Processes the give style and includes the generated code to the codeList.
+	 * 
+	 * @param style the style
+	 * @param codeList the array list into which generated code is written
+	 * @param styleSheet the parent style sheet
+	 * @param device the device for which the style should be processed
+	 * @param environment the environment
+	 */
+	protected void processStyle(boolean declareVariable, Style style, ArrayList codeList, ArrayList staticCodeList, StyleSheet styleSheet, Device device, Environment environment ) {
 		String styleName = style.getStyleName();
 		//System.out.println("processing style " + style.getStyleName() + ": " + style.toString() );
 		// create a new style field:
-		staticCodeList.add( STANDALONE_MODIFIER_NON_FINAL + "Style " + styleName + "Style;");
-		// create a new style:
-		codeList.add( "\t" + styleName + "Style = new Style (");
+		if (declareVariable) {
+			staticCodeList.add( STANDALONE_MODIFIER_NON_FINAL + "Style " + styleName + "Style;");
+			// create a new style:
+			codeList.add( "\t" + styleName + "Style = new Style (");
+		} else {
+			codeList.add("new Style(");
+		}
 		codeList.add("\t\t\"" + style.getSelector() + "\", ");
 		// process all animations, do this here so animations can also be done for margins, paddings, font settings etc:
 		CssAnimationSetting[] cssAnimations = extractAnimationSettings(style);
@@ -635,11 +668,12 @@ public class CssConverter extends Converter {
 				if (group == null) {
 					System.err.println("unable to get group [" + groupName + "] of style : " + style.toString());
 				}
-				Set keys = group.keySet();
+				Set keys = group.entrySet();
 				for (Iterator iter = keys.iterator(); iter.hasNext();) {
 					currentAttribute++;
-					String key = (String) iter.next();
-					String value = (String) group.get( key );
+					Map.Entry entry = (Map.Entry) iter.next();
+					String key = (String) entry.getKey();
+					String value = (String) entry.getValue();
 					String attributeName;
 					if (key.equals(groupName)) {
 						attributeName = groupName;
@@ -730,7 +764,11 @@ public class CssConverter extends Converter {
 		}
 		
 		// close the style definition:
-		codeList.add("\t);");
+		if (declareVariable) {
+			codeList.add("\t);");
+		} else {
+			codeList.add("\t)");
+		}
 		
 		// add the selector of the style, but only when dynamic styles are used:
 		//TODO: hack for WYSIWYG designer:

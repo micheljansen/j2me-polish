@@ -38,7 +38,7 @@ import de.enough.polish.util.CastUtil;
 import de.enough.polish.util.PropertyUtil;
 
 /**
- * <p>Is used for integrating the <java> element into the <buid> task. </p>
+ * <p>Is used for integrating the &lt;java&gt; element into the &lt;buid&gt; task. </p>
  * <p>The included arguments can use J2ME Polish variables in their values.</p>
  *
  * <p>Copyright Enough Software 2004, 2005</p>
