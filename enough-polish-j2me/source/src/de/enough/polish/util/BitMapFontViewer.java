@@ -186,11 +186,11 @@ public class BitMapFontViewer {
 			for (int i = 0; i < rgb.length; i++) {
 				int pixel = rgb[i];
 				
-				if(isValidPixel(pixel, mask))
-				{
+        // if(isValidPixel(pixel, mask))
+        // {
 					rgb[i] = colorizePixel(pixel, color);
-				}
-			}
+        // }
+      // }
 			
 			return Image.createRGBImage(rgb, w, h, true);
 		//#else
