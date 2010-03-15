@@ -4,6 +4,8 @@ package de.enough.polish.ui;
 
 import javax.microedition.lcdui.Image;
 
+import de.enough.polish.event.AsynchronousMultipleCommandListener;
+
 /**
  * The <code>Command</code> class is a construct that encapsulates the semantic information of an action. 
  * In J2ME Polish a command is also an IconItem, so it can be designed using normal //#style directives during
@@ -309,7 +311,6 @@ extends javax.microedition.lcdui.Command
 	 */
 	public static final int ITEM = 8;
 
-	//following variables are implicitely defined by getter- or setter-methods:
 	private String longLabel;
 	private int commandType;
 	private int priority;
@@ -330,6 +331,10 @@ extends javax.microedition.lcdui.Command
 	private Style style;
 
 	private String label;
+
+	private ItemCommandListener itemCommandListener;
+
+	private CommandListener commandListener;
 
 	/**
 	 * Creates a new command object with the given short
@@ -500,5 +505,100 @@ extends javax.microedition.lcdui.Command
 		return this.label.hashCode() | this.priority | (this.commandType << 3);
 	}
 	
+	//#if polish.LibraryBuild
+		/**
+		 * Sets the command listener for this screen
+		 * 
+		 * @param listener the listener
+		 */
+		public void setItemCommandListener(javax.microedition.lcdui.ItemCommandListener listener) {
+			// ignore
+		}
+	//#endif
+	/**
+	 * Sets a command listener for this command.
+	 * @param listener the listener, use null to remove the current listener
+	 */
+	public void setItemCommandListener( ItemCommandListener listener ) {
+		this.itemCommandListener = listener;
+	}
+	
+	/**
+	 * Retrieves the command listener for this command
+	 * @return the command listener, might be null
+	 */
+	public ItemCommandListener getItemCommandListener() {
+		return this.itemCommandListener;
+	}
+	
+	//#if polish.LibraryBuild
+		/**
+		 * Sets the command listener for this screen
+		 * 
+		 * @param listener the listener
+		 */
+		public void setCommandListener(javax.microedition.lcdui.CommandListener listener) {
+			// ignore
+		}
+	//#endif
+	/**
+	 * Sets a command listener for this command.
+	 * @param listener the listener, use null to remove the current listener
+	 */
+	public void setCommandListener( CommandListener listener ) {
+		this.commandListener = listener;
+	}
+	
+	/**
+	 * Retrieves the command listener for this command
+	 * @return the command listener, might be null
+	 */
+	public CommandListener getCommandListener() {
+		return this.commandListener;
+	}
+
+	/**
+	 * Triggers this command
+	 * @param item the corresponding item
+	 * @param displayable the corresponding screen
+	 * @return true when this command was forwarded
+	 */
+	public boolean commandAction( Item item, Displayable displayable ) {
+		if (item != null && this.itemCommandListener != null) {
+			while (item instanceof Container && (item.commands == null || !item.commands.contains(this)) ) {
+				item = ((Container)item).getFocusedItem();
+			}
+			if (item != null && item.commands != null && item.commands.contains(this)) {
+				this.itemCommandListener.commandAction(this, item);
+				return true;
+			}
+		}
+		if (displayable != null && this.commandListener != null) {
+			//#if polish.executeCommandsAsynchrone
+				AsynchronousMultipleCommandListener.getInstance().commandAction(this.commandListener, this, displayable);
+			//#else
+				this.commandListener.commandAction(this, displayable);
+			//#endif
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Retrieves the style for this command.
+	 * @return the style, can be null
+	 */
+	public Style getStyle() {
+		return this.style;
+	}
+	
+	/**
+	 * Sets the style for this command. 
+	 * Note that you need to set the style before adding the command to a screen, otherwise no effect will be seen. 
+	 * @param style the new style
+	 */
+	public void setStyle(Style style) {
+		this.style = style;
+	}
 	
 }

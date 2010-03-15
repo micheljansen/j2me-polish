@@ -28,11 +28,13 @@ package de.enough.polish.blackberry.ui;
 import java.util.Date;
 import java.util.TimeZone;
 
+import de.enough.polish.ui.Screen;
 import de.enough.polish.ui.Style;
 import de.enough.polish.ui.StyleSheet;
 import net.rim.device.api.i18n.DateFormat;
 import net.rim.device.api.system.Application;
 import net.rim.device.api.ui.component.DateField;
+import net.rim.device.api.ui.DrawStyle;
 import net.rim.device.api.ui.XYRect;
 import net.rim.device.api.i18n.SimpleDateFormat;
 
@@ -57,8 +59,8 @@ implements AccessibleField
 	private static final int MIDP_TIME = 2;
 	private static final int MIDP_DATE_TIME = 3;
 
-    private boolean isFocused;
-    public boolean processKeyEvents = true;
+	private boolean isFocused;
+	public boolean processKeyEvents = true;
 	private int fontColor;
 	private int maxLayoutHeight;
 	private int maxLayoutWidth;
@@ -71,28 +73,28 @@ implements AccessibleField
 	 * Creates a new date field
 	 *
 	 * @param date the date
-   * @param inputMode the input mode for the date, either
+	 * @param inputMode the input mode for the date, either
 	 * DateField.DATE, DateField.DATE_TIME or DateField.TIME.
-   *
-   * @see javax.microedition.lcdui.DateField
+	 *
+	 * @see javax.microedition.lcdui.DateField
 	 */
 	public PolishDateField( Date date, int inputMode ) {
 		this( getTime( date ), getDateFormat( inputMode), getStyle(inputMode) );
 	}
-	
+
 	/**
 	 * Creates a new date field
 	 *
 	 * @param time the date
-     * @param inputMode the input mode for the date, either
+	 * @param inputMode the input mode for the date, either
 	 * DateField.DATE, DateField.DATE_TIME or DateField.TIME.
-     *
-     * @see javax.microedition.lcdui.DateField
+	 *
+	 * @see javax.microedition.lcdui.DateField
 	 */
 	public PolishDateField( long time, int inputMode ) {
 		this( time, getDateFormat( inputMode), getStyle(inputMode) );
 	}
-	
+
 	/**
 	 * Creates a new date field
 	 *
@@ -104,9 +106,10 @@ implements AccessibleField
 		super(null, date, dateFormat, style);
 		this.xyFocusRect = new XYRect();
 	}
-	
+
 	public static long getStyle(int inputMode) {
 		long style = EDITABLE;
+		style |= DrawStyle.LEFT;
 		switch (inputMode) {
 		case MIDP_DATE:
 			style |= DateField.DATE;
@@ -128,7 +131,7 @@ implements AccessibleField
 			return date.getTime();
 		}
 	}
-	
+
 	private static DateFormat getDateFormat( int mode ) {
 		int blackberryMode;
 		switch (mode) {
@@ -144,80 +147,100 @@ implements AccessibleField
 		return DateFormat.getInstance( blackberryMode );
 	}
 
-	
+
 
 	public void focusAdd( boolean draw ) {
-        //System.out.println("DateField: focusAdd (" + getText() + ")");
-        super.focusAdd( draw );
-        this.isFocused = true;
-	}
-	
-	public void focusRemove() {
-	        //System.out.println("DateField: focusRemove (" + getText() + ")");
-	        super.focusRemove();
-	        this.isFocused = false;
-	}
-	
-	 public void paint( net.rim.device.api.ui.Graphics g ) {
-         if (this.isFocused && !StyleSheet.currentScreen.isMenuOpened()) {
-       	  //g.setFont( this.font.font );
-       	  g.setColor( this.fontColor );
-             super.paint( g );
-         }
-   }
-	 protected void drawFocus(net.rim.device.api.ui.Graphics graphics, boolean on)
-	 {
-		 getFocusRect( this.xyFocusRect );
-		 graphics.setColor( this.fontColor );
-		 // apparently the focus is paint _after_ the content is drawn on BB.
-		 // Weird design decision, this means that we cannot use any fill method here...
-//		 graphics.fillRoundRect( this.xyFocusRect.x - 2, this.xyFocusRect.y - 2, this.xyFocusRect.width + 4, this.xyFocusRect.height + 4, 6, 6 );
-//		 int complementaryColor = DrawUtil.getComplementaryColor( this.fontColor );
-//		 graphics.setColor( complementaryColor );
-//		 graphics.fillRoundRect( this.xyFocusRect.x, this.xyFocusRect.y, this.xyFocusRect.width, this.xyFocusRect.height, 6, 6 );
-		 graphics.drawRoundRect( this.xyFocusRect.x, this.xyFocusRect.y, this.xyFocusRect.width, this.xyFocusRect.height, 6, 6 );
-	 }
-	 
-     public void layout( int width, int height) {
-    	 if (this.maxLayoutWidth != 0) {
-    		 super.layout( this.maxLayoutWidth, this.maxLayoutHeight );
-    	 } else {
-    		 super.layout( width, height );
-    	 }
-     }
-   
-		public void setStyle(Style style) {
-			Font font = (Font)(Object)style.getFont();
-			if (font == null) {
-				font = Font.getDefaultFont();
-			}
-			try {
-				super.setFont( font.font );
-			} catch (IllegalStateException e) {
-				//#debug error
-				System.out.println("Layout error: " + e );
-			}
-			this.fontColor = style.getFontColor();
-			//#if ${ version(polish.JavaPlatform, BlackBerry) } >= ${version(4.6)}
-				if (style.background != null) {
-					if (this.backgroundWrapper == null) {
-						this.backgroundWrapper = new BackgroundWrapper( style.background );
-						try {
-							setBackground(this.backgroundWrapper);
-						} catch (Exception e) {
-							//#debug error
-							System.out.println("Unable to set background" + e);
-						}
-					} else {
-						this.backgroundWrapper.setBackground(style.background);
-					}
-				}
-			//#endif
+		//System.out.println("DateField: focusAdd (" + getText() + ")");
+		Object bbLock = Application.getEventLock();
+		synchronized (bbLock) {    
+			super.focusAdd( draw );
 		}
+		this.isFocused = true;
+	}
+
+	public void focusRemove() {
+		//System.out.println("DateField: focusRemove (" + getText() + ")");
+		Object bbLock = Application.getEventLock();
+		synchronized (bbLock) {    
+			super.focusRemove();
+		}
+		this.isFocused = false;
+	}
+
+	public void paint( net.rim.device.api.ui.Graphics g ) {
+		Screen screen = StyleSheet.currentScreen;
+		if (this.isFocused && !screen.isMenuOpened()) {
+//			int x = screen.getScreenContentX();
+//			int y = screen.getScreenContentY();
+//			int width = screen.getScreenContentWidth();
+//			int height = screen.getScreenContentHeight();
+//			g.pushContext(x - g.getTranslateX(), y - g.getTranslateY(), width, height, 0, 0 );
+			g.setColor( this.fontColor );
+			super.paint( g );
+//			g.popContext();
+		}
+	}
+	protected void drawFocus(net.rim.device.api.ui.Graphics g, boolean on)
+	{
+//		Screen screen = StyleSheet.currentScreen;
+//		int x = screen.getScreenContentX();
+//		int y = screen.getScreenContentY();
+//		int width = screen.getScreenContentWidth();
+//		int height = screen.getScreenContentHeight();
+//		g.pushContext(x - g.getTranslateX(), y - g.getTranslateY(), width, height, 0, 0 );
+		getFocusRect( this.xyFocusRect );
+		g.setColor( this.fontColor );
+		// apparently the focus is paint _after_ the content is drawn on BB.
+		// Weird design decision, this means that we cannot use any fill method here...
+//		graphics.fillRoundRect( this.xyFocusRect.x - 2, this.xyFocusRect.y - 2, this.xyFocusRect.width + 4, this.xyFocusRect.height + 4, 6, 6 );
+//		int complementaryColor = DrawUtil.getComplementaryColor( this.fontColor );
+//		graphics.setColor( complementaryColor );
+//		graphics.fillRoundRect( this.xyFocusRect.x, this.xyFocusRect.y, this.xyFocusRect.width, this.xyFocusRect.height, 6, 6 );
+		g.drawRoundRect( this.xyFocusRect.x, this.xyFocusRect.y, this.xyFocusRect.width, this.xyFocusRect.height, 6, 6 );
+//		g.popContext();
+
+	}
+
+	public void layout( int width, int height) {
+		if (this.maxLayoutWidth != 0) {
+			super.layout( this.maxLayoutWidth, this.maxLayoutHeight );
+		} else {
+			super.layout( width, height );
+		}
+	}
+
+	public void setStyle(Style style) {
+		Font font = (Font)(Object)style.getFont();
+		if (font == null) {
+			font = Font.getDefaultFont();
+		}
+		try {
+			super.setFont( font.font );
+		} catch (IllegalStateException e) {
+			//#debug error
+			System.out.println("Layout error: " + e );
+		}
+		this.fontColor = style.getFontColor();
+		//#if ${ version(polish.JavaPlatform, BlackBerry) } >= ${version(4.6)}
+			if (style.background != null) {
+				if (this.backgroundWrapper == null) {
+					this.backgroundWrapper = new BackgroundWrapper( style.background );
+					try {
+						setBackground(this.backgroundWrapper);
+					} catch (Exception e) {
+						//#debug error
+						System.out.println("Unable to set background" + e);
+					}
+				} else {
+					this.backgroundWrapper.setBackground(style.background);
+				}
+			}
+		//#endif
+	}
 
 	public void setPaintPosition(int x, int y ) {
-       this.isFocused = true;
-       super.setPosition(x, y);
+		this.isFocused = true;
+		super.setPosition(x - 1, y);
 	}
 
 	public void setInputMode(int mode) {
@@ -239,7 +262,7 @@ implements AccessibleField
 		this.maxLayoutHeight = height;
 		layout( width, height );
 	}
-	
+
 	//#if polish.hasTrackballEvents
 	public boolean navigationMovement(int dx, int dy, int status, int time) {
 		int lastSubfield = getCurrentSubfield();

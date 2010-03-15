@@ -363,14 +363,14 @@ implements Externalizable
 	 * Returns all stored elements in the given array.
 	 * 
 	 * @param target the array in which the stored elements should be copied.
-	 * @return the stored elements of this list
+	 * @return the stored elements of this list, when the target array is smaller than the size of this ArrayList, only the elements that fit in the target array are returned
 	 */
   //#if polish.java5
 	public K[] toArray( K[] target ) {
 	//#else
 	//# public Object[] toArray( Object[] target ) {
   //#endif
-		System.arraycopy( this.storedObjects, 0, target, 0, this.size );
+		System.arraycopy( this.storedObjects, 0, target, 0, Math.max( this.size, target.length) );
 		return target;
 	}
 	

@@ -71,11 +71,11 @@ public class TableItem
 	public static final int SELECTION_MODE_COLUMN = 32;
 	
 	/** default style for lines between cells */
-	public static int LINE_STYLE_SOLID = 0;
+	public static final int LINE_STYLE_SOLID = 0;
 	/** dotted style for lines between cells */
-	public static int LINE_STYLE_DOTTED = 2;
+	public static final int LINE_STYLE_DOTTED = 2;
 	/** no lines between cells */
-	public static int LINE_STYLE_INVISIBLE = 2;
+	public static final int LINE_STYLE_INVISIBLE = 2;
 	
 	protected TableData tableData;
 	protected Font font;

@@ -13,6 +13,8 @@ import net.rim.device.api.ui.decor.Background;
  */
 public class BackgroundWrapper extends Background {
 
+	public static final BackgroundWrapper INSTANCE = new BackgroundWrapper();
+	
 	private de.enough.polish.ui.Background background;
 	private final Graphics graphics;
 	
@@ -36,19 +38,19 @@ public class BackgroundWrapper extends Background {
 	 * @see net.rim.device.api.ui.decor.Background#draw(net.rim.device.api.ui.Graphics, net.rim.device.api.ui.XYRect)
 	 */
 	public void draw(net.rim.device.api.ui.Graphics g, XYRect rect) {
-		if (this.background != null) {
-			this.graphics.setGraphics(g);
-			//#if true
-				//# this.background.paint(rect.x, rect.y, rect.width, rect.height, this.graphics );
-			//#endif
-		}
+//		if (this.background != null) {
+//			this.graphics.setGraphics(g);
+//			//#if true
+//				//# this.background.paint(rect.x, rect.y, rect.width, rect.height, this.graphics );
+//			//#endif
+//		}
 	}
 
 	/* (non-Javadoc)
 	 * @see net.rim.device.api.ui.decor.Background#isTransparent()
 	 */
 	public boolean isTransparent() {
-		return false;
+		return true;
 	}
 
 }

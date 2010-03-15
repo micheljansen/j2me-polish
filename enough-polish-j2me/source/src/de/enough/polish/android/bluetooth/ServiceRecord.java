@@ -586,7 +586,7 @@ public interface ServiceRecord
 	 * <A HREF="../../constant-values.html#javax.bluetooth.ServiceRecord.NOAUTHENTICATE_NOENCRYPT" tppabs="http://java.sun.com/javame/reference/apis/jsr082/constant-values.html#javax.bluetooth.ServiceRecord.NOAUTHENTICATE_NOENCRYPT">Constant Field Values</A></DL>
 	 * 
 	 */
-	static final int NOAUTHENTICATE_NOENCRYPT = 0x00;
+	int NOAUTHENTICATE_NOENCRYPT = 0x00;
 
 	/**
 	 * Authentication is required for connections to this service, but not
@@ -601,7 +601,7 @@ public interface ServiceRecord
 	 * <A HREF="../../constant-values.html#javax.bluetooth.ServiceRecord.AUTHENTICATE_NOENCRYPT" tppabs="http://java.sun.com/javame/reference/apis/jsr082/constant-values.html#javax.bluetooth.ServiceRecord.AUTHENTICATE_NOENCRYPT">Constant Field Values</A></DL>
 	 * 
 	 */
-	static final int AUTHENTICATE_NOENCRYPT =  0x01;
+	int AUTHENTICATE_NOENCRYPT =  0x01;
 
 	/**
 	 * Authentication and encryption are required for
@@ -616,7 +616,7 @@ public interface ServiceRecord
 	 * 
 	 * 
 	 */
-	static final int AUTHENTICATE_ENCRYPT = 0x02;
+	int AUTHENTICATE_ENCRYPT = 0x02;
 
 	
 

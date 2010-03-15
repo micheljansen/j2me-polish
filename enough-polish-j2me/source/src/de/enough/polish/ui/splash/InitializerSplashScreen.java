@@ -286,6 +286,12 @@ implements Runnable
 	 * @see java.lang.Runnable#run()
 	 */
 	public void run() {
+		// sleep just a little bit so that the main thread can show this splash screen.
+		try {
+			Thread.sleep( 10 );
+		} catch (Exception e) {
+			// ignore
+		}
 		try {
 			this.nextScreen = this.initializer.initApp();
 			//#if !polish.classes.SplashView:defined

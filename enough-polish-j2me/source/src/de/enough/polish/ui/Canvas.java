@@ -5,7 +5,7 @@ package de.enough.polish.ui;
 
 import javax.microedition.lcdui.Graphics;
 
-import de.enough.polish.util.ArrayList;
+import de.enough.polish.util.IdentityArrayList;
 
 
 /**
@@ -485,7 +485,7 @@ implements Displayable
 
 	private CommandListener _commandListener;
 	boolean _isShown;
-	public ArrayList _commands;
+	public IdentityArrayList _commands;
 	String _title;
 
 
@@ -516,7 +516,11 @@ implements Displayable
      */
     public boolean hasPointerEvents()
     {
-            return false;
+    	Display display = Display.getInstance();
+    	if (display != null) {
+    		return display.hasPointerEvents();
+    	}
+        return false;
     }
 
     /**
@@ -528,7 +532,11 @@ implements Displayable
      */
     public boolean hasPointerMotionEvents()
     {
-            return false;
+    	Display display = Display.getInstance();
+    	if (display != null) {
+    		return display.hasPointerMotionEvents();
+    	}
+        return false;
     }
 
     /**
@@ -539,7 +547,7 @@ implements Displayable
      */
     public boolean hasRepeatEvents()
     {
-            return true;
+        return true;
     }
 
     /**
@@ -741,6 +749,34 @@ implements Displayable
     {
             // do nothing
     }
+    
+    /**
+	 * Handles a touch down/press event. 
+	 * This is similar to a pointerPressed event, however it is only available on devices with screens that differentiate
+	 * between press and touch events (read: BlackBerry Storm).
+	 * 
+	 * @param x the absolute horizontal pixel position of the touch event 
+	 * @param y  the absolute vertical pixel position of the touch event
+	 * @return true when the event was handled
+	 */
+	public boolean handlePointerTouchDown( int x, int y ) {
+		return false;
+	}
+	
+
+	/**
+	 * Handles a touch up/release event. 
+	 * This is similar to a pointerReleased event, however it is only available on devices with screens that differentiate
+	 * between press and touch events (read: BlackBerry Storm).
+	 * 
+	 * @param x the absolute horizontal pixel position of the touch event 
+	 * @param y  the absolute vertical pixel position of the touch event
+	 * @return true when the event was handled
+	 */
+	public boolean handlePointerTouchUp( int x, int y ) {
+		return false;
+	}
+	
 
     /**
      * Requests a repaint for the specified region of the <code>Canvas</code>. 
@@ -857,6 +893,7 @@ implements Displayable
 				if (cmd == null) {
 					break;
 				}
+//				System.out.println("adding cmd " + cmd.getLabel());
 				instance.addCommand(cmd);
 			}
     		instance.setCommandListener(this._commandListener);
@@ -881,17 +918,29 @@ implements Displayable
     	if (this._commands != null) {
     		Object[] commands = this._commands.getInternalArray();
     		Display instance = Display.getInstance();
+    		Canvas current = instance.currentCanvas;
     		for (int i = 0; i < commands.length; i++) {
 				Command cmd = (Command) commands[i];
 				if (cmd == null) {
 					break;
 				}
-				instance.removeCommand(cmd);
+				//TODO we could skip this test when calling first _hideNotify() on the old screen and then _showNotify() on the new screen
+				// however there are other dependencies that might not get easily resolved (repaint-previous-screen, StyleSheet.currentScreen), so for now we keep it like this.
+				if (current == null || current._commands == null || !current._commands.contains(cmd)) {
+//					System.out.println("removing cmd " + cmd.getLabel());
+					instance.removeCommand(cmd);
+				}
 			}
     	}
     	this._isShown = false;
     	hideNotify();
     }
+    
+	protected void _hideNotifyExternal() {
+		_hideNotify();
+		hideNotifyExternal();
+	}
+
 
     /**
      * The implementation calls <code>showNotify()</code>
@@ -924,6 +973,15 @@ implements Displayable
     {
         // do nothing
     }
+    
+	/**
+	 * Allows subclasses to react to external hide notifications much easier.
+	 * An external hide notification can originate from incoming phone calls or security prompts, for example.
+	 * The default implementation does nothing.
+	 */
+	protected void hideNotifyExternal() {
+		// subclasses may override this
+	}
 
     /**
      * Renders the <code>Canvas</code>. The application must implement
@@ -1112,10 +1170,18 @@ implements Displayable
 		
 	}
 	
+	/**
+	 * Sets the commandlistener for this canvas
+	 * @param l the listener, use null to remove command listener
+	 */
 	public void setCommandListener( CommandListener l) {
 		this._commandListener = l;
 	}
 	
+	/**
+	 * Retrieves the command listener for this canvas.
+	 * @return the current command listener, may be null
+	 */
 	public CommandListener getCommandListener() {
 		return this._commandListener;
 	}
@@ -1126,7 +1192,7 @@ implements Displayable
 	public void addCommand(Command cmd)
 	{
 		if (this._commands == null) {
-			this._commands = new ArrayList();
+			this._commands = new IdentityArrayList();
 		}
 		boolean add = !this._commands.contains(cmd);
 		this._commands.add( cmd );
@@ -1149,7 +1215,18 @@ implements Displayable
 		} 		
 	}
 
-	
+	/**
+	 * Retrieves all commands as an object array which may contain null values
+	 * @return all registered commands, may be null
+	 */
+	public Object[] getCommands()
+	{
+		if (this._commands == null) {
+			return null;
+		}
+		Object[] commands = this._commands.getInternalArray();
+		return commands;
+	}
 
 	/* (non-Javadoc)
 	 * @see de.enough.polish.ui.Displayable#setTitle(java.lang.String)

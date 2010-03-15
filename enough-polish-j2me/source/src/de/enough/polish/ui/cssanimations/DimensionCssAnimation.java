@@ -71,13 +71,22 @@ public class DimensionCssAnimation extends CssAnimation
 	 */
 	public Object animate(Style style, Object styleValue, long passedTime)
 	{
+		
 		int currentValue = calculatePointInRange(this.startValue, this.endValue, passedTime, this.duration, this.function);
 		//System.out.println("running percent or absolute animation: current value=" + currentValue);
 		if (currentValue == this.endValue) {
 			return ANIMATION_FINISHED;
 		}
+		
+
+		
+		
 		//((PercentOrAbsoluteInteger)styleValue).setValue(currentValue);
-		return new Dimension(currentValue, this.isPercent );
+		Dimension x = new Dimension(currentValue, this.isPercent ); 
+
+		
+		return x;
+		
 	}
 
 }

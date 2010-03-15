@@ -45,7 +45,7 @@ import java.net.URLEncoder;
 
 import de.enough.polish.android.helper.ResourceInputStream;
 import de.enough.polish.android.helper.ResourcesHelper;
-import de.enough.polish.android.midlet.MIDlet;
+import de.enough.polish.android.midlet.MidletBridge;
 import android.content.Context;
 import android.content.res.AssetFileDescriptor;
 import android.media.AudioManager;
@@ -152,8 +152,8 @@ public class AudioPlayer implements PlayerListener
 		this.androidPlayer = new MediaPlayer();
 		this.androidPlayer.setOnCompletionListener(this);
 		this.androidPlayer.setOnPreparedListener(this);
-		this.volumeControlStream = MIDlet.midletInstance.getVolumeControlStream();
-		AudioManager audioManager = (AudioManager) MIDlet.midletInstance.getSystemService(Context.AUDIO_SERVICE);			
+		this.volumeControlStream = MidletBridge.instance.getVolumeControlStream();
+		AudioManager audioManager = (AudioManager) MidletBridge.instance.getSystemService(Context.AUDIO_SERVICE);			
 		this.androidMaxVolume = audioManager.getStreamMaxVolume(this.volumeControlStream);
 		//#debug
 		System.out.println("The maximum volume is '"+this.androidMaxVolume+"'");
@@ -286,7 +286,7 @@ public class AudioPlayer implements PlayerListener
 			fileInputStream.close();
 		} else {
 			int resourceID = ResourcesHelper.getResourceID(url);
-			AssetFileDescriptor assetFileDescriptor = MIDlet.midletInstance.getResources().openRawResourceFd(resourceID);
+			AssetFileDescriptor assetFileDescriptor = MidletBridge.instance.getResources().openRawResourceFd(resourceID);
 			if(assetFileDescriptor == null) {
 				throw new IOException("Could not retrieve AssetFileDescriptor for resource id '"+resourceID+"'");
 			}
@@ -334,7 +334,7 @@ public class AudioPlayer implements PlayerListener
 		}
 		//#if polish.android
 			if (in instanceof ResourceInputStream) {
-				this.androidPlayer = MediaPlayer.create(MIDlet.midletInstance, ((ResourceInputStream)in).getResourceId());
+				this.androidPlayer = MediaPlayer.create(MidletBridge.instance, ((ResourceInputStream)in).getResourceId());
 				this.androidPlayer.setOnCompletionListener(this);
 				this.androidPlayer.start();
 			} 
@@ -381,7 +381,7 @@ public class AudioPlayer implements PlayerListener
 				this.androidPlayer.setDataSource(url);
 		} else {
 			int resourceID = ResourcesHelper.getResourceID(url);
-			AssetFileDescriptor assetFileDescriptor = MIDlet.midletInstance.getResources().openRawResourceFd(resourceID);
+			AssetFileDescriptor assetFileDescriptor = MidletBridge.instance.getResources().openRawResourceFd(resourceID);
 			if(assetFileDescriptor == null) {
 				throw new IOException("Could not retrieve AssetFileDescriptor for resource id '"+resourceID+"'");
 			}
@@ -417,7 +417,7 @@ public class AudioPlayer implements PlayerListener
 	{
 		//#if polish.android
 			if (in instanceof ResourceInputStream) {
-				this.androidPlayer = MediaPlayer.create(MIDlet.midletInstance, ((ResourceInputStream)in).getResourceId());
+				this.androidPlayer = MediaPlayer.create(MidletBridge.instance, ((ResourceInputStream)in).getResourceId());
 				this.androidPlayer.setOnCompletionListener(this);
 				this.androidPlayer.start();
 			} 
@@ -640,7 +640,7 @@ public class AudioPlayer implements PlayerListener
 		//#debug
 		System.out.println("The current J2Me volume is '"+this.userJ2MeLevel+"'");
 		//#if polish.android
-			AudioManager audioManager = (AudioManager) MIDlet.midletInstance.getSystemService(Context.AUDIO_SERVICE);			
+			AudioManager audioManager = (AudioManager) MidletBridge.instance.getSystemService(Context.AUDIO_SERVICE);			
 			int androidLevel = (int)(this.androidMaxVolume / 100f * boundJ2MeLevel);
 			//#debug
 			System.out.println("The android volume is set to '"+androidLevel+"'");
@@ -704,7 +704,7 @@ public class AudioPlayer implements PlayerListener
 		//#debug
 		System.out.println("onPrepared called.");
 		p.start();
-		this.androidPlayer.start();
+//		this.androidPlayer.start();
 	}
 	
 	//#endif
@@ -735,7 +735,7 @@ public class AudioPlayer implements PlayerListener
 			fileInputStream.close();
 		} else {
 			int resourceID = ResourcesHelper.getResourceID(url);
-			AssetFileDescriptor assetFileDescriptor = MIDlet.midletInstance.getResources().openRawResourceFd(resourceID);
+			AssetFileDescriptor assetFileDescriptor = MidletBridge.instance.getResources().openRawResourceFd(resourceID);
 			if(assetFileDescriptor == null) {
 				throw new IOException("Could not retrieve AssetFileDescriptor for resource id '"+resourceID+"'");
 			}

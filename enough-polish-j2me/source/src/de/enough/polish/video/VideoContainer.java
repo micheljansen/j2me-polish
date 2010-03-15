@@ -42,7 +42,13 @@ import de.enough.polish.video.util.VideoUtil;
  * 
  * @author Andre Schmidt
  */
-public class VideoContainer extends Container implements Runnable, PlayerListener {
+public class VideoContainer extends Container implements Runnable, PlayerListener, VideoCallback {
+
+	/**
+	 * The video is stopped
+	 */
+	public static final int STATE_CLOSED = -1;
+	
 	/**
 	 * The video is not yet prepared
 	 */
@@ -250,7 +256,7 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 					player.setMediaTime(this.position);
 				}
 			} catch (Exception e) {
-				errorCallback(e);
+				onVideoError(e);
 			}
 		}
 	}
@@ -426,6 +432,7 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 		setState(STATE_NOT_PREPARED);
 		this.sourceToClear = this.source;
 		this.source = source;
+		this.source.setParent(this);
 	}
 	
 	/**
@@ -454,38 +461,33 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 		}
 	}
 	
+	void close(VideoSource source) {
+		if(source != null) {
+			if(getState() == STATE_PLAYING)
+			{
+				try
+				{
+					source.getVideoControl().setVisible(false);
+					source.getPlayer().stop();
+				}catch(MediaException e)
+				{
+					onVideoError(e);
+				}
+			}
+			
+			onVideoClose();
+			
+			source.close();
+		}
+	}
+	
 	/**
 	 * Closes this VideoContainer.
 	 */
 	public void close()
 	{
-		if(getState() == STATE_PLAYING)
-		{
-			try
-			{
-				this.source.getVideoControl().setVisible(false);
-				this.source.getPlayer().stop();
-			}catch(MediaException e)
-			{
-				errorCallback(e);
-			}
-		}
-		
-		for (int i = 0; i < this.callbacks.size(); i++) {
-			callback(i).onVideoClose();
-		}
-		
-		if(this.sourceToClear != null)
-		{
-			this.sourceToClear.close();
-			this.sourceToClear = null;
-		}
-		
-		if(this.multipartToClear != null)
-		{
-			this.multipartToClear.close();
-			this.multipartToClear = null;
-		}
+		close(this.source);
+		setState(STATE_CLOSED);
 	}
 
 	/**
@@ -512,8 +514,6 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 		this.gameActionEnterFullscreen = gameAction;
 	}
 	
-	
-
 	/**
 	 * Returns the callback at the given index
 	 * @param index the index
@@ -687,12 +687,10 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 				this.source.getPlayer().start();
 				setState(STATE_PLAYING);
 			} catch (Exception e) {
-				errorCallback(e);
+				onVideoError(e);
 			}
 			
-			for (int i = 0; i < this.callbacks.size(); i++) {
-				callback(i).onVideoPlay();
-			}
+			onVideoPlay();
 		}
 	}
 	
@@ -707,12 +705,10 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 				this.source.getPlayer().stop();
 				setState(STATE_PAUSED);
 			} catch (MediaException e) {
-				errorCallback(e);
+				onVideoError(e);
 			}
 			
-			for (int i = 0; i < this.callbacks.size(); i++) {
-				callback(i).onVideoPause();
-			}
+			onVideoPause();
 		}
 	}
 
@@ -732,11 +728,9 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 				seek(0);
 				setState(STATE_STOPPED);
 				
-				for (int i = 0; i < this.callbacks.size(); i++) {
-					callback(i).onVideoStop();
-				}
+				onVideoStop();
 			} catch (MediaException e) {
-				errorCallback(e);
+				onVideoError(e);
 			}
 		}
 		//#if polish.blackberry
@@ -746,26 +740,6 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 		//#endif
 	}
 	
-	/**
-	 * Takes a snapshot. 
-	 */
-	public void snapShot()
-	{
-		if(getState() == STATE_READY)
-		{
-			try
-			{
-				byte[] data = this.source.getVideoControl().getSnapshot(null);
-				
-				for (int i = 0; i < this.callbacks.size(); i++) {
-					callback(i).onSnapshot(data);
-				}
-			} catch (MediaException e) {
-				errorCallback(e);
-			}
-		}
-	}
-
 	/**
 	 * Set the player to the given position. The position must be in microseconds. 
 	 * @param position the position in microseconds
@@ -799,7 +773,7 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 	public void setVolume(int volume)
 	{
 		if (volume < 0 || volume > 100) {
-			errorCallback(new IllegalArgumentException("volume must be in percent"));
+			onVideoError(new IllegalArgumentException("volume must be in percent"));
 		}
 		
 		try {
@@ -813,7 +787,7 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 				}
 			}
 		} catch (Exception e) {
-			errorCallback(e);
+			onVideoError(e);
 		}
 	}
 	
@@ -824,18 +798,6 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 	public int getVolume()
 	{
 		return this.volume;
-	}
-	
-	/**
-	 * Notifies all listeners that an error occured
-	 * @param exception the exception
-	 */
-	private void errorCallback(Exception exception) {
-		for (int i = 0; i < this.callbacks.size(); i++) {
-			callback(i).onVideoError(exception);
-		}
-
-		exception.printStackTrace();
 	}
 	
 	/* (non-Javadoc)
@@ -874,7 +836,7 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 					setDisplay(this.videoControl, this.videoX, this.videoY,
 							this.videoWidth, this.videoHeight, this.ratio);
 				} catch (Exception e) {
-					errorCallback(e);
+					onVideoError(e);
 				}
 			}
 		}*/
@@ -918,7 +880,7 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 		{
 			//#debug error
 			System.out.println("Unable to enter fullscreen mode" + e );
-			errorCallback(e);
+			onVideoError(e);
 		}
 		
 	}
@@ -981,7 +943,7 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 		} catch (Exception e) {
 			//#debug error
 			System.out.println("exception : " + e.getMessage());
-			errorCallback(e);
+			onVideoError(e);
 		}
 	}
 	
@@ -997,12 +959,12 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 					System.out.println("de.enough.polish.video.VideoContainer.run(): 1 state = " + getState());	
 					
 					//Wait till the Container is initialized
-					//while(!isInitialized())
-					//{
-						Thread.sleep(2500);
-					//};
+					while(!isInitialized())
+					{
+						Thread.sleep(500);
+					}
 
-					close();
+					close(this.sourceToClear);
 					
 					if(this.source != null)
 					{
@@ -1010,28 +972,30 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 
 						setState(STATE_READY);
 						
-						for (int i = 0; i < this.callbacks.size(); i++) {
-							callback(i).onVideoReady();
+						onVideoReady();
+					
+						// if this has a multipart source,prepare the next VideoSource, wait for END_OF_MEDIA
+						// of the current, start the next VideoSource and close the current
+						while(this.multipart != null && this.multipart.hasNext())
+						{
+							VideoSource oldSource = this.source;
+							
+							VideoSource nextSource = this.multipart.next();
+							
+							init(nextSource);
+							
+							wait();
+							
+							this.source = nextSource;
+							
+							play();
+							
+							oldSource.close();
 						}
 					}
-					
-					// if this has a multipart source,prepare the next VideoSource, wait for END_OF_MEDIA
-					// of the current, start the next VideoSource and close the current
-					while(this.multipart != null && this.multipart.hasNext())
-					{
-						VideoSource oldSource = this.source;
-						
-						VideoSource nextSource = this.multipart.next();
-						
-						init(nextSource);
-						
-						wait();
-						
-						this.source = nextSource;
-						
-						play();
-						
-						oldSource.close();
+					else {
+						//#debug error
+						System.out.println("source is not set");
 					}
 				}
 			
@@ -1041,7 +1005,7 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 				return;
 			}
 			catch (Exception e) {
-				errorCallback(e);
+				onVideoError(e);
 			} 
 			//#debug
 			System.out.println("exit thread");
@@ -1112,7 +1076,7 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 					try {
 						player.start();
 					} catch (MediaException e) {
-						errorCallback(e);
+						onVideoError(e);
 					}
 				}
 				else
@@ -1123,7 +1087,7 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 		}
 		
 		if (event.equals(PlayerListener.ERROR)) {
-			errorCallback(new Exception("player error"));
+			onVideoError(new Exception("player error"));
 		}
 	}
 
@@ -1225,7 +1189,7 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 	
 	void hideVideo()
 	{
-		if(!this.changingViewMode)
+		if(!this.changingViewMode && getState() > STATE_CLOSED)
 		{
 			this.resume = (getState() == STATE_PLAYING);
 			pause();
@@ -1237,10 +1201,65 @@ public class VideoContainer extends Container implements Runnable, PlayerListene
 		
 		showVideo();
 	}
+		
+	public void capture(String encoding) {
+		if(getState() >= STATE_READY && this.source == VideoSource.CAPTURE)
+		{
+			byte[] data;
+			try {
+				data = this.source.getVideoControl().getSnapshot(encoding);
+				onSnapshot(data,encoding);
+			} catch (MediaException e) {
+				onVideoError(e);
+			}
+		}
+	}
 	
 	protected void hideNotify() {
 		super.hideNotify();
 		
 		hideVideo();
+	}
+
+	public void onSnapshot(byte[] data, String encoding) {
+		for (int i = 0; i < this.callbacks.size(); i++) {
+			callback(i).onSnapshot(data, encoding);
+		}
+	}
+
+	public void onVideoClose() {
+		for (int i = 0; i < this.callbacks.size(); i++) {
+			callback(i).onVideoClose();
+		}
+	}
+
+	public void onVideoError(Exception e) {
+		for (int i = 0; i < this.callbacks.size(); i++) {
+			callback(i).onVideoError(e);
+		}
+	}
+
+	public void onVideoPause() {
+		for (int i = 0; i < this.callbacks.size(); i++) {
+			callback(i).onVideoPause();
+		}
+	}
+
+	public void onVideoPlay() {
+		for (int i = 0; i < this.callbacks.size(); i++) {
+			callback(i).onVideoPlay();
+		}
+	}
+
+	public void onVideoReady() {
+		for (int i = 0; i < this.callbacks.size(); i++) {
+			callback(i).onVideoReady();
+		}
+	}
+
+	public void onVideoStop() {
+		for (int i = 0; i < this.callbacks.size(); i++) {
+			callback(i).onVideoStop();
+		}
 	}	
 }

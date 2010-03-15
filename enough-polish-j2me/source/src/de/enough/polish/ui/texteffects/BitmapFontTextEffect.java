@@ -125,8 +125,30 @@ public class BitmapFontTextEffect extends TextEffect {
 		this.lastText = wrappedText;
 		return wrappedText;
 	}
-
-
+	
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.TextEffect#wrap(java.lang.String, int, javax.microedition.lcdui.Font, int, int, int, java.lang.String, int)
+	 */
+	public String[] wrap(String text, int textColor, Font fnt, int firstLineWidth, int lineWidth, int maxLines, String maxLinesAppendix, int maxLinesAppendixPosition) {
+		if (this.font == null) {
+			return super.wrap(text, textColor, fnt, firstLineWidth, lineWidth);
+		}
+		this.viewer = this.font.getViewer(text,textColor);
+		if (this.viewer == null) {
+			return super.wrap( text, textColor, fnt, firstLineWidth, lineWidth );
+		}
+		int pv = 1;
+		int anchor = Graphics.LEFT;
+		if (this.style != null) {
+			pv = this.style.getPaddingVertical( lineWidth );
+			anchor = this.style.getAnchorHorizontal();
+		}
+		this.viewer.layout(firstLineWidth, lineWidth, pv,  anchor, maxLines, maxLinesAppendix, this.font );
+		String[] wrappedText = this.viewer.wrap( text );
+		this.lastText = wrappedText;
+		return wrappedText;
+	}
 
 
 	/* (non-Javadoc)

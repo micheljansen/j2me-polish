@@ -89,7 +89,7 @@ public class MaskBackground extends Background
 	 */
 	public MaskBackground( Background mask, int maskColor, Background background, Dimension opacity )
 	{
-		this( mask, maskColor, background, opacity.getValue(255));
+		this( mask, maskColor, background, opacity == null ? 255 : opacity.getValue(255));
 	}
 
 

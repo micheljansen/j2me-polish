@@ -34,6 +34,7 @@ import de.enough.polish.ui.Border;
 import de.enough.polish.ui.ClippingRegion;
 import de.enough.polish.ui.Container;
 import de.enough.polish.ui.ContainerView;
+import de.enough.polish.ui.Display;
 import de.enough.polish.ui.IconItem;
 import de.enough.polish.ui.Item;
 import de.enough.polish.ui.Screen;
@@ -119,6 +120,14 @@ public class FishEyeContainerView extends ContainerView {
 	protected boolean isShowTextInTitle;
 	//#if polish.css.fisheyeview-max-visible
 		protected int maxVisibleItems;
+	//#endif
+	//#if polish.hasPointerEvents
+		private int touchPressX;
+		private int touchCurrentIndex;
+		private static boolean isPointerDraggedEnabled;
+	//#endif
+	//#if polish.css.fisheyeview-place-label-at-top
+		private boolean isPlaceLabelAtTop;
 	//#endif
 		
 	private final Object lock = new Object();
@@ -327,6 +336,11 @@ public class FishEyeContainerView extends ContainerView {
 	 * @see de.enough.polish.ui.ContainerView#initContent(de.enough.polish.ui.Container, int, int)
 	 */
 	protected void initContent(Item parentContainerItem, int firstLineWidth, int availWidth, int availHeight) {
+		//#if polish.hasPointerEvents
+			if (!isPointerDraggedEnabled) {
+				isPointerDraggedEnabled = Display.getInstance().hasPointerMotionEvents();
+			}
+		//#endif
 		this.isVertical = false;
 		this.isHorizontal = true;
 		Container parent = (Container) parentContainerItem;		
@@ -493,10 +507,20 @@ public class FishEyeContainerView extends ContainerView {
 	 * @param maxHeight the maximum height of one item
 	 */
 	protected void initItemArrangement(int lineWidth, int availHeight, Item[] myItems, int length, int maxWidth, int maxHeight) {
+		//#debug
+		System.out.println("initItemArrangement: lineWidth=" + lineWidth + ", availHeight=" + availHeight + ", maxWidth="  + maxWidth + ", maxHeight=" + maxHeight + ", length=" + length);
+		if (length == 0) {
+			return;
+		}
 		this.referenceXCenterPositions = new int[length];
 		this.referenceXCenterPositions[this.focusedIndex] = lineWidth >> 1;
 		this.referenceFocusedIndex = this.focusedIndex;
-
+		if (maxWidth==0) {
+			maxWidth = lineWidth;
+		}
+		if (maxHeight == 0) {
+			maxHeight = availHeight;
+		}
 		int completeWidth;
 		//#if polish.midp2
 			completeWidth = maxWidth + ((maxWidth*this.scaleFactor)/100) * (length - 1) + ( length -1 ) * this.paddingHorizontal;
@@ -511,6 +535,7 @@ public class FishEyeContainerView extends ContainerView {
 		} else if (this.focusedWidth == 0) {
 			this.focusedWidth = maxWidth;
 		}
+		
 		int availWidth;
 		if ( (completeWidth > lineWidth && this.includeAllItems) || (completeWidth < lineWidth && isLayoutExpand() ) ) {
 			availWidth = ((lineWidth - this.focusedWidth) >> 1) - this.paddingHorizontal;
@@ -711,6 +736,13 @@ public class FishEyeContainerView extends ContainerView {
 		int itemLabelDiff = 0;
 		if (this.isRemoveText && this.focusedLabel != null) {
 			itemLabelDiff = this.focusedLabel.itemHeight - this.focusedLabel.getContentHeight();
+			//#if polish.css.fisheyeview-place-label-at-top
+				if (this.isPlaceLabelAtTop) {
+					int labelX = x + ((rightBorder - leftBorder) >> 1) - (this.focusedLabel.getItemWidth( lineWidth, lineWidth, this.availableHeight ) >> 1);
+					this.focusedLabel.paint( labelX, y, labelX, labelX + this.focusedLabel.itemWidth, g);
+					y += this.focusedLabel.itemHeight;
+				}
+			//#endif
 		}
 		if (this.focusedItem != null && (this.focusedBackground != null || this.focusedBorder != null)) {
 			Item item = this.focusedItem;
@@ -737,8 +769,11 @@ public class FishEyeContainerView extends ContainerView {
 		int itemX;
 		int itemY;
 		
+		int length  = myItems.length;
+		if (length == 0) {
+			return;
+		}
 		//#if polish.css.fisheyeview-max-visible
-			int length  = myItems.length;
 			int maxDistance = length;
 			if (this.maxVisibleItems != 0) {
 				maxDistance = this.maxVisibleItems >> 1;
@@ -806,7 +841,12 @@ public class FishEyeContainerView extends ContainerView {
 			paintItem(item, this.focusedIndex, itemX, itemY, itemX, itemX + item.itemWidth, clipX, clipY, clipWidth, clipHeight, g);
 
 			// now paint label:
-			if (this.isRemoveText && this.focusedLabel != null) {
+			if (this.isRemoveText 
+					&& this.focusedLabel != null
+					//#if polish.css.fisheyeview-place-label-at-top
+					&& !this.isPlaceLabelAtTop
+					//#endif
+			) {
 				//System.out.println("painting focused label with style " + this.focusedLabel.getStyle() );
 				int labelX = x + ((rightBorder - leftBorder) >> 1) - (this.focusedLabel.getItemWidth( lineWidth, lineWidth, this.availableHeight ) >> 1);
 				int labelY = y + this.contentHeight - this.focusedLabel.itemHeight;  // item.itemHeight + itemLabelDiff;
@@ -871,7 +911,12 @@ public class FishEyeContainerView extends ContainerView {
 				this.isRemoveText = removeTextBool.booleanValue();
 			}
 		//#endif
-			
+		//#if polish.css.fisheyeview-place-label-at-top
+			Boolean placeLabelAtTopBool = style.getBooleanProperty("fisheyeview-place-label-at-top");
+			if (placeLabelAtTopBool != null) {
+				this.isPlaceLabelAtTop = placeLabelAtTopBool.booleanValue();
+			}
+		//#endif
 		//#if polish.css.fisheyeview-scale && polish.midp2
 			Integer scaleInt = style.getIntProperty( "fisheyeview-scale" );
 			if (scaleInt != null) {
@@ -918,7 +963,10 @@ public class FishEyeContainerView extends ContainerView {
 	}
 
 
-	/* see ItemView.releaseResources() */
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.ContainerView#releaseResources()
+	 */
 	public void releaseResources() {
 		super.releaseResources();
 		synchronized (this.lock) {
@@ -933,6 +981,74 @@ public class FishEyeContainerView extends ContainerView {
 			//#endif
 		}
 	}
+
+	//#if polish.hasPointerEvents
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.ItemView#handlePointerDragged(int, int)
+	 */
+	public boolean handlePointerDragged( int x, int y ) {
+		if (y < 0 || y > this.contentHeight || x < 0 || x > this.contentWidth) {
+			return false;
+		}
+		int diff = x - this.touchPressX;
+		int minDiff = this.contentWidth / this.parentContainer.size();
+		if (minDiff > 30) {
+			minDiff >>>= 1;
+		}
+		if (Math.abs(diff) < minDiff) {
+			return false;
+		}
+		int current = this.touchCurrentIndex;
+		if (diff < 0) {
+			current++;
+			if (current >=  this.parentContainer.size()) {
+				current = 0;
+			}
+		} else {
+			current--;
+			if (current < 0) {
+				current = this.parentContainer.size() - 1;
+			}
+		}
+		this.touchCurrentIndex = current;
+		this.touchPressX = x;
+		this.parentContainer.focusChild( current );
+		return true;
+	}
+	//#endif
+
+	//#if polish.hasPointerEvents
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.ItemView#handlePointerPressed(int, int)
+	 */
+	public boolean handlePointerPressed( int x, int y ) {
+		if (isPointerDraggedEnabled) {
+			if (y < 0 || y > this.contentHeight || x < 0 || x > this.contentWidth) {
+				return false;
+			}
+			this.touchPressX = x;
+			this.touchCurrentIndex = this.focusedIndex;
+			return true;
+		} else {
+			return super.handlePointerPressed(x, y);
+		}
+	}
+	//#endif
+
+	//#if polish.hasTouchEvents
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.ItemView#handlePointerTouchDown(int, int)
+	 */
+	public boolean handlePointerTouchDown( int x, int y) {
+		if (y < 0 || y > this.contentHeight || x < 0 || x > this.contentWidth) {
+			return false;
+		}
+		return handlePointerPressed( x, y );
+	}
+	//#endif
 
 	
 	

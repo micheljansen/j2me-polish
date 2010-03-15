@@ -76,13 +76,13 @@ public class OpacityRgbFilter extends RgbFilter
 		int[] rgbOutput = this.output.getRgbData();
 		int alpha = this.opacity.getValue(255);
 		int alphaMask = (alpha << 24) | 0xffffff;
+		int pixel = 0;
 		for (int i = 0; i < rgbOutput.length; i++)
 		{
-			int pixel = rgbInput[i];
+			pixel = rgbInput[i];
 			if ( ((pixel & 0xff000000)>>>24) > alpha) {
 				rgbOutput[i] = (pixel & alphaMask);
 			} else {
-				if (pixel != 0)
 				rgbOutput[i] = pixel;
 			}
 		}

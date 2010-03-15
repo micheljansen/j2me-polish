@@ -33,7 +33,7 @@ import de.enough.polish.util.ArrayList;
  * 
  * <p>
  * Implementations may truncate or scale the icon image if it is larger than the
- * size supported by device. Applications can query the implementation�s tab
+ * size supported by device. Applications can query the implementation's tab
  * icon size by calling <A HREF="../../../javax/microedition/lcdui/Display.html#getBestImageWidth(int)"><CODE>Display.getBestImageWidth(int)</CODE></A> and
  * <A HREF="../../../javax/microedition/lcdui/Display.html#getBestImageHeight(int)"><CODE>Display.getBestImageHeight(int)</CODE></A> methods using the <A HREF="../../../javax/microedition/lcdui/Display.html#TAB"><CODE>Display.TAB</CODE></A>
  * image type. The style and apperance of tabs are platform-dependent.
@@ -44,7 +44,7 @@ import de.enough.polish.util.ArrayList;
  * on the screen at one time. In that case, implementations must indicate to
  * users that more tabs are available and provide a mechanism for accessing
  * them. An application can be notified of tab navigation events on a given
- * TabbedPane using the <A HREF="../../../javax/microedition/lcdui/TabListener.html" title="interface in javax.microedition.lcdui"><CODE>TabListener</CODE></A> interface.
+ * TabbedPane using the <A HREF="TabListener.html" title="interface in javax.microedition.lcdui"><CODE>TabListener</CODE></A> interface.
  * </P>
  * <img src="doc-files/arrows_in_tab.gif">
  * </P>
@@ -301,7 +301,7 @@ public class TabbedPane extends Screen
 		}
 		this.tabIconsContainer.add( iconItem, tabIconStyle );
 		this.tabDisplayables.add( tab );
-		if (this.tabDisplayables.size() == 1) {
+		if (this.tabDisplayables.size() == 1 && this.isShown()) {
 			// this was the first tab, switch to it by default:
 			setFocus(0);
 		}
@@ -780,7 +780,9 @@ public class TabbedPane extends Screen
 			this.currentScreen = screen;
 			int screenFullWidth = getScreenFullWidth();
 			int screenFullHeight = getScreenFullHeight();
-			init( screenFullWidth, screenFullHeight);
+			if (screenFullWidth != 0 && screenFullHeight != 0) {
+				init( screenFullWidth, screenFullHeight);
+			}
 			if (isShown) {
 				screen.showNotify();
 			}
@@ -794,7 +796,9 @@ public class TabbedPane extends Screen
 		if (this.tabbedFormListener != null && tabIndex != previousIndex) {
 			this.tabbedFormListener.notifyTabChangeCompleted(previousIndex, tabIndex);
 		}
-		repaint();
+		if (isShown) {
+			repaint();
+		}
 	}
 
 	/**
@@ -992,7 +996,7 @@ public class TabbedPane extends Screen
 		if (screen != null) {
 			if (!screen.isInitialized) {
 				int w = getScreenFullWidth();
-				int h = getScreenFullHeight();
+				int h = Display.getScreenHeight();
 				h -= this.tabIconsContainer.itemHeight;
 				screen.init( w, h );
 			}
@@ -1080,6 +1084,7 @@ public class TabbedPane extends Screen
 				
 			//#endif
 			if (this.isTabPositionTop) {
+				//todo align tabs to the top
 			} else {
 				//#if tmp.menuFullScreen
 					//#if tmp.useExternalMenuBar
@@ -1300,6 +1305,9 @@ public class TabbedPane extends Screen
 	 * @see de.enough.polish.ui.Screen#showNotify()
 	 */
 	public void showNotify() {
+		if (this.currentDisplayableIndex == -1 && this.tabDisplayables.size() > 0) {
+			setFocus(0);
+		}
 		if (this.currentScreen != null) {
 			this.currentScreen.showNotify();
 		}

@@ -14,13 +14,15 @@ import net.rim.device.api.ui.Manager;
 	import net.rim.device.api.ui.VirtualKeyboard;
 //#endif
 import de.enough.polish.blackberry.midlet.MIDlet;
+import de.enough.polish.ui.Container;
 import de.enough.polish.ui.Item;
 import de.enough.polish.ui.Screen;
 import de.enough.polish.ui.Canvas;
 import de.enough.polish.ui.CommandItem;
 import de.enough.polish.ui.Display;
 import de.enough.polish.ui.Displayable;
-import de.enough.polish.util.ArrayList;;
+import de.enough.polish.util.ArrayList;
+import de.enough.polish.util.DeviceControl;
 
 /**
  * Provides the base screen / displayable implementation for BlackBerry devices.
@@ -59,11 +61,6 @@ public abstract class BaseScreen
 //    private static final int KEY_BB_8 = 4325376;
 //    private static final int KEY_BB_9 = 5046272;
 
-    //#if polish.hasPointerEvents
-		private int pointerDownYOffset;
-		private int pointerDownY;
-		private long pointerDownTime;
-	//#endif
 	//#if !tmp.fullscreen
 		private final ArrayList addedMenuItems = new ArrayList();
 	//#endif
@@ -78,25 +75,28 @@ public abstract class BaseScreen
 	private boolean isObscured;
 	public Item currentItem;
 	//#if !polish.blackberry.keyUpCalledOnKeyRelease
-		//#if ${ version(polish.JavaPlatform, BlackBerry) } >= ${version(4.3)}
+		//#if polish.JavaPlatform >= BlackBerry/4.3
 			//#define tmp.checkKeyUp
 			private static boolean versionHigherThan46 = checkSoftwareVersionHigherThan(4.6);
 		//#endif
 		private int keyDownKeyCode;
 		private int keyDownStatus;
 	//#endif
+	private int lastWidth;
+	private int lastHeight;
 	
     /**
      * Constructs a new <code>Canvas</code> object.
-     * 
-     * 
      */
     protected BaseScreen()
     {
     	//#if polish.useFullScreen
     		//# super( BaseScreenManager.getInstance(), 0 );
     	//#else
-    		super();
+    		super( DEFAULT_MENU );
+    		//#if polish.BlackBerry.addDefaultClose != true
+    			super.setDefaultClose(false);
+    		//#endif
     	//#endif
     	this.addedItems = new ArrayList();
         this.graphics = new Graphics();
@@ -107,11 +107,11 @@ public abstract class BaseScreen
 
     /**
      * Checks if the software version of this device is higher than the specified one
-     * @param version
-     * @return
+     * @param version the version as double value, e.g. 4.7
+     * @return true when the software version of this device is higher than the specified one
      */
     private static boolean checkSoftwareVersionHigherThan(double version) {
-    	//#if ${ version(polish.JavaPlatform, BlackBerry) } >= ${version(4.3)}
+    	//#if polish.JavaPlatform >= BlackBerry/4.3
     		String versionStr = DeviceInfo.getSoftwareVersion();
     		if (versionStr != null && versionStr.length() > 0) {
     			double foundVersion = -1D;
@@ -432,6 +432,34 @@ public abstract class BaseScreen
     {
             // do nothing
     }
+    
+    /**
+	 * Handles a touch down/press event. 
+	 * This is similar to a pointerPressed event, however it is only available on devices with screens that differentiate
+	 * between press and touch events (read: BlackBerry Storm).
+	 * 
+	 * @param x the absolute horizontal pixel position of the touch event 
+	 * @param y  the absolute vertical pixel position of the touch event
+	 * @return true when the event was handled
+	 */
+	public boolean handlePointerTouchDown( int x, int y ) {
+		return false;
+	}
+	
+
+	/**
+	 * Handles a touch up/release event. 
+	 * This is similar to a pointerReleased event, however it is only available on devices with screens that differentiate
+	 * between press and touch events (read: BlackBerry Storm).
+	 * 
+	 * @param x the absolute horizontal pixel position of the touch event 
+	 * @param y  the absolute vertical pixel position of the touch event
+	 * @return true when the event was handled
+	 */
+	public boolean handlePointerTouchUp( int x, int y ) {
+		return false;
+	}
+	
 
     /**
      * Requests a repaint for the specified region of the <code>Canvas</code>. 
@@ -710,8 +738,8 @@ public abstract class BaseScreen
     protected void paintBackground( net.rim.device.api.ui.Graphics g ) {
         //System.out.println("Canvas.paintBackground(): enter");
     	try {
-        this.graphics.setGraphics( g );
-    	paint( this.graphics );
+	        this.graphics.setGraphics( g );
+	    	paint( this.graphics );
     	} catch (Exception e) {
     		//#debug error
     		System.out.println("unable to paint screen " + this + e );
@@ -752,8 +780,12 @@ public abstract class BaseScreen
             super.sublayout(width, height);
             int w = net.rim.device.api.ui.Graphics.getScreenWidth();
             int h = net.rim.device.api.ui.Graphics.getScreenHeight();
-            setExtent( w,  h );
-            sizeChanged( w, h );
+            if (w != this.lastWidth || h != this.lastHeight) {
+            	this.lastWidth = w;
+            	this.lastHeight = h;
+            	setExtent( w,  h );
+            	sizeChanged( w, h );
+            }
     }
 
     //#if polish.useFullScreen
@@ -1055,50 +1087,44 @@ public abstract class BaseScreen
      * @see net.rim.device.api.ui.Screen#keyRepeat(int, int)
      */
     protected boolean keyRepeat(int keyCode, int status) {
-        //#if !polish.blackberry.keyUpCalledOnKeyRelease
-	    	// note: this is only a notification triggered for the CAPS key,
-			// not a keyReleased action on platforms before 4.7:
-			//# return keyDown( keyCode, status );
-		//#else
-	        Screen screen = getPolishScreen();
-	        if ( screen != null ) {
-	           if (forwardEventToNativeField( screen, keyCode) 
-	        		   && (Keypad.map( keyCode ) != Keypad.KEY_ESCAPE))
-	           {
-	        	   try {
-	        		   return super.keyDown(keyCode, status);                	   
-	        	   } catch (Exception e) {
-	        		   //#debug error
-	        		   System.out.println("super.keyRepeat(" + keyCode + ", " + status + ") failed" + e );
-	        	   }
-	           }
-	        }
-	        //#debug
-	    	System.out.println("keyRepeat: keyCode=" + keyCode + ", key=" + Keypad.key( keyCode) + ", char=" + Keypad.map( keyCode ) );
-	    	keyCode = getMidpKeyCode(keyCode, status);
-	        keyPressed( keyCode );
-	        //#if !polish.blackberry.keyUpCalledOnKeyRelease
-	       		keyReleased( keyCode );
-	       	//#endif
-	        if ( screen != null ) {
-	        	return (screen.keyPressedProcessed || screen.keyReleasedProcessed);
-	        } else { 
-	        	return true; // consume the key event
-	        } 
-		//#endif    
+        Screen screen = getPolishScreen();
+        if ( screen != null ) {
+           if (forwardEventToNativeField( screen, keyCode) 
+        		   && (Keypad.map( keyCode ) != Keypad.KEY_ESCAPE))
+           {
+        	   try {
+        		   return super.keyRepeat(keyCode, status);                	   
+        	   } catch (Exception e) {
+        		   //#debug error
+        		   System.out.println("super.keyRepeat(" + keyCode + ", " + status + ") failed" + e );
+        	   }
+           }
+        }
+        //#debug
+    	System.out.println("keyRepeat: keyCode=" + keyCode + ", key=" + Keypad.key( keyCode) + ", char=" + Keypad.map( keyCode ) );
+    	keyCode = getMidpKeyCode(keyCode, status);
+        keyRepeated(keyCode);
+    	return true; // consume the key event
 	}
     
     //#if polish.hasPointerEvents
+    /**
+     * Handles BlackBerry touch events.
+     * @param message the touch event
+     * @return true when the event was handled
+     */
     protected boolean touchEvent(TouchEvent message) {
     	Screen screen = getPolishScreen();
     	boolean isSuperCalled = false;
     	int x = message.getGlobalX(1);
 		int y = message.getGlobalY(1);
+		int event = message.getEvent();
     	if ( screen != null && forwardEventToNativeField( screen, 0)) {
     		boolean forwardEvent = true;
     		Item item = this.currentItem;
         	Field field = item != null ? this.currentItem._bbField : null;
-        	if (field instanceof PolishTextField) {
+        	boolean isTextField = field instanceof PolishTextField; 
+        	if (isTextField) {
         		int absX = item.getAbsoluteX();
         		int absY = item.getAbsoluteY();
         		if ( x < absX || y < absY || x > absX + item.itemWidth || y > absY + item.itemHeight) {
@@ -1107,12 +1133,11 @@ public abstract class BaseScreen
         	}
         	if (forwardEvent) {
         		isSuperCalled = true;
-	    		if (super.touchEvent( message ) && !focusChangeDetected(screen)) {
+	    		if (super.touchEvent( message ) && !focusChangeDetected(screen) && (!isTextField)) {
 	    			return true;
 	    		}
         	}
     	}
-		int event = message.getEvent();
 		if (event == TouchEvent.CLICK) {
     			pointerPressed( x, y );
     			return true;
@@ -1120,65 +1145,22 @@ public abstract class BaseScreen
     			pointerReleased( x, y );
     			return true;
 		} else {
-			int offset = 0;
-			int scrollHeight = 0;
-			int screenContentHeight = 0;
-			if (screen != null) {
-				offset = screen.getScrollYOffset();
-				scrollHeight = screen.getScrollHeight();
-				screenContentHeight = screen.getScreenContentHeight();
-			}
 			if (event == TouchEvent.MOVE) {
-    			if (screen == null) {
-    				pointerDragged( x, y );
-    			} else if ( scrollHeight > screenContentHeight ){
-					if (y < this.pointerDownY) {
-						// scrolling downwards:
-						if (offset + scrollHeight > screenContentHeight) {
-							screen.setScrollYOffset( this.pointerDownYOffset + (y - this.pointerDownY), true );
-						}
-					} else {
-						if (offset < 0) {
-							screen.setScrollYOffset( this.pointerDownYOffset + (y - this.pointerDownY), true );
-						}
-					}                             
-    			}
-    			invalidate();
-    			return true;
+				pointerDragged( x, y );
+				invalidate();
+				return true;
 			} else if (event == TouchEvent.UP) {
-    			if (System.currentTimeMillis() - this.pointerDownTime < 700 && scrollHeight > screenContentHeight) {
-    				if (screen != null) {
-    					if (y < this.pointerDownY) {
-    						// scrolling downwards:
-    						if (offset + scrollHeight > screenContentHeight) {
-    							screen.setScrollYOffset( offset + (y - this.pointerDownY), true );
-    						}
-    					} else {
-    						if (offset < 0) {
-    							screen.setScrollYOffset( offset + (y - this.pointerDownY), true );
-    						}
-    					}                             
-    				}
-    			}
-    			return true;
+					if (handlePointerTouchUp(x, y)) {
+						invalidate();
+						return true;
+					}
+					return false;
 			} else if (event == TouchEvent.DOWN) {
-    			if ( screen != null ) {
-    				this.pointerDownY = y;
-    				this.pointerDownYOffset = offset; 
-    				this.pointerDownTime = System.currentTimeMillis();
-    				Item item = screen.getItemAt(x, y);
-    				if (item != null) {
-    					if (item instanceof CommandItem) {
-    						CommandItem cmdItem = (CommandItem) item;
-    						if (cmdItem.isOpen()) {
-    							cmdItem.open(false);
-    						}
-    					}
-    					screen.focus(item);
-    				}
-    			}
-    			invalidate();
-    			return true;
+				if (handlePointerTouchDown(x, y)) {
+					invalidate();
+					return true;
+				}
+				return false;
 			}
     	}
 		if (isSuperCalled) {
@@ -1187,7 +1169,13 @@ public abstract class BaseScreen
     	return super.touchEvent(message);
     }
     //#endif
-    
+
+	
+    /**
+     * Determines whether this screen is shown
+     * 
+     * @return true when this screen is currently being shown.
+     */
     public boolean isShown() {
     	return super.isDisplayed();
     }
@@ -1211,7 +1199,7 @@ public abstract class BaseScreen
      * @param item the item that is focused
      * @param repeatSync true when the access should be tried synchronized again when the first trial fails
      */
-    public void notifyFocusSet( Item item, boolean repeatSync ) {
+    public void notifyFocusSet( final Item item, boolean repeatSync ) {
        	if (this.isObscured) {
     		return;
     	}
@@ -1233,7 +1221,7 @@ public abstract class BaseScreen
 	            //System.out.println("Canvas.focus(): focusing field " + item._bbField );
 	            this.dummyFieldHasFocus = false;
 	            //#if polish.hasPointerEvents
-	            	getVirtualKeyboard().setVisibility( VirtualKeyboard.SHOW );
+	            	//getVirtualKeyboard().setVisibility( VirtualKeyboard.SHOW );
 	            //#endif
 	        } else if (!this.dummyFieldHasFocus) {
 	        	this.currentItem = null;
@@ -1242,14 +1230,34 @@ public abstract class BaseScreen
 	            //System.out.println("Canvas.focus(): focusing dummy");
 	        }
     	} catch (IllegalStateException e) {
+    		// On Blackberry we need to run the following code on the UI thread
+    		// to make sure we get no deadlock between Blackberry lock and lock
+    		// on Container.itemsList.
     		if (repeatSync) {
-	            Object lock = MIDlet.getEventLock();
-	            synchronized (lock) {
-	            	notifyFocusSet(item, false);
-	            }
+	    		Display.getInstance().callSerially(new Runnable() {
+	    			public void run()
+	    			{
+				            Object lock = MIDlet.getEventLock();
+				            synchronized (lock) {
+				            	notifyFocusSet(item, false);
+				            }
+	    			}
+	    		});
     		}
     	}
     }
+    
+	/**
+	 * Determines whether a native UI component is shown for the specified item.
+	 * This is currently only implemented for BlackBerry platforms - check for the preprocesing
+	 * symbol polish.blackberry.
+	 * 
+	 * @param item the item that has been focused
+	 */
+	public boolean isNativeUiShownFor( Item item ) {
+		return (this.currentItem == item) && !de.enough.polish.ui.StyleSheet.currentScreen.isMenuOpened();
+	}
+
     
 	/**
 	 * Notifies this screen about an item with a native componen that is removed on BlackBerry platforms.
@@ -1419,11 +1427,18 @@ public abstract class BaseScreen
             synchronized (lock) {
             	deleteRange(1, count -1 );
             }
-			addedItems.clear();
+			this.addedItems.clear();
     	} 
     	clearPermanentNativeItems();
         //#if polish.hasPointerEvents
-	    	getVirtualKeyboard().setVisibility( VirtualKeyboard.HIDE );
+	        if (nextDisplayable instanceof Screen) {
+	            Screen screen = (Screen) nextDisplayable;
+	            if (screen.getCurrentItem() == null || screen.getCurrentItem()._bbField == null) {
+	            	DeviceControl.hideSoftKeyboard();
+	            }
+	        } else {
+            	DeviceControl.hideSoftKeyboard();
+	        }
 	    //#endif
 		//#if !tmp.fullscreen
 	    	removeAllMenuItems();
@@ -1447,7 +1462,7 @@ public abstract class BaseScreen
 	
 	public void addCommand( de.enough.polish.ui.Command cmd ) {
 		//#if !tmp.fullscreen
-			CommandMenuItem item = new CommandMenuItem( cmd, Display.getInstance().getCurrent() );
+			CommandMenuItem item = new CommandMenuItem( cmd, Display.getInstance().getNextOrCurrent() );
 			this.addedMenuItems.add(item);
 			addMenuItem( item );
 		//#endif
@@ -1560,12 +1575,22 @@ class BaseScreenManager extends Manager {
 		for (int i=0; i<getFieldCount(); i++) {
 			Field field = getField(i);
 			if (currentItem != null && field == currentItem._bbField) {
-				layoutChild( field, currentItem.itemWidth, currentItem.itemHeight);
-				setPositionChild( field, currentItem.getAbsoluteX(), currentItem.getAbsoluteY() );
+				int itemW = currentItem.getContentWidth();
+				if (itemW == 0) {
+					itemW = currentItem.itemWidth;
+				}
+				itemW += 2;
+				layoutChild( field, itemW, currentItem.itemHeight);
+				setPositionChild( field, currentItem.getAbsoluteX() + currentItem.getContentX(), currentItem.getAbsoluteY() + currentItem.getContentY() );
 			} else {
 				Item item = getItem( field );
 				if (item != null) {
-					layoutChild( field, item.getContentWidth(), item.getContentHeight());
+					int itemW = currentItem.getContentWidth();
+					if (itemW == 0) {
+						itemW = currentItem.itemWidth;
+					}
+					itemW += 2;
+					layoutChild( field, itemW, item.itemHeight);
 					//layoutChild( field, w, h);
 					setPositionChild( field, item.getAbsoluteX() + item.getContentX(), item.getAbsoluteY() + item.getContentY() );
 				} else {
@@ -1599,8 +1624,26 @@ class BaseScreenManager extends Manager {
 		if (polishScreen == null || !polishScreen.isMenuOpened()) {
 			Item currentItem = baseScreen.currentItem;
 			if (currentItem != null) {
+				Item parent = currentItem;
+				if (polishScreen != null) {
+					while (parent.getParent() != null) {
+						parent = parent.getParent();
+					}
+					if (parent == polishScreen.getRootContainer()) {
+						int x = polishScreen.getScreenContentX();
+						int y = polishScreen.getScreenContentY();
+						int width = polishScreen.getScreenContentWidth();
+						int height = polishScreen.getScreenContentHeight();
+						g.pushContext(x - g.getTranslateX(), y - g.getTranslateY(), width, height, 0, 0 );
+					} else {
+						polishScreen = null; 
+					}
+				}
 				Field field = currentItem._bbField;
 				paintChild( g, field );
+				if (polishScreen != null) {
+					g.popContext();
+				}
 			}
 			if (this.permanentItems != null) {
 				Object[] objects = this.permanentItems.getInternalArray();

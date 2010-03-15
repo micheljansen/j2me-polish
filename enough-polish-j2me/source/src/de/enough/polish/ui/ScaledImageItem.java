@@ -123,7 +123,9 @@ public class ScaledImageItem
 	
 			// Scale only when current image size differs from expected image size. 
 			if ((sourceWidth != targetWidth || sourceHeight != targetWidth)
-				&& (targetWidth != currentImage.getWidth() || targetHeight != currentImage.getHeight())) {
+				&& (targetWidth != currentImage.getWidth() || targetHeight != currentImage.getHeight())
+				&& (targetWidth > 1 && targetHeight > 1)
+			) {
 				//#debug
 				System.out.println("Scaling image from " + sourceWidth + "x" + sourceHeight + " to " + targetWidth + "x" + targetHeight);
 	

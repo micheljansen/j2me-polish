@@ -1,6 +1,7 @@
 //#condition polish.usePolishGui && polish.api.mmapi
 package de.enough.polish.video;
 
+import de.enough.polish.snapshot.SnapshotUtil;
 import de.enough.polish.video.VideoCallback;
 
 import java.io.IOException;
@@ -12,6 +13,7 @@ import javax.microedition.io.Connector;
 	import javax.microedition.io.file.FileConnection;
 //#endif
 import javax.microedition.media.Manager;
+import javax.microedition.media.MediaException;
 import javax.microedition.media.Player;
 import javax.microedition.media.control.FramePositioningControl;
 import javax.microedition.media.control.VideoControl;
@@ -27,9 +29,17 @@ import de.enough.polish.io.Serializable;
  *
  */
 public class VideoSource implements Serializable{
-	private static VideoSource CAPTURE;
+	public static VideoSource CAPTURE; 
 	
-	static final String tag = "videosource";
+	static {
+		try {
+			CAPTURE = new VideoSource("capture",SnapshotUtil.getProtocol(),null);
+		} catch (MediaException e) {
+			CAPTURE = null;
+			//#debug error
+			System.out.println("capture is not supported");
+		}
+	}
 		
 	/**
 	 * the id of the video
@@ -81,20 +91,16 @@ public class VideoSource implements Serializable{
 	 */
 	transient VolumeControl volumeControl;
 	
-	public static VideoSource capture(VideoCallback callback)
-	{
-		return new VideoSource("capture","capture://video",null,callback);
-	}
+	transient VideoContainer parent;
 	
 	/**
 	 * Constructs a basic VideoSource. Private access only.
 	 * @param id the id
 	 * @param callback the callback
 	 */
-	private VideoSource(String id, String mime, VideoCallback callback)
+	private VideoSource(String id, String mime)
 	{
 		this.id = id;
-		this.callback = callback;
 		this.mime = mime;
 	}
 	
@@ -103,11 +109,10 @@ public class VideoSource implements Serializable{
 	 * used for devices supporting progressive download
 	 * @param id the id
 	 * @param file the url of the video file
-	 * @param callback the callback
 	 */
-	public VideoSource(String id, String file, String mime, VideoCallback callback)
+	public VideoSource(String id, String file, String mime)
 	{
-		this(id,mime,callback);
+		this(id,mime);
 		
 		this.file = file;
 	}
@@ -117,11 +122,10 @@ public class VideoSource implements Serializable{
 	 * @param id the id
 	 * @param stream the stream
 	 * @param mime the mimetype
-	 * @param callback the callback
 	 */
-	public VideoSource(String id, InputStream stream, String mime, VideoCallback callback)
+	public VideoSource(String id, InputStream stream, String mime)
 	{
-		this(id,mime,callback);
+		this(id,mime);
 		
 		this.stream = stream;
 	}
@@ -130,25 +134,35 @@ public class VideoSource implements Serializable{
 	 * Construct a VideoSource with a stream, a connection a mimetype and a callback
 	 * @param id the id
 	 * @param stream the stream
-	 * @param connection
+	 * @param connection the connection
 	 * @param mime the mimetype
-	 * @param callback the callback
 	 */
-	public VideoSource(String id, InputStream stream, Connection connection, String mime, VideoCallback callback)
+	public VideoSource(String id, InputStream stream, Connection connection, String mime)
 	{
-		this(id,mime,callback);
+		this(id,mime);
 		
 		this.stream = stream;
 		this.connection = connection;
 	}
 	
-	public void open() throws Exception
+	/**
+	 * Sets the VideoContainer parent
+	 * @param parent the VideoContainer parent
+	 */
+	protected void setParent(VideoContainer parent) {
+		this.parent = parent;
+	}
+	
+	/**
+	 * Opens the specified source
+	 * @throws Exception if an error occurs (obviously)
+	 */
+	protected void open() throws Exception
 	{
 		try {
 			//#if !polish.video.progressive && polish.api.fileconnection
-			if(this.file != null  && !this.file.startsWith("rtsp://"))
+			if(this.file != null  && !this.file.startsWith("rtsp://") && this != CAPTURE)
 			{	
-			
 					FileConnection fileConnection;
 					
 					fileConnection = (FileConnection)Connector.open(this.file, Connector.READ_WRITE);
@@ -173,18 +187,22 @@ public class VideoSource implements Serializable{
 			
 			this.player.prefetch();
 			
-			this.videoControl = (VideoControl) player.getControl("VideoControl");
+			this.videoControl = (VideoControl) this.player.getControl("VideoControl");
 			
-			this.volumeControl = (VolumeControl) player.getControl("VolumeControl");
+			this.volumeControl = (VolumeControl) this.player.getControl("VolumeControl");
 			
-			this.framePositioningControl = (FramePositioningControl) player.getControl("FramePositioningControl");
+			this.framePositioningControl = (FramePositioningControl) this.player.getControl("FramePositioningControl");
 		} catch (Exception e) {
 			//#debug
 			System.out.println("error in VideoSource.open() : " + e.toString());
+			this.parent.onVideoError(e);
 		}
 	}
 	
-	public void close()
+	/**
+	 * Closes the specified source
+	 */
+	protected void close()
 	{
 		try
 		{
@@ -218,47 +236,47 @@ public class VideoSource implements Serializable{
 	 * Returns the id
 	 * @return the id
 	 */
-	public String getId() {
-		return id;
+	protected String getId() {
+		return this.id;
 	}
 	
 	/**
 	 * Returns the file url
 	 * @return the file url
 	 */
-	public String getFile() {
-		return file;
+	protected String getFile() {
+		return this.file;
 	}
 	
 	/**
 	 * Returns the stream
 	 * @return the stream
 	 */
-	public InputStream getStream() {
-		return stream;
+	protected InputStream getStream() {
+		return this.stream;
 	}
 	
 	/**
 	 * Returns the connection
 	 * @return the connection
 	 */
-	public Connection getConnection() {
-		return connection;
+	protected Connection getConnection() {
+		return this.connection;
 	}
 
 	/**
 	 * Returns the mimetype
 	 * @return the mimetype
 	 */
-	public String getMime() {
-		return mime;
+	protected String getMime() {
+		return this.mime;
 	}
 	
 	/**
 	 * Returns the player
 	 * @return the player
 	 */
-	public Player getPlayer() {
+	protected Player getPlayer() {
 		return this.player;
 	}
 	
@@ -266,11 +284,7 @@ public class VideoSource implements Serializable{
 	 * Returns the video control
 	 * @return the video control
 	 */
-	public VideoControl getVideoControl() {
-		System.out.println("source.getVideoControl: " + this.videoControl);
-//		if (this.videoControl == null) {
-//			open();
-//		}
+	protected VideoControl getVideoControl() {
 		return this.videoControl;
 	}
 
@@ -278,18 +292,15 @@ public class VideoSource implements Serializable{
 	 * Returns the frame control
 	 * @return the frame control
 	 */
-	public FramePositioningControl getFramePositioningControl() {
-		return framePositioningControl;
+	protected FramePositioningControl getFramePositioningControl() {
+		return this.framePositioningControl;
 	}
 
 	/**
 	 * Returns the volume control
 	 * @return the volume control
 	 */
-	public VolumeControl getVolumeControl() {
-//		if (this.volumeControl == null) {
-//			open();
-//		}
+	protected VolumeControl getVolumeControl() {
 		return this.volumeControl;
 	}
 }

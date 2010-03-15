@@ -7,6 +7,7 @@ import android.content.Context;
 import android.location.LocationManager;
 import android.os.Looper;
 import de.enough.polish.android.midlet.MIDlet;
+import de.enough.polish.android.midlet.MidletBridge;
 
 public class AndroidLocationProvider extends LocationProvider {
 
@@ -55,7 +56,7 @@ public class AndroidLocationProvider extends LocationProvider {
 	 */
 	public static AndroidLocationProvider getAndroidLocationProviderInstance(Criteria meCriteria) throws LocationException {
 		if(locationManager == null) {
-			locationManager = (LocationManager)MIDlet.midletInstance.getSystemService(Context.LOCATION_SERVICE);
+			locationManager = (LocationManager)MidletBridge.instance.getSystemService(Context.LOCATION_SERVICE);
 		}
 		int powerRequirement;
 		if(meCriteria == null) {

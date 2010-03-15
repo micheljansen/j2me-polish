@@ -133,7 +133,7 @@ extends Browser
 	{
 		if (text.length() > 0)
 		{
-			StringTokenizer st = new StringTokenizer(text, " \n\t");
+			StringTokenizer st = new StringTokenizer(text, " \r\n\t");
 
 			while (st.hasMoreTokens())
 			{

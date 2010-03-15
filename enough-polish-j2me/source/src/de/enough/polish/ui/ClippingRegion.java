@@ -128,5 +128,17 @@ public class ClippingRegion {
 		}
 		return this.bottomY - this.topY;
 	}
+	
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	public String toString() {
+		return 	"ClippingRegion [" +
+				"leftX : " + this.leftX + "," +
+				"topY : " + this.topY + "," +
+				"rightX : " + this.rightX + "," +
+				"bottomY : " + this.bottomY + 
+				"containsRegion : " + this.containsRegion + "]";
+	}
 
 }

@@ -172,17 +172,13 @@ public final class DrawUtil {
 			Object o = g; // this cast is needed, otherwise the compiler will complain
 			              // that javax.microedition.lcdui.Graphics can never be casted
 			              // to de.enough.polish.blackberry.ui.Graphics.
-			//#if polish.useDefaultPackage
-				//# net.rim.device.api.ui.Graphics graphics = g.g;
-				//# graphics.setColor(color);
-				//# graphics.drawPathOutline( xPoints, yPoints, null, null, true);
-			//#else
-				if ( o instanceof de.enough.polish.blackberry.ui.Graphics) {
-					net.rim.device.api.ui.Graphics graphics = ((de.enough.polish.blackberry.ui.Graphics) o).g;
-					graphics.setColor(color);
-					graphics.drawPathOutline( xPoints, yPoints, null, null, true);
-				}				
-			//#endif
+			net.rim.device.api.ui.Graphics graphics = ((de.enough.polish.blackberry.ui.Graphics) o).g;
+			if ((color & 0xff000000) == 0) {
+				color = 0xff000000 | color;
+			}
+			graphics.setColor( color );
+			graphics.setColor(color);
+			graphics.drawPathOutline( xPoints, yPoints, null, null, true);
 		//#elif polish.api.nokia-ui
 			DirectGraphics dg = DirectUtils.getDirectGraphics(g);
 			if ((color & 0xFF000000) == 0) {
@@ -212,7 +208,17 @@ public final class DrawUtil {
 		//#if polish.blackberry && polish.usePolishGui
 			net.rim.device.api.ui.Graphics bbGraphics = null;
 			//# bbGraphics = g.g;
+			if ((color & 0xff000000) == 0) {
+				color = 0xff000000 | color;
+			}
+			bbGraphics.setColor( color );
+			// rest of translation is handled in de.enough.polish.blackberry.ui.Graphics directly, so we have to adjust
+			// this here manually
+            int translateX = g.getTranslateX();
+			int translateY = g.getTranslateY();
+			bbGraphics.translate( translateX, translateY );
 			bbGraphics.drawFilledPath( xPoints, yPoints, null, null);
+			bbGraphics.translate( -translateX, -translateY );
 		//#elif polish.api.nokia-ui
 			DirectGraphics dg = DirectUtils.getDirectGraphics(g);
 			if ((color & 0xFF000000) == 0) {
@@ -563,7 +569,7 @@ public final class DrawUtil {
 	
 	/**
 	 * Creates a gradient of colors.
-	 * This method is highly optimized and only uses bit-shifting and additions (no multitplication nor devision), but
+	 * This method is highly optimized and only uses bit-shifting and additions (no multiplication nor devision), but
 	 * it will create a new integer array in each call. 
 	 * 
 	 * @param startColor the first color
@@ -575,6 +581,9 @@ public final class DrawUtil {
 	 * @see #getGradientColor(int, int, int)
 	 */
 	public static final int[] getGradient( int startColor, int endColor, int steps ) {
+		if (steps <= 0) {
+			return new int[0];
+		}
 		int[] gradient = new int[ steps ];
 		getGradient(startColor, endColor, gradient);
 		return gradient;
@@ -583,7 +592,7 @@ public final class DrawUtil {
 
 	/**
 	 * Creates a gradient of colors.
-	 * This method is highly optimized and only uses bit-shifting and additions (no multitplication nor devision).
+	 * This method is highly optimized and only uses bit-shifting and additions (no multiplication nor devision).
 	 * 
 	 * @param startColor the first color
 	 * @param endColor the last color

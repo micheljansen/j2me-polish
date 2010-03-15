@@ -103,6 +103,14 @@ public final class BitMapFont {
 			//#else
 				in = getClass().getResourceAsStream(this.fontUrl);
 			//#endif
+			if (in == null && !this.fontUrl.endsWith(".bmf")) {
+				this.fontUrl += ".bmf";
+				//#if polish.classes.BitMapFont.resourceLoader:defined
+					//# in = ${polish.classes.BitMapFont.resourceLoader}.getResourceAsStream(this.fontUrl);
+				//#else
+					in = getClass().getResourceAsStream(this.fontUrl);
+				//#endif
+			}
 			initFont(in);
 		} catch (IOException e) {
 			//#debug error

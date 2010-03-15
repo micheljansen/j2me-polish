@@ -12,6 +12,7 @@ import de.enough.polish.android.pim.PIMList;
 
 public class AndroidPim extends PIM {
 
+	public static final String DEFAULT_PIMLIST_NAME_CONTACTS = "contacts";
 	private static ContactListImpl contactListInstance;
 
 	@Override
@@ -21,28 +22,39 @@ public class AndroidPim extends PIM {
 
 	@Override
 	public String[] listPIMLists(int pimListType) {
-		return new String[] {"contacts"};
+		switch(pimListType) {
+			case PIM.CONTACT_LIST:
+				return new String[] {DEFAULT_PIMLIST_NAME_CONTACTS};
+			default:
+				return new String[0];
+		}
 	}
 
 	@Override
 	public PIMList openPIMList(int pimListType, int mode) throws PIMException {
 		switch(pimListType) {
-			case PIM.CONTACT_LIST:
-				if(contactListInstance == null) {
-					contactListInstance = new ContactListImpl("contacts",mode);
-				}
-				return contactListInstance;
-			default:
-				throw new PIMException("The pimListType '"+pimListType+"' is not supported.");
+		case PIM.CONTACT_LIST:
+			return openPIMList(pimListType, mode,DEFAULT_PIMLIST_NAME_CONTACTS);
+		default:
+			throw new PIMException("The pimListType '"+pimListType+"' is not supported.");
 		}
+		
 	}
 
 	@Override
 	public PIMList openPIMList(int pimListType, int mode, String name) throws PIMException {
-		if( ! "contacts".equals(name)) {
-			throw new PIMException("No PIMList with the name '"+name+"' present. See method listPIMLists(int) for available names.");
+		switch(pimListType) {
+		case PIM.CONTACT_LIST:
+			if( ! DEFAULT_PIMLIST_NAME_CONTACTS.equals(name)) {
+				throw new PIMException("A PIMList with name '"+name+"' and type '"+pimListType+"' does not exist.");
+			}
+			if(contactListInstance == null) {
+				contactListInstance = new ContactListImpl(name,mode);
+			}
+			return contactListInstance;
+		default:
+			throw new PIMException("The pimListType '"+pimListType+"' is not supported.");
 		}
-		return openPIMList(pimListType, mode);
 	}
 
 	@Override

@@ -32,6 +32,7 @@ import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 
+import de.enough.polish.ui.StyleSheet;
 import de.enough.polish.ui.TextEffect;
 import de.enough.polish.util.ArrayList;
 import de.enough.polish.util.IntHashMap;
@@ -39,24 +40,9 @@ import de.enough.polish.util.IntHashMap;
 /**
  * <p>Renders textual smileys with images.</p>
  * <p>Activate the smiley text effect by specifying <code>text-effect: smiley;</code> in your polish.css file.
- * <!--
- *    You can finetune the effect with following attributes:
- *    -->
  * </p>
- * <!--
- * <ul>
- * 	 <li><b>text-shadow-color</b>: the color of the shadow, defaults to black.</li>
- * 	 <li><b>text-shadow-orientation</b>: the orientation of the shadow, either bottom-right, bottom-left, top-right, top-left, bottom, top, right or left. Defaults to bottom-right.</li>
- * 	 <li><b>text-shadow-x</b>: use this for finetuning the shadow's horizontal position. Negative values move the shadow to the left.</li>
- * 	 <li><b>text-shadow-y</b>: use this for finetuning the shadow's vertical position. Negative values move the shadow to the top.</li>
- * </ul>
- *    -->
  *
  * <p>Copyright (c) 2009 Enough Software</p>
- * <pre>
- * history
- *        16-July-2007 - Andre creation
- * </pre>
  * @author Andre Schmidt, j2mepolish@enough.de
  * @author Robert Virkus, j2mepolish@enough.de
  */
@@ -77,7 +63,7 @@ public class SmileyTextEffect extends TextEffect {
 			
 			try
 			{
-				this.image = Image.createImage(imageUrl);
+				this.image = StyleSheet.getImage(imageUrl, this, false);
 			}
 			catch(IOException e)
 			{
@@ -88,7 +74,7 @@ public class SmileyTextEffect extends TextEffect {
 			this.description = description;
 		}
 	}
-	
+	/** an array of smileys that are used by all SmileyTextEffects */
 	public static Smiley[] smileyList = null;		
 	static IntHashMap smileyMap;
 	static IntHashMap smileyHash;
@@ -111,6 +97,9 @@ public class SmileyTextEffect extends TextEffect {
 		//#endif
 	}
 	
+	/**
+	 * Intializes this effect and loads smileys.
+	 */
 	public static void init() {
 
 		smileyMap 		= new IntHashMap();
@@ -154,6 +143,10 @@ public class SmileyTextEffect extends TextEffect {
 		isInitialized = true;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.TextEffect#stringWidth(java.lang.String)
+	 */
 	public int stringWidth(String str) {
 		if (!isInitialized) {
 			init();
@@ -188,6 +181,10 @@ public class SmileyTextEffect extends TextEffect {
 		return stringWidth;
 	}
 	
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.TextEffect#getFontHeight()
+	 */
 	public int getFontHeight() {
 		if (!isInitialized) {
 			init();
@@ -205,11 +202,22 @@ public class SmileyTextEffect extends TextEffect {
 		}
 	}
 	
+
 	/* (non-Javadoc)
 	 * @see de.enough.polish.ui.TextEffect#wrap(java.lang.String, int, javax.microedition.lcdui.Font, int, int)
 	 */
 	public String[] wrap(String text, int textColor, Font font,
 			int firstLineWidth, int lineWidth)
+	{
+		return wrap( text, textColor, font, firstLineWidth, lineWidth, -1, null );
+	}
+	
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.TextEffect#wrap(java.lang.String, int, javax.microedition.lcdui.Font, int, int, int, java.lang.String)
+	 */
+	public String[] wrap(String text, int textColor, Font font,
+			int firstLineWidth, int lineWidth, int maxLines, String maxLinesAppendix)
 	{
 		if (!isInitialized) {
 			init();
@@ -271,11 +279,33 @@ public class SmileyTextEffect extends TextEffect {
 		}
 		//#debug
 		System.out.println("Wrapped [" + text + "] into " + lines.size() + " rows.");
+		if (maxLines != -1 && lines.size() > maxLines) {
+			String[] result = (String[]) lines.toArray( new String[ maxLines ]);
+			if (maxLinesAppendix != null) {
+				String lastLine = result[ maxLines -1 ];
+				int width = font.stringWidth(lastLine);
+				int appendixWidth = font.stringWidth(maxLinesAppendix);
+				while (width + appendixWidth > firstLineWidth && lastLine.length() > 0) {
+					lastLine = lastLine.substring(0, lastLine.length() - 1);
+					width = font.stringWidth(lastLine);
+				}
+				result[maxLines-1] = lastLine + maxLinesAppendix;
+			}
+		}
 		return (String[]) lines.toArray( new String[ lines.size() ]);
 	}
 	
 	
-
+	
+	/**
+	 * Wraps a text chunk without linebreaks
+	 * @param value the text chunk
+	 * @param font the used font
+	 * @param completeWidth the complete width of the text chunk
+	 * @param firstLineWidth the available width for the first line
+	 * @param lineWidth the available width for subsequent lines
+	 * @param list for storing the wrapped text lines
+	 */
 	public void wrap( String value, Font font, 
 			int completeWidth, int firstLineWidth, int lineWidth, 
 			ArrayList list ) 

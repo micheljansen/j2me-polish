@@ -160,7 +160,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 		if (this.isInitialized && this.enableScrolling && item != null) {
 			//#debug
 			System.out.println("setScrollHeight(): scrolling to item=" + item + " with y=" + item.relativeY + ", height=" + height);
-			scroll( 0, item );
+			scroll( 0, item, true);
 			this.isScrollRequired = false;
 		}
 	}
@@ -349,7 +349,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 			last.defocus(this.itemStyle);
 			if ( item.appearanceMode != PLAIN ) {
 				if (this.isFocused) {
-					focusChild( index, item, 0 );
+					focusChild( index, item, 0 , true);
 				} else {
 					this.focusedItem = item;
 				}
@@ -437,7 +437,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 				if (index != -1) { 
 					Item item = myItems[ index ];
 					if (item.appearanceMode != PLAIN) {
-						focusChild( index, item, Canvas.DOWN );
+						focusChild( index, item, Canvas.DOWN, true );
 					} else {
 						focusClosestItem(index, myItems);
 					}
@@ -505,7 +505,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 			if (newFocusedIndex < index) {
 				direction = Canvas.UP;
 			}
-			focusChild( newFocusedIndex, newFocusedItem, direction );
+			focusChild( newFocusedIndex, newFocusedItem, direction, true );
 		} else {
 			this.autoFocusEnabled = true;
 			this.focusedItem = null;
@@ -571,7 +571,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 			if (i < index) {
 				direction = Canvas.UP;
 			}
-			focusChild( i, newFocusedItem, direction );
+			focusChild( i, newFocusedItem, direction, true );
 		} else {
 			this.autoFocusEnabled = true;
 			this.focusedItem = null;
@@ -743,7 +743,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 				}
 			
 			}
-			focusChild( index, item, direction );			
+			focusChild( index, item, direction, true );			
 			return true;
 		}
 		return false;
@@ -756,7 +756,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 	 * @param item the item which should be focused
 	 * @param direction the direction, either Canvas.DOWN, Canvas.RIGHT, Canvas.UP, Canvas.LEFT or 0.
 	 */
-	public void focusChild( int index, Item item, int direction ) {
+	public void focusChild( int index, Item item, int direction, boolean force ) {
 		//#debug
 		System.out.println("Container (" + this + "): Focusing item " + index + " (" + item + "), isInitialized=" + this.isInitialized + ", autoFocusEnabled=" + this.autoFocusEnabled );
 		//System.out.println("focus: yOffset=" + this.yOffset + ", targetYOffset=" + this.targetYOffset + ", enableScrolling=" + this.enableScrolling + ", isInitialized=" + this.isInitialized );
@@ -880,7 +880,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
                             itemYTop += (itemYBottom - itemYTop) - height;
                         }
                     }
-					scroll( direction, this.relativeX, itemYTop, item.internalWidth, height );
+					scroll( direction, this.relativeX, itemYTop, item.internalWidth, height, force);
 				}
 			}
 		} else if (getScrollHeight() != -1) { // if (this.enableScrolling) {
@@ -930,7 +930,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 	 * @param item the item for which the scrolling should be adjusted
 	 * @return true when the container was scrolled
 	 */
-	public boolean scroll(int direction, Item item) {
+	public boolean scroll(int direction, Item item, boolean force) {
 		//#debug
 		System.out.println("scroll: scrolling for item " + item  + ", item.internalX=" + item.internalX +", relativeInternalY=" + ( item.relativeY + item.contentY + item.internalY ) + ", relativeY=" + item.relativeY + ", contentY=" + item.contentY + ", internalY=" + item.internalY);
 		if (item.internalX != NO_POSITION_SET 
@@ -940,7 +940,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 			//System.out.println("using internal area for scrolling");
 			int relativeInternalX = item.relativeX + item.contentX + item.internalX;
 			int relativeInternalY = item.relativeY + item.contentY + item.internalY;
-			return scroll(  direction, relativeInternalX, relativeInternalY, item.internalWidth, item.internalHeight );
+			return scroll(  direction, relativeInternalX, relativeInternalY, item.internalWidth, item.internalHeight, force );
 		} else {
 			if (!this.isInitialized && item.relativeY == 0) {
 				// defer scrolling to init at a later stage:
@@ -950,7 +950,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 			} else {				
 				// use item dimensions for scrolling:
 				//System.out.println("use item area for scrolling");
-				return scroll(  direction, item.relativeX, item.relativeY, item.itemWidth, item.itemHeight );
+				return scroll(  direction, item.relativeX, item.relativeY, item.itemWidth, item.itemHeight, force );
 			}
 		}
 	}
@@ -966,14 +966,14 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 	 * @param height the height of the area
 	 * @return true when the scroll request changed the internal scroll offsets
 	 */
-	protected boolean scroll( int direction, int x, int y, int width, int height ) {
+	protected boolean scroll( int direction, int x, int y, int width, int height, boolean force ) {
 		if (!this.enableScrolling) {
 			if (this.parent instanceof Container) {
 				x += this.contentX + this.relativeX;
 				y += this.contentY + this.relativeY;
 				//#debug
 				System.out.println("Forwarding scroll request to parent now with y=" + y);
-				return ((Container)this.parent).scroll(direction, x, y, width, height );
+				return ((Container)this.parent).scroll(direction, x, y, width, height, force );
 			}
 			return false;
 		}
@@ -1078,7 +1078,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 									this.autoFocusEnabled = false;
 									requireScrolling = (this.autoFocusIndex != 0);
 //									int heightBeforeFocus = item.itemHeight;
-									focusChild( i, item, 0 );
+									focusChild( i, item, 0, true );
 									// outcommented on 2008-07-09 because this results in a wrong
 									// available width for items with subsequent wrong getAbsoluteX() coordinates
 //									int availableWidth = item.itemWidth;
@@ -1109,11 +1109,11 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 						//#debug
 						System.out.println("initContent(): scrolling autofocused or scroll-required item for view, focused=" + this.focusedItem);
 						Item item = this.focusedItem;
-						scroll( 0, item.relativeX, item.relativeY, item.itemWidth, item.itemHeight );
+						scroll( 0, item.relativeX, item.relativeY, item.itemWidth, item.itemHeight, true );
 					}
 					else if (this.scrollItem != null) {
 						//System.out.println("initContent(): scrolling scrollItem=" + this.scrollItem);
-						boolean  scrolled = scroll( 0, this.scrollItem );
+						boolean  scrolled = scroll( 0, this.scrollItem, true );
 						if (scrolled) {
 							this.scrollItem = null;
 						}
@@ -1144,7 +1144,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 				if (this.isFocused && this.autoFocusEnabled  && (i >= this.autoFocusIndex ) && (item.appearanceMode != Item.PLAIN)) {
 					this.autoFocusEnabled = false;
 					//System.out.println("Container.initContent: auto-focusing " + i + ": " + item );
-					focusChild( i, item, 0 );
+					focusChild( i, item, 0, true );
 					this.isScrollRequired = (this.isScrollRequired || hasFocusableItem) && (this.autoFocusIndex != 0); // override setting in focus()
 					height = item.getItemHeight(availWidth, availWidth, availHeight);
 					if (!isLayoutShrink) {
@@ -1155,7 +1155,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 					if (this.enableScrolling && this.autoFocusIndex != 0) {
 						//#debug
 						System.out.println("initContent(): scrolling autofocused item, autofocus-index=" + this.autoFocusIndex + ", i=" + i  );
-						scroll( 0, 0, myContentHeight, width, height );
+						scroll( 0, 0, myContentHeight, width, height, true );
 					}
 				} else if (i == this.focusedIndex) {
 					if (isLayoutShrink) {
@@ -1164,7 +1164,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 					if (this.isScrollRequired) {
 						//#debug
 						System.out.println("initContent(): scroll is required - scrolling to y=" + myContentHeight + ", height=" + height);
-						scroll( 0, 0, myContentHeight, width, height );
+						scroll( 0, 0, myContentHeight, width, height, true );
 						this.isScrollRequired = false;
 	//				} else if (item.internalX != NO_POSITION_SET ) {
 	//					// ensure that lines of textfields etc are within the visible area:
@@ -1257,7 +1257,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 				}
 			}
 			if (this.scrollItem != null) {
-				boolean scrolled = scroll( 0, this.scrollItem );
+				boolean scrolled = scroll( 0, this.scrollItem, true );
 				//System.out.println( this + ": scrolled scrollItem " + this.scrollItem + ": " + scrolled);
 				if (scrolled) {
 					this.scrollItem = null;
@@ -1424,7 +1424,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 					(startY < 0  && gameAction == Canvas.UP && keyCode != Canvas.KEY_NUM2) 
 					||  (startY + item.internalHeight > this.scrollHeight  && gameAction == Canvas.DOWN && keyCode != Canvas.KEY_NUM8)
 					)
-					&& (scroll(gameAction, item))
+					&& (scroll(gameAction, item, false))
 				){
 					return true;
 				}
@@ -1436,7 +1436,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 						if (getScrollYOffset() == scrollOffset) {
 							//#debug
 							System.out.println("scrolling focused item that has handled key pressed, item=" + item + ", item.internalY=" + item.internalY);
-							scroll(gameAction, item);
+							scroll(gameAction, item, false);
 						}
 					} else  {
 						if (item.internalX != NO_POSITION_SET) { // && (item.itemHeight > getScrollHeight()  || (item.contentY + item.internalY + item.internalHeight > item.itemHeight) ) ) {
@@ -1621,7 +1621,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 			Item item = this.focusedItem;
 			if ( item.handleKeyReleased( keyCode, gameAction ) ) {
 				if (this.enableScrolling && item.internalX != NO_POSITION_SET) {
-					scroll(gameAction, item);
+					scroll(gameAction, item, false);
 				}
 //				if (this.enableScrolling) {
 //					if (getScrollYOffset() == scrollOffset) {
@@ -1666,7 +1666,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 			Item item = this.focusedItem;
 			if ( item.handleKeyRepeated( keyCode, gameAction ) ) {
 				if (this.enableScrolling && item.internalX != NO_POSITION_SET) {
-					scroll(gameAction, item);
+					scroll(gameAction, item, false);
 				}
 				//#debug
 				System.out.println("Container(" + this + "): handleKeyRepeated consumed by item " + item.getClass().getName() + "/" + item );				
@@ -1813,7 +1813,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 		if (forwardFocus) {
 			direction = Canvas.DOWN;
 		}
-		focusChild(i, item, direction );
+		focusChild(i, item, direction, true );
 		return true;
 	}
 
@@ -2120,7 +2120,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 //				previousStyle = StyleSheet.defaultStyle;
 //			}
 			this.showCommandsHasBeenCalled = false;
-			focusChild( this.focusedIndex, item, direction );
+			focusChild( this.focusedIndex, item, direction, true );
 			// item command handling is now done within showCommands and handleCommand
 			if (!this.showCommandsHasBeenCalled && this.commands != null) {
 				showCommands();
@@ -2400,7 +2400,7 @@ public class FakeContainerCustomItem extends FakeCustomItem {
 			//#debug
 			System.out.println("Container.handlePointerPressed(" + relX + "," + relY + "): found item " + i + "=" + item + " at relative " + itemRelX + "," + itemRelY + ", itemHeight=" + item.itemHeight);
 			// only focus the item when it has not been focused already:
-			focusChild(i, item, 0);
+			focusChild(i, item, 0, true);
 			// let the item also handle the pointer-pressing event:
 			item.handlePointerPressed( itemRelX , itemRelY );
 			return true;			

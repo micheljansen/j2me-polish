@@ -1,15 +1,18 @@
 //#condition polish.usePolishGui && polish.android
 package de.enough.polish.android.lcdui;
 
+import android.app.Dialog;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.os.Looper;
 import android.os.Parcelable;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
 import de.enough.polish.android.midlet.MIDlet;
+import de.enough.polish.android.midlet.MidletBridge;
 import de.enough.polish.ui.Display;
 import de.enough.polish.ui.Displayable;
 import de.enough.polish.ui.NativeDisplay;
@@ -19,7 +22,8 @@ import de.enough.polish.util.ArrayList;
 //#if polish.android1.5
 	import android.view.inputmethod.BaseInputConnection;
 	import android.view.inputmethod.EditorInfo;
-	import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputConnection;
+import android.widget.PopupWindow;
 //#endif
 
 /**
@@ -278,7 +282,7 @@ public class AndroidDisplay extends View implements NativeDisplay, OnTouchListen
 			System.out.println("onSizeChanged with width '"+w+"' and height '"+h+"'");
 			this.currentPolishCanvas.sizeChanged(w,h);
 		}
-		MIDlet.midletInstance.onSizeChanged(w, h);
+		MidletBridge.instance.onSizeChanged(w, h);
 	}
 	
 
@@ -324,10 +328,10 @@ public class AndroidDisplay extends View implements NativeDisplay, OnTouchListen
 					return false;
 				}
 				if (keyCode == KeyEvent.KEYCODE_BACK) {
-					return MIDlet.midletInstance.onBack();
+					return MidletBridge.instance.onBack();
 				}
 				if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER ) {
-					return MIDlet.midletInstance.onOK();
+					return MidletBridge.instance.onOK();
 				}
 			}
 		//#endif
@@ -342,7 +346,7 @@ public class AndroidDisplay extends View implements NativeDisplay, OnTouchListen
 		if(keyCode == KeyEvent.KEYCODE_ENTER && ((event.getFlags() & KeyEvent.FLAG_SOFT_KEYBOARD) == KeyEvent.FLAG_SOFT_KEYBOARD)) {
 			//#debug
 			System.out.println("Hiding Softkeyboard");
-			MIDlet.midletInstance.hideSoftKeyboard();
+			MidletBridge.instance.hideSoftKeyboard();
 			return true;
 		}
 		//#endif
@@ -597,7 +601,7 @@ public class AndroidDisplay extends View implements NativeDisplay, OnTouchListen
 			throw new NullPointerException("The first parameter is null but it must reference an object.");
 		}
 		if(instance == null) {
-			instance = new AndroidDisplay(m);
+			instance = new AndroidDisplay(m._getMidletBridge());
 		}
 		return instance;
 	}
@@ -839,6 +843,22 @@ public class AndroidDisplay extends View implements NativeDisplay, OnTouchListen
 			nextDisplayable._showNotify();
 		}
 		postInvalidate();
+	}
+	
+
+	public void setCurrent(Displayable nextDisplayable) {
+		if (nextDisplayable instanceof Dialog) {
+			if (Looper.myLooper() == null) {
+				Looper.prepare();
+			}
+			Dialog window = (Dialog) nextDisplayable;
+			window.show();
+			return;
+		}
+		if (nextDisplayable instanceof View) {
+			
+		}
+		
 	}
 
 	/**
@@ -1199,8 +1219,6 @@ public class AndroidDisplay extends View implements NativeDisplay, OnTouchListen
 
 	@Override
 	public boolean onCheckIsTextEditor() {
-		//#debug
-		System.out.println("XXX checking if is text editor");
 		return true;
 	}
 
@@ -1211,5 +1229,6 @@ public class AndroidDisplay extends View implements NativeDisplay, OnTouchListen
 		return true;
 	}
 	//#endif
+
 	
 }

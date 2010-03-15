@@ -148,7 +148,7 @@ public final class Manager extends Object
 	 */
 	public static String[] getSupportedContentTypes( String protocol)
 	{
-		return null;
+		return new String[0];
 		//TODO implement getSupportedContentTypes
 	}
 
@@ -181,7 +181,7 @@ public final class Manager extends Object
 	 */
 	public static String[] getSupportedProtocols( String content_type)
 	{
-		return null;
+		return new String[0];
 		//TODO implement getSupportedProtocols
 	}
 

@@ -853,6 +853,7 @@ public class RepeatRule extends java.lang.Object
 	 * @return true if the contents of the RepeatRules are equivalent, false otherwise.
 	 * @see Object#equals(Object)
 	 */
+	@Override
 	public boolean equals(java.lang.Object obj)
 	{
 		return false;

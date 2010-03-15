@@ -39,12 +39,11 @@ import de.enough.polish.util.Locale;
 	import net.rim.device.api.ui.Field;
 	import net.rim.device.api.ui.FieldChangeListener;
 	import net.rim.device.api.ui.UiApplication;
-	import net.rim.device.api.ui.XYRect;
 	import de.enough.polish.blackberry.ui.PolishDateField;
 //#endif
 	
 //#if polish.android
-	import de.enough.polish.android.midlet.MIDlet;
+	import de.enough.polish.android.midlet.MidletBridge;
 //#endif
 	
 import de.enough.polish.calendar.CalendarItem;
@@ -87,7 +86,7 @@ implements
 //#if polish.DateField.useDirectInput == true || polish.Bugs.dateFieldBroken || polish.blackberry || polish.android
 	//#define tmp.directInput
 //#endif
-//#if (!tmp.directInput || (polish.hasPointerEvents && !polish.DateField.useDirectInputForPointer)) && polish.midp
+//#if (!tmp.directInput || (polish.hasPointerEvents && !polish.DateField.useDirectInputForPointer)) && (polish.midp && !polish.blackberry)
 	//#define tmp.useMidp
 //#endif
 //#if polish.DateField.useDirectInputForPointer && polish.hasPointerEvents
@@ -155,8 +154,7 @@ implements
 		private int currentFieldStartIndex;
 		private ItemCommandListener additionalItemCommandListener;
 	//#endif
-	//#if (!tmp.directInput || polish.hasPointerEvents) && polish.midp
-		//#define tmp.useMidp
+	//#if tmp.useMidp
 		private javax.microedition.lcdui.DateField midpDateField; 
 		private de.enough.polish.midp.ui.Form form;
 	//#endif
@@ -166,10 +164,11 @@ implements
 	//#endif
 	//#if polish.blackberry
 		private PolishDateField blackberryDateField;
+		private int bbYAdjust;	
 	//#endif
 	//#if polish.android1.5
 		private long androidFocusedTime;
-		private long androidLastInvalidCharacterTime;	
+		private long androidLastInvalidCharacterTime;
 	//#endif
 		
 		
@@ -297,8 +296,7 @@ implements
 	{
 		//#if tmp.directInput
 			if (this.isFocused && (this.date != null)) {
-				moveForward(false);
-				moveBackward(false);
+				checkOutDate();
 			}
 		//#endif
 		return this.date;
@@ -569,9 +567,10 @@ implements
 			this.text = buffer.toString();
 		} // date != null
 		if (isInitialized()) {
+			this.isTextInitializationRequired = true;
 			setInitialized(false);
-			repaint();
 		}
+		repaint();
 	}
 	
 	public String getDateFormatPattern() {
@@ -678,8 +677,28 @@ implements
 	 */
 	public void paintContent(int x, int y, int leftBorder, int rightBorder, Graphics g) {
 		//#if polish.blackberry
-	    	if (this.isFocused && !StyleSheet.currentScreen.isMenuOpened() ) {
-				this.blackberryDateField.setPaintPosition( x, y );
+			if (getScreen().isNativeUiShownFor(this)) {
+				x--;
+				int diff = this.backgroundWidth - this.originalWidth - this.paddingLeft - this.paddingRight;
+        		//int diff = this.contentWidth - this.originalWidth;
+        		if (diff != 0) {
+        			//#if polish.css.text-layout
+	        			if (this.textLayout != 0) {
+	        				if ((this.textLayout & LAYOUT_CENTER) == LAYOUT_CENTER) {
+	        					x += diff / 2;
+	        				} else if ((this.textLayout & LAYOUT_CENTER) == LAYOUT_RIGHT) {
+	        					x += diff;
+	        				}
+	        			} else 
+        			//#endif
+        			if (this.isLayoutCenter) {
+        				x += diff / 2;
+        			} else if (this.isLayoutRight) {
+        				x += diff;
+        			}
+        		}
+        		y -= this.bbYAdjust;
+				this.blackberryDateField.setPaintPosition( x + g.getTranslateX(), y + g.getTranslateY() );
 			} else {
 				super.paintContent(x, y, leftBorder, rightBorder, g);
 			}
@@ -780,21 +799,18 @@ implements
 				return;
 			}
 			// setFont() triggers a re-layout of the BlackBerry manager, so we need to prepare
-			// some position settings here:
-			int contX = this.contentX;
-			if (this.label != null && this.label.itemWidth + this.contentWidth <= availWidth) {
-				this.contentX += this.label.itemWidth;
-			}
+			// some position settings here (at least on 4.6 this code is wrong):
+//			int contX = this.contentX;
+//			if (this.label != null && this.label.itemWidth + this.contentWidth <= availWidth) {
+//				contX += this.label.itemWidth;
+//			}
 			if (this.style != null) {
 				this.blackberryDateField.setStyle( this.style );
 			}
 			// allow extra pixels for the cursor:
-			this.blackberryDateField.doLayout( this.contentWidth+8, this.contentHeight );
+			this.blackberryDateField.doLayout( this.contentWidth+2, this.contentHeight );
+			this.bbYAdjust = (this.blackberryDateField.getExtent().height - this.contentHeight) / 2;
 			//System.out.println("TextField: editField.getText()="+ this.editField.getText() );
-			XYRect rect = this.blackberryDateField.getExtent();
-			this.contentX = contX;
-			this.contentWidth = rect.width;
-			this.contentHeight = rect.height;
 		//#endif			
 	}
 
@@ -841,8 +857,7 @@ implements
 		this.showCaret = false;
 		//#if tmp.directInput
 			if (this.date != null) {
-				moveForward(false);
-				moveBackward(false);
+				checkOutDate();
 			}
 		//#endif
 		//#if polish.blackberry
@@ -851,6 +866,36 @@ implements
 	}
 	
 	
+	private void checkOutDate() {
+		//#if tmp.directInput && !polish.blackberry
+			String current = this.text;
+			int start = 0;
+			this.currentField = 0;
+			while (start < this.text.length()) {
+				int end = getNextDateTimeEnd(start);
+				this.editIndex = end - 1;
+				this.currentFieldStartIndex = start;
+				checkField( end, false);
+				this.text = current;
+				this.currentField++;
+				start = end + 1;
+			}
+			this.currentField = 0;
+			this.currentFieldStartIndex = 0;
+			this.editIndex = 0;
+		//#endif
+	}
+
+	private int getNextDateTimeEnd(int start) {
+		for (int i=start; i<this.text.length(); i++) {
+			char c = this.text.charAt(i);
+			if (!Character.isDigit(c) && i>start) {
+				return i;
+			}
+		}
+		return this.text.length();
+	}
+
 	//#if polish.android1.5
 	/*
 	 * (non-Javadoc)
@@ -858,7 +903,7 @@ implements
 	 */
 	protected Style focus(Style newStyle, int direction) {
 		if (this.isShown) {
-			MIDlet.midletInstance.showSoftKeyboard();
+			MidletBridge.instance.showSoftKeyboard();
 			this.androidFocusedTime = System.currentTimeMillis();
 		}
 		return super.focus(newStyle, direction);
@@ -872,7 +917,7 @@ implements
 	 */
 	protected void showNotify() {
 		if (this.isFocused) {
-			MIDlet.midletInstance.showSoftKeyboard();
+			MidletBridge.instance.showSoftKeyboard();
 		}
 		super.showNotify();
 	}
@@ -899,7 +944,7 @@ implements
 			int foundNumber = -1;
 
 			//#if polish.TextField.numerickeys.1:defined
-				char insertChar = Integer.toString( keyCode - Canvas.KEY_NUM0 ).charAt( 0 );
+				char insertChar = (char) (' ' + (keyCode - 32)); 
 				String numericKeyStr = null;
 				//#= numericKeyStr = "${polish.TextField.numerickeys.1}";
 				if (numericKeyStr.indexOf(insertChar) != -1) {
@@ -969,9 +1014,11 @@ implements
 				if (this.date == null) {
 					setDate( new Date( System.currentTimeMillis() ) );
 				}
-				char c = Integer.toString( keyCode - Canvas.KEY_NUM0 ).charAt( 0 );
+				char c;
 				if (foundNumber != -1) {
 					c = Integer.toString( foundNumber ).charAt( 0 );
+				} else {
+					c = Integer.toString( keyCode - Canvas.KEY_NUM0 ).charAt( 0 );
 				}
 				String newText = this.text.substring( 0, this.editIndex ) + c;
 				if ( this.editIndex < this.text.length() -1 ) {
@@ -1340,7 +1387,7 @@ implements
 				showDateForm();
 			//#elif polish.android1.5
 				if (this.isFocused && ((System.currentTimeMillis() - this.androidFocusedTime) > 200)) {
-					MIDlet.midletInstance.toggleSoftKeyboard();
+					MidletBridge.instance.toggleSoftKeyboard();
 					return true;
 				}
 			//#endif

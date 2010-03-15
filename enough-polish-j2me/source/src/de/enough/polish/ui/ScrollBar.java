@@ -78,8 +78,9 @@ public class ScrollBar extends Item {
 	private static final int MODE_AREA = 0;
 	private static final int MODE_ITEM = 1;
 	private static final int MODE_PAGE = 2;
+	
 	protected int sliderColor;
-	protected int sliderWidth = 2;
+	protected Dimension sliderWidth;
 	//#if polish.css.scrollbar-slider-image
 		protected Image sliderImage;
 		//#if polish.css.scrollbar-slider-image-repeat
@@ -96,6 +97,7 @@ public class ScrollBar extends Item {
 	protected boolean hideSlider = true;
 	protected int sliderY;
 	protected int sliderHeight;
+	protected int sliderMinHeight = 1;
 	protected int scrollBarHeight;
 	//#if polish.css.opacity && polish.midp2 && polish.css.scrollbar-fadeout
 		//#define tmp.fadeout
@@ -106,7 +108,7 @@ public class ScrollBar extends Item {
 	private int screenAvailableContentHeight;
 	private int screenActualContentHeight;
 	private boolean isPointerDraggedHandled;
-	private boolean isPointerPressedHandled;
+	protected boolean isPointerPressedHandled;
 
 	/**
 	 * Creates a new default scrollbar
@@ -147,31 +149,33 @@ public class ScrollBar extends Item {
 		}
 		int lastSliderY = this.sliderY;
 		int lastSliderHeight = this.sliderHeight;
+		int nextSliderY;
+		int nextSliderHeight;
 		this.isVisible = true;
 		this.scrollBarHeight = screenAvailableHeight;
 		//#if polish.css.scrollbar-slider-mode
 			if ( this.sliderMode == MODE_ITEM && focusedIndex != -1) {
 				//System.out.println("using item");
 				int chunkPerSlider = (screenAvailableHeight << 8) / numberOfItems; 
-				this.sliderY = (chunkPerSlider * focusedIndex) >>> 8;
-				this.sliderHeight = chunkPerSlider >>> 8;
+				nextSliderY = (chunkPerSlider * focusedIndex) >>> 8;
+				nextSliderHeight = chunkPerSlider >>> 8;
 			} else if ( this.sliderMode == MODE_AREA && selectionHeight != 0 ) {
 				// take the currently selected area
 				//System.out.println("using area");
-				this.sliderY = ( (selectionStart - contentYOffset) * screenAvailableHeight) / screenContentHeight;
-				this.sliderHeight = (selectionHeight * screenAvailableHeight) / screenContentHeight;					
+				nextSliderY = ( (selectionStart - contentYOffset) * screenAvailableHeight) / screenContentHeight;
+				nextSliderHeight = (selectionHeight * screenAvailableHeight) / screenContentHeight;					
 			} else {
 		//#endif
 				// use the page dimensions:
 				//System.out.println("using page");
-				this.sliderY = (-contentYOffset  * screenAvailableHeight) / screenContentHeight;
-				this.sliderHeight = (screenAvailableHeight * screenAvailableHeight) / screenContentHeight;
+				nextSliderY = (-contentYOffset  * screenAvailableHeight) / screenContentHeight;
+				nextSliderHeight = (screenAvailableHeight * screenAvailableHeight) / screenContentHeight;
 		//#if polish.css.scrollbar-slider-mode
 			}
 		//#endif
 		//#if polish.css.scrollbar-slider-image && polish.css.scrollbar-slider-image-repeat
 			if (this.repeatSliderImage && this.sliderImage != null ) {
-				if (this.sliderHeight > this.sliderImage.getHeight()) {
+				if (nextSliderHeight > this.sliderImage.getHeight()) {
 					this.repeatSliderNumber = this.sliderHeight / this.sliderImage.getHeight(); 
 				} else {
 					this.repeatSliderNumber = 1;
@@ -179,17 +183,31 @@ public class ScrollBar extends Item {
 			}
 		//#endif
 		//#debug
-		System.out.println("sliderY=" + this.sliderY + ", sliderHeight=" + this.sliderHeight);
+		System.out.println("sliderY=" + nextSliderY + ", sliderHeight=" + this.sliderHeight);
+		if (nextSliderY < 0) {
+			nextSliderHeight += nextSliderY;
+			nextSliderY = 0;
+		}
+		this.sliderY = nextSliderY;
 		if (!this.isInitialized || (this.scrollBarHeight != this.itemHeight) ) {
 			init( screenWidth, screenWidth, screenAvailableHeight );
 		}
 		this.itemHeight = this.scrollBarHeight;
 		//#if tmp.fadeout
-			if (lastSliderY != this.sliderY || lastSliderHeight != this.sliderHeight) {
+			if (lastSliderY != nextSliderY || lastSliderHeight != nextSliderHeight) {
 				this.opacityRgbData = null;
 				this.opacity = this.startOpacity;
 			}
 		//#endif
+			
+		// adjust slider height if it not visible
+		if (nextSliderHeight < this.sliderMinHeight) {
+			nextSliderHeight = this.sliderMinHeight;
+		} else if (nextSliderHeight < 0) {
+			nextSliderHeight = 0;
+		}
+		this.sliderHeight = nextSliderHeight;
+			
 		return this.itemWidth;
 //		int w = this.itemWidth;
 //		//#if tmp.fadeout
@@ -250,7 +268,11 @@ public class ScrollBar extends Item {
 //				this.contentWidth = 0;
 //			}
 //		//#endif
-		this.contentWidth = this.sliderWidth;
+		if (this.sliderWidth != null) {
+			this.contentWidth = this.sliderWidth.getValue(availWidth);
+		} else {
+			this.contentWidth = 2;
+		}
 		this.contentHeight = this.scrollBarHeight - ( this.paddingTop + this.paddingBottom + this.marginTop + this.marginBottom + getBorderWidthTop() + getBorderWidthBottom());
 
 	}
@@ -297,7 +319,7 @@ public class ScrollBar extends Item {
 		}
 		//#if polish.css.scrollbar-slider-background
 			if (this.sliderBackground != null) {
-				this.sliderBackground.paint(x, y + this.sliderY, this.sliderWidth, this.sliderHeight, g);
+				this.sliderBackground.paint(x, y + this.sliderY, this.contentWidth, this.sliderHeight, g);
 			} else {
 		//#endif
 			//#if polish.css.scrollbar-slider-image
@@ -317,7 +339,7 @@ public class ScrollBar extends Item {
 			//#endif
 					//System.out.println("Painting slider at " + x + "," + (y + this.sliderY) + ", width=" + this.sliderWidth + ", height=" + this.sliderHeight);
 					g.setColor( this.sliderColor );
-					g.fillRect(x, y + this.sliderY, this.sliderWidth, this.sliderHeight);
+					g.fillRect(x, y + this.sliderY, this.contentWidth, this.sliderHeight);
 			//#if polish.css.scrollbar-slider-image
 				}
 			//#endif
@@ -349,7 +371,7 @@ public class ScrollBar extends Item {
 			if (url != null) {
 				try {
 					this.sliderImage = StyleSheet.getImage(url, url, false);
-					this.sliderWidth = this.sliderImage.getWidth();
+					this.sliderWidth = new Dimension( this.sliderImage.getWidth() );
 					this.sliderHeight = this.sliderImage.getHeight();
 				} catch (Exception e) {
 					//#debug error
@@ -364,9 +386,9 @@ public class ScrollBar extends Item {
 			//#endif
 		//#endif
 		//#if polish.css.scrollbar-slider-width
-			Integer sliderWidthInt = style.getIntProperty("scrollbar-slider-width");
-			if (sliderWidthInt != null) {
-				this.sliderWidth = sliderWidthInt.intValue();
+			Dimension sliderWidthDim = (Dimension)style.getObjectProperty("scrollbar-slider-width");
+			if (sliderWidthDim != null) {
+				this.sliderWidth = sliderWidthDim; 
 			}
 		//#endif
 		//#if polish.css.scrollbar-slider-color
@@ -400,6 +422,12 @@ public class ScrollBar extends Item {
 			Background bg = (Background) style.getObjectProperty("scrollbar-slider-background");
 			if (bg != null) {
 				this.sliderBackground = bg;
+			}
+		//#endif
+		//#if polish.css.scrollbar-slider-minimum-height
+			Dimension sliderMinHeightInt = (Dimension)style.getObjectProperty("scrollbar-slider-minimum-height");
+			if (sliderMinHeightInt != null) {
+				this.sliderMinHeight = sliderMinHeightInt.getValue(this.contentHeight);
 			}
 		//#endif
 	}

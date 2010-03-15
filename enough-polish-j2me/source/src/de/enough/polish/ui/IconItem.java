@@ -103,7 +103,9 @@ implements ImageConsumer
 	//#if polish.css.icon-filter && polish.midp2
 		private boolean isIconFiltersActive;
 		private RgbImage iconFilterRgbImage;
+		private RgbImage iconFilterProcessedRgbImage;
 		private RgbFilter[] originalIconFilters;
+		private int iconFilterLayout;
 	//#endif
 	
 	/**
@@ -304,6 +306,20 @@ implements ImageConsumer
 		//#endif
 	} 
 	
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.Item#setContentWidth(int)
+	 */
+	protected void setContentWidth( int width ) {
+		if (this.imageAlign == Graphics.TOP || this.imageAlign == Graphics.BOTTOM) {
+			int diff = width - this.contentWidth;
+			this.relativeIconX += diff/2;
+		} else if (this.imageAlign == Graphics.RIGHT) {
+			this.relativeIconX = width - this.imageWidth;
+		}
+		super.setContentWidth(width);
+	}
+	
 	
 	/* (non-Javadoc)
 	 * @see de.enough.polish.ui.Item#paintContent(int, int, javax.microedition.lcdui.Graphics)
@@ -337,20 +353,11 @@ implements ImageConsumer
 							rgbImage = new RgbImage(this.image, true);
 							this.iconFilterRgbImage = rgbImage;
 						} 
-						//System.out.println("painting RGB data for " + this  + ", pixel=" + Integer.toHexString( rgbData[ rgbData.length / 2 ]));
-						for (int i=0; i<this.iconFilters.length; i++) {
-							RgbFilter filter = this.iconFilters[i];
-							rgbImage = filter.process(rgbImage);
-						}
-						int width = rgbImage.getWidth();
-						int height = rgbImage.getHeight();
-						int[] rgb = rgbImage.getRgbData();
-						if (this.isLayoutRight) {
-							x = rightBorder - width;
-						} else if (this.isLayoutCenter) {
-							x =  leftBorder + ((rightBorder - leftBorder)/2) - (width/2);
-						}
-						DrawUtil.drawRgb(rgb, x + this.relativeIconX, y + this.relativeIconY, width, height, true, g );
+						int lo = this.layout;
+						//#if polish.css.icon-filter-layout
+							lo = this.iconFilterLayout;
+						//#endif
+						this.iconFilterProcessedRgbImage = paintFilter( x + this.relativeIconX, y + this.relativeIconY, this.iconFilters, rgbImage, lo, g );
 					} else {
 				//#endif
 						g.drawImage( this.image, x + this.relativeIconX, y + this.relativeIconY, Graphics.TOP | Graphics.LEFT );
@@ -481,7 +488,17 @@ implements ImageConsumer
 						}
 						this.originalIconFilters = filterObjects;
 					}
+				} else if (this.iconFilterRgbImage != null) {
+					this.originalIconFilters = null;
+					this.iconFilters = null;
+					this.iconFilterRgbImage = null;
 				}
+				//#if polish.css.icon-filter-layout
+					Integer iconFilterLayoutInt = style.getIntProperty("icon-filter-layout");
+					if (iconFilterLayoutInt != null) {
+						this.iconFilterLayout = iconFilterLayoutInt.intValue();
+					}
+				//#endif
 			//#endif
 		//#endif	
 		//#if polish.css.icon-inactive
@@ -534,7 +551,7 @@ implements ImageConsumer
 				}
 			//#endif
 				
-			//#if polish.css.icon-filter && polish.midp2
+			//#if polish.css.icon-filter
 				if (this.iconFilters != null) {
 					boolean isActive = false;
 					for (int i=0; i<this.iconFilters.length; i++) {
@@ -635,6 +652,40 @@ implements ImageConsumer
 		setInitialized(false);
 	}
 	
+	
+	//#if polish.css.icon-filter
+	/* (non-Javadoc)
+	 * @see de.enough.polish.ui.Item#addRepaintArea(de.enough.polish.ui.ClippingRegion)
+	 */
+	public void addRepaintArea(ClippingRegion repaintRegion) {
+		super.addRepaintArea(repaintRegion);
+		RgbImage img = this.iconFilterProcessedRgbImage;
+		if (img != null && (img.getHeight() > this.imageHeight || img.getWidth() > this.imageWidth)) {
+			int lo = this.layout;
+			//#if polish.css.icon-filter-layout
+				lo = this.iconFilterLayout;
+			//#endif 
+			int w = img.getWidth();
+			int h = img.getHeight();
+			int horDiff = w - this.imageWidth;
+			int verDiff = h - this.imageHeight;
+			int absX = getAbsoluteX() + this.relativeIconX;
+			int absY = getAbsoluteY() + this.relativeIconY;
+			if ((lo & LAYOUT_CENTER) == LAYOUT_CENTER) {
+				absX -= horDiff / 2;
+			} else if ((lo & LAYOUT_CENTER) == LAYOUT_RIGHT) {
+				absX -= horDiff;
+			}
+			if ((lo & LAYOUT_VCENTER) == LAYOUT_VCENTER) {
+				absY -= verDiff / 2; 
+			} else if ((lo & LAYOUT_VCENTER) == LAYOUT_TOP) {
+				absY -= verDiff; 
+			}
+			repaintRegion.addRegion( absX, absY, w, h );
+		}
+	}
+	//#endif
+
 	//#if polish.midp2 && polish.css.scale-factor
 	/* (non-Javadoc)
 	 * @see de.enough.polish.ui.Item#animate(long, de.enough.polish.ui.ClippingRegion)
@@ -756,6 +807,7 @@ implements ImageConsumer
 		if (!isTextVisible) {
 			this.textLines = null;
 		}
+		this.isTextInitializationRequired = true;
 		setInitialized(false);
 	}
 

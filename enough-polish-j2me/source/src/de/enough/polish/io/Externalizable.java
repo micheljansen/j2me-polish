@@ -52,7 +52,7 @@ public interface Externalizable extends Serializable {
 	 * @param out the output stream to which instance fields should be written
 	 * @throws IOException when writing fails
 	 */
-	public void write( DataOutputStream out )
+	void write( DataOutputStream out )
 	throws IOException;
 	
 	/**
@@ -61,7 +61,7 @@ public interface Externalizable extends Serializable {
 	 * @param in the input stream from which the data is loaded
 	 * @throws IOException when reading fails
 	 */
-	public void read( DataInputStream in )
+	void read( DataInputStream in )
 	throws IOException;
 	
 	/**
@@ -75,7 +75,7 @@ public interface Externalizable extends Serializable {
 	 * @see Serializer#calculateSerialVersionId( Serializable )
 	 * @see Serializer#getClassName( long serialId )
 	 */
-	//public long getSerialVersionId();
+	//long getSerialVersionId();
 	/*
 	 * Problems with this approach:
 	 * 1. we don't want to re-calculate the serial ID each time we serialize an Externalizable class, this can happen with this method,

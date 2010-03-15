@@ -23,16 +23,16 @@ class HttpConnectionImpl implements HttpConnection {
 	private String requestMethod = GET;
 		
 	private URL url;
-	private HttpURLConnection theConnection = null;
-	private InputStream theInput = null;
-	private OutputStream theOutput = null;
+	private HttpURLConnection connection = null;
+	private InputStream input = null;
+	private OutputStream output = null;
 
 		
 	protected HttpConnectionImpl(String url) {
 		if(url == null) {
 			throw new NullPointerException();
 		}
-		checkIsHttpUrl(url);
+		checkIsValidUrl(url);
 		this.urlString = url;
 		try {
 			this.url = new URL(url);
@@ -46,19 +46,20 @@ class HttpConnectionImpl implements HttpConnection {
 	}
 
 	
-	private void checkIsHttpUrl(String url2) {
-		if (url2.indexOf(Connector.HTTP_PREFIX)!=0 || 
-				!(url2.length()>Connector.HTTP_PREFIX.length()) ) {
-			throw new IllegalArgumentException("invalid URL");
+	protected void checkIsValidUrl(String checkUrl) {
+		if (checkUrl.indexOf(Connector.HTTP_PREFIX) != 0 
+				|| (checkUrl.length() <= Connector.HTTP_PREFIX.length()) ) 
+		{
+			throw new IllegalArgumentException("invalid URL " + checkUrl);
 		}
 	}
 	
 	public void close() throws IOException {
-		if(this.theInput != null) {
-			this.theInput.close();
+		if(this.input != null) {
+			this.input.close();
 		}
-		if(this.theOutput != null) {
-			this.theOutput.close();
+		if(this.output != null) {
+			this.output.close();
 		}
 	}
 
@@ -67,13 +68,13 @@ class HttpConnectionImpl implements HttpConnection {
 	}
 
 	public OutputStream openOutputStream() throws IOException {
-		if(this.theOutput != null) {
+		if(this.output != null) {
 			throw new IOException("already opened");
 		}
 		connect();
-		this.theConnection.setDoOutput(true);
-		this.theOutput = this.theConnection.getOutputStream();
-		return this.theOutput;
+		this.connection.setDoOutput(true);
+		this.output = this.connection.getOutputStream();
+		return this.output;
 	}
 	
 	
@@ -85,7 +86,7 @@ class HttpConnectionImpl implements HttpConnection {
 			} else if (requestMethod.equals(POST)) {
 				this.requestMethod = requestMethod;
 			} else {
-				throw new IllegalArgumentException("illegal request method");
+				throw new IllegalArgumentException("illegal request method " + requestMethod);
 			}
 		} else {
 			throw new IOException("already connected");
@@ -94,7 +95,7 @@ class HttpConnectionImpl implements HttpConnection {
 	
 	public void setRequestProperty(String key, String value) throws IOException {
 		connect();
-		this.theConnection.setRequestProperty(key, value);
+		this.connection.setRequestProperty(key, value);
 	}
 	
 	//invoke at any time
@@ -108,7 +109,7 @@ class HttpConnectionImpl implements HttpConnection {
 		} catch (IOException e) {
 			return "";
 		}
-		return this.theConnection.getRequestProperty(key);
+		return this.connection.getRequestProperty(key);
 	}
 	
 	public String getURL() {
@@ -146,8 +147,8 @@ class HttpConnectionImpl implements HttpConnection {
 
 	public InputStream openInputStream() throws IOException {
 		connect();
-		this.theInput = this.theConnection.getInputStream();
-		return this.theInput;
+		this.input = this.connection.getInputStream();
+		return this.input;
 	}
 	
 	public long getLength() {
@@ -156,7 +157,7 @@ class HttpConnectionImpl implements HttpConnection {
 		} catch (IOException ex) {
 			return 0;
 		}
-		return this.theConnection.getHeaderFieldInt("Content-Length", 0);
+		return this.connection.getContentLength();
 	}
 	
 	public String getType() {
@@ -165,7 +166,7 @@ class HttpConnectionImpl implements HttpConnection {
 		} catch (IOException ex) {
 			return "";
 		}
-		return this.theConnection.getContentType();
+		return this.connection.getContentType();
 	}
 	
 	public String getEncoding() {
@@ -174,70 +175,70 @@ class HttpConnectionImpl implements HttpConnection {
 		} catch (IOException ex) {
 			return "";
 		}
-		return this.theConnection.getContentEncoding();
+		return this.connection.getContentEncoding();
 	}
 	
 	public String getHeaderField(String name) throws IOException {
 		connect();
-		return this.theConnection.getHeaderField(name);
+		return this.connection.getHeaderField(name);
 	}
 	
 	public String getHeaderField(int n) throws IOException {
 		connect();
-		return this.theConnection.getHeaderField(n);
+		return this.connection.getHeaderField(n);
 	}
 	
 	public int getResponseCode()  throws IOException {
 		connect();
-		return this.theConnection.getResponseCode();
+		return this.connection.getResponseCode();
 	}
 	
 	public String getResponseMessage() throws IOException {
 		connect();
-		return this.theConnection.getResponseMessage();
+		return this.connection.getResponseMessage();
 	}
 	
 	public int getHeaderFieldInt(String name, int def) throws IOException {
 		connect();
-		return this.theConnection.getHeaderFieldInt(name, def);
+		return this.connection.getHeaderFieldInt(name, def);
 	}
 
 	public long getHeaderFieldDate(String name,	long def) throws IOException {
 		connect();
-		return this.theConnection.getHeaderFieldDate(name, def);
+		return this.connection.getHeaderFieldDate(name, def);
 	}
 
 	public String getHeaderFieldKey(int n) throws IOException {
 		connect();
-		return this.theConnection.getHeaderFieldKey(n);
+		return this.connection.getHeaderFieldKey(n);
 	}
 	
 	public long getDate() throws IOException {
 		connect();
-		return this.theConnection.getDate();
+		return this.connection.getDate();
 	}
 	
 	public long getExpiration() throws IOException {
 		connect();
-		return this.theConnection.getExpiration();
+		return this.connection.getExpiration();
 	}
 	
 	public long getLastModified() throws IOException {
 		connect();
-		return this.theConnection.getLastModified();
+		return this.connection.getLastModified();
 	}
 	
-	private synchronized void connect() throws IOException {
+	protected synchronized void connect() throws IOException {
 		if (this.state == STATE_CONNECTED) {
-			if(this.theConnection == null) {
+			if(this.connection == null) {
 				throw new IOException("Invalid State. No connection in state STATE_CONNECTED");
 			}
 			return;
 		} else {
 			this.state = STATE_CONNECTED;
 		}
-		this.theConnection = (HttpURLConnection)this.url.openConnection();
-		this.theConnection.setRequestMethod(this.requestMethod);
+		this.connection = (HttpURLConnection)this.url.openConnection();
+		this.connection.setRequestMethod(this.requestMethod);
 	}
 	
 }	

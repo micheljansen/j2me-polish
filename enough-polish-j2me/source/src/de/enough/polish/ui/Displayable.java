@@ -250,10 +250,4 @@ public interface Displayable
 	 */
 	public void sizeChanged(int w, int h);
 
-//	/**
-//	 * Retrieves all commands as an object array which may contain null values
-//	 * @return all registered commands, may be null
-//	 */
-//	public Object[] getCommands();
-
 }

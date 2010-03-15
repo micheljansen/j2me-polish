@@ -382,7 +382,7 @@ public class PredictiveAccess implements TrieSetupCallback{
 					this.choicesContainer.add(0, item);
 				}
 			}
-			if (!this.isOpen && this.predictiveType != ARRAY)
+			if (!this.isOpen )
 			{
 				openChoices(this.numberOfMatches > 0);
 			}
@@ -737,8 +737,7 @@ public class PredictiveAccess implements TrieSetupCallback{
 	}
 
 	protected boolean keyNavigation(int keyCode, int gameAction) {
-		if(this.predictiveType != ARRAY)
-		{
+		
 			if (this.isInChoice) {
 				if ( this.choicesContainer.handleKeyPressed(keyCode, gameAction) ) {
 					//#debug
@@ -863,7 +862,6 @@ public class PredictiveAccess implements TrieSetupCallback{
 			}
 
 			this.parent.notifyStateChanged();
-		}
 		
 		return false;
 	}
@@ -883,6 +881,7 @@ public class PredictiveAccess implements TrieSetupCallback{
 	{
 		
 		if (this.numberOfMatches > 0 && this.isOpen) {
+			System.out.println("painting choices");
 			if (this.refreshChoices) {
 				this.elementX = getChoicesX(leftBorder, rightBorder,
 						this.choicesContainer.getItemWidth(
@@ -1088,8 +1087,7 @@ public class PredictiveAccess implements TrieSetupCallback{
 		}
 		if ((gameAction == Canvas.FIRE || gameAction == Canvas.RIGHT) &&
 			!(keyCode >= Canvas.KEY_NUM0 && keyCode <= Canvas.KEY_NUM9) &&
-			this.isOpen &&
-			this.predictiveType != ARRAY) {
+			this.isOpen) {
 			// option has been selected!
 			if(!this.builder.isString(0))
 			{

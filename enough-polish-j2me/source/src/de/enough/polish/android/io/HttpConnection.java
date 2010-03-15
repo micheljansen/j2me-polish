@@ -9,108 +9,108 @@ import java.io.OutputStream;
 
 public interface HttpConnection extends ContentConnection {
 
-	public static final String GET = "GET";
-	public static final String HEAD = "HEAD";
-	public static final String POST = "POST";
-	public static final int HTTP_ACCEPTED = 202;
-	public static final int HTTP_BAD_GATEWAY = 502;
-	public static final int HTTP_BAD_METHOD = 405;
-	public static final int HTTP_BAD_REQUEST = 400;
-	public static final int HTTP_CLIENT_TIMEOUT = 408;
-	public static final int HTTP_CONFLICT = 409;
-	public static final int HTTP_CREATED = 201;
-	public static final int	HTTP_ENTITY_TOO_LARGE = 413;
-	public static final int HTTP_EXPECT_FAILED = 417;
-	public static final int HTTP_FORBIDDEN = 403;
-	public static final int HTTP_GATEWAY_TIMEOUT = 504;
-	public static final int HTTP_GONE = 410;
-	public static final int HTTP_INTERNAL_ERROR = 500;
-	public static final int HTTP_LENGTH_REQUIRED = 411;
-	public static final int HTTP_MOVED_PERM = 301;
-	public static final int HTTP_MOVED_TEMP = 302;
-	public static final int HTTP_MULT_CHOICE = 300;
-	public static final int HTTP_NO_CONTENT = 204;
-	public static final int HTTP_NOT_ACCEPTABLE = 406;
-	public static final int HTTP_NOT_AUTHORITATIVE = 203;
-	public static final int HTTP_NOT_FOUND = 404;
-	public static final int	HTTP_NOT_IMPLEMENTED = 501;
-	public static final int HTTP_NOT_MODIFIED = 304;
-	public static final int HTTP_OK = 200;
-	public static final int HTTP_PARTIAL = 206;
-	public static final int HTTP_PAYMENT_REQUIRED = 402;
-	public static final int HTTP_PRECON_FAILED = 412;
-	public static final int HTTP_PROXY_AUTH = 407;
-	public static final int HTTP_REQ_TOO_LONG = 414;
-	public static final int HTTP_RESET = 205;
-	public static final int HTTP_SEE_OTHER = 303;
-	public static final int HTTP_TEMP_REDIRECT = 307;
-	public static final int HTTP_UNAUTHORIZED = 401;
-	public static final int	HTTP_UNAVAILABLE = 503;
-	public static final int	HTTP_UNSUPPORTED_RANGE = 416;
-	public static final int HTTP_UNSUPPORTED_TYPE = 415;
-	public static final int HTTP_USE_PROXY = 305;
-	public static final int	HTTP_VERSION = 505;
+	String GET = "GET";
+	String HEAD = "HEAD";
+	String POST = "POST";
+	int HTTP_ACCEPTED = 202;
+	int HTTP_BAD_GATEWAY = 502;
+	int HTTP_BAD_METHOD = 405;
+	int HTTP_BAD_REQUEST = 400;
+	int HTTP_CLIENT_TIMEOUT = 408;
+	int HTTP_CONFLICT = 409;
+	int HTTP_CREATED = 201;
+	int	HTTP_ENTITY_TOO_LARGE = 413;
+	int HTTP_EXPECT_FAILED = 417;
+	int HTTP_FORBIDDEN = 403;
+	int HTTP_GATEWAY_TIMEOUT = 504;
+	int HTTP_GONE = 410;
+	int HTTP_INTERNAL_ERROR = 500;
+	int HTTP_LENGTH_REQUIRED = 411;
+	int HTTP_MOVED_PERM = 301;
+	int HTTP_MOVED_TEMP = 302;
+	int HTTP_MULT_CHOICE = 300;
+	int HTTP_NO_CONTENT = 204;
+	int HTTP_NOT_ACCEPTABLE = 406;
+	int HTTP_NOT_AUTHORITATIVE = 203;
+	int HTTP_NOT_FOUND = 404;
+	int	HTTP_NOT_IMPLEMENTED = 501;
+	int HTTP_NOT_MODIFIED = 304;
+	int HTTP_OK = 200;
+	int HTTP_PARTIAL = 206;
+	int HTTP_PAYMENT_REQUIRED = 402;
+	int HTTP_PRECON_FAILED = 412;
+	int HTTP_PROXY_AUTH = 407;
+	int HTTP_REQ_TOO_LONG = 414;
+	int HTTP_RESET = 205;
+	int HTTP_SEE_OTHER = 303;
+	int HTTP_TEMP_REDIRECT = 307;
+	int HTTP_UNAUTHORIZED = 401;
+	int	HTTP_UNAVAILABLE = 503;
+	int	HTTP_UNSUPPORTED_RANGE = 416;
+	int HTTP_UNSUPPORTED_TYPE = 415;
+	int HTTP_USE_PROXY = 305;
+	int	HTTP_VERSION = 505;
 
-	public void close() throws IOException;
+	void close() throws IOException;
 
-	public DataOutputStream openDataOutputStream() throws IOException;
+	DataOutputStream openDataOutputStream() throws IOException;
 
-	public OutputStream openOutputStream() throws IOException;
+	OutputStream openOutputStream() throws IOException;
 	
 	//only in setup state
-	public void setRequestMethod(String method) throws IOException;
+	void setRequestMethod(String method) throws IOException;
 	
-	public void setRequestProperty(String key, String value) throws IOException;
+	void setRequestProperty(String key, String value) throws IOException;
 	
 	//invoke at any time
-	public String getRequestMethod();
+	String getRequestMethod();
 	
-	public String getRequestProperty(String key);
+	String getRequestProperty(String key);
 	
-	public String getURL();
+	String getURL();
 	
-	public String getQuery();
+	String getQuery();
 	
-	public int getPort();
+	int getPort();
 	
-	public String getHost();
+	String getHost();
 	
-	public String getProtocol();
+	String getProtocol();
 		
-	public String getFile();
+	String getFile();
 		
-	public String getRef();
+	String getRef();
 	
 	//these calls force transition to connected state
-	public DataInputStream openDataInputStream() throws IOException;
+	DataInputStream openDataInputStream() throws IOException;
 
-	public InputStream openInputStream() throws IOException;
+	InputStream openInputStream() throws IOException;
 	
-	public long getLength();
+	long getLength();
 	
-	public String getType();
+	String getType();
 	
-	public String getEncoding();
+	String getEncoding();
 	
-	public String getHeaderField(String name) throws IOException;
+	String getHeaderField(String name) throws IOException;
 	
-	public String getHeaderField(int n) throws IOException;
+	String getHeaderField(int n) throws IOException;
 	
-	public int getResponseCode()  throws IOException;
+	int getResponseCode()  throws IOException;
 	
-	public String getResponseMessage() throws IOException;
+	String getResponseMessage() throws IOException;
 	
-	public int getHeaderFieldInt(String name, int def) throws IOException;
+	int getHeaderFieldInt(String name, int def) throws IOException;
 	
-	public long getHeaderFieldDate(String name,
+	long getHeaderFieldDate(String name,
 			long def) throws IOException;
 
-	public String getHeaderFieldKey(int n) throws IOException;
+	String getHeaderFieldKey(int n) throws IOException;
 	
-	public long getDate() throws IOException;
+	long getDate() throws IOException;
 	
-	public long getExpiration() throws IOException;
+	long getExpiration() throws IOException;
 	
-	public long getLastModified() throws IOException;
+	long getLastModified() throws IOException;
 
 }

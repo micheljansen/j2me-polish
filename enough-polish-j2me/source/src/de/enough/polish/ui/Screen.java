@@ -37,6 +37,7 @@ import com.nttdocomo.ui.Frame;
 
 import de.enough.polish.event.AsynchronousMultipleCommandListener;
 import de.enough.polish.event.EventManager;
+import de.enough.polish.event.UiEventListener;
 import de.enough.polish.ui.backgrounds.TranslucentSimpleBackground;
 import de.enough.polish.util.ArrayList;
 import de.enough.polish.util.Locale;
@@ -204,15 +205,16 @@ implements UiElement, Animatable
 	//#if polish.ScreenChangeAnimation.forward:defined
 		protected Command lastTriggeredCommand;
 	//#endif	
+	//#if polish.key.ReturnKey:defined || polish.css.repaint-previous-screen
+		//#define tmp.triggerBackCommand
+		private Command backCommand;
+	//#endif
 	//#if (polish.useMenuFullScreen && tmp.fullScreen) || polish.needsManualMenu
 		//#define tmp.menuFullScreen
 		/** the real, complete height of the screen - this includes title, subtitle, content and menubar */
 		protected int fullScreenHeight;
 		protected int menuBarHeight;
 		private boolean excludeMenuBarForBackground;
-		//#ifdef polish.key.ReturnKey:defined
-			private Command backCommand;
-		//#endif
 		
 		private Command okCommand;
 		//#if polish.key.ClearKey:defined
@@ -314,6 +316,9 @@ implements UiElement, Animatable
 	//#endif
 	//#if polish.css.repaint-previous-screen
 		private boolean repaintPreviousScreen;
+		//#if polish.css.repaint-previous-screen-anchor
+			private int repaintPreviousScreenAnchor;
+		//#endif
 		private Canvas previousScreen;
 		//#if !polish.Bugs.noTranslucencyWithDrawRgb
 			protected Background previousScreenOverlayBackground;
@@ -373,6 +378,10 @@ implements UiElement, Animatable
 	//#if polish.css.move-scroll-backgrounds && (polish.css.scroll-up-background || polish.css.scroll-down-background)
 		private boolean isMoveScrollBackgrounds = true;
 	//#endif
+	//#if polish.css.screen-change-animation	
+		protected boolean enableScreenChangeAnimation = true;
+	//#endif
+	private UiEventListener uiEventListener;
 	
 	/**
 	 * Creates a new screen, this constructor can be used together with the //#style directive.
@@ -680,14 +689,12 @@ implements UiElement, Animatable
 		if (this.border != null) {
 			availableWidth -= this.border.borderWidthLeft + this.border.borderWidthRight;
 		}
-		//#if !tmp.menuFullScreen
-			this.screenHeight = getHeight();
-		//#elif tmp.useExternalMenuBar
-		//#if tmp.usingTitle
-			if (this.title != null) {
-				this.titleHeight = this.title.getItemHeight( availableWidth, availableWidth, this.screenHeight ); 
-			}
-		//#endif
+		//#if tmp.menuFullScreen && tmp.useExternalMenuBar
+			//#if tmp.usingTitle
+				if (this.title != null) {
+					this.titleHeight = this.title.getItemHeight( availableWidth, availableWidth, this.screenHeight ); 
+				}
+			//#endif
 			this.menuBar.relativeY = this.screenHeight;
 		//#endif
 		calculateContentArea( 0, 0, this.screenWidth, this.screenHeight );
@@ -829,7 +836,7 @@ implements UiElement, Animatable
 			borderWidthB = this.border.borderWidthBottom;
 			height -= borderWidthT + borderWidthB;
 		}
-		x += this.marginRight;
+		x += this.marginLeft;
 		width -= this.marginLeft + this.marginRight;
 		y += this.marginTop;
 		height -= this.marginTop + this.marginBottom;
@@ -839,7 +846,7 @@ implements UiElement, Animatable
 //		int containerHeight = 0; 
 		int originalWidth = width;
 		if (cont != null && this.isLayoutHorizontalShrink) {
-			width = cont.getItemWidth(width, width, height);
+			width = cont.getItemWidth(width, width, height) + cont.paddingLeft + cont.paddingRight;
 //			containerHeight = cont.itemHeight;
 //			width = containerWidth;
 		}
@@ -903,47 +910,51 @@ implements UiElement, Animatable
 //			x += this.border.borderWidthLeft;
 //			y += this.border.borderWidthTop;
 //		}
-		Item info = this.infoItem;
-		if (info != null) {
-			//TODO use #if polish.css.clip-screen-info
-				//			if (this.infoItem != null && this.clipScreenInfo) {			
-				//				topHeight += this.infoHeight;
-				//			}
-			this.infoHeight = info.getItemHeight(width, width, height);
-			info.relativeX = x;
-			int iw = info.itemWidth;
-			if (iw < originalWidth) {
-				if (info.isLayoutRight) {
-					info.relativeX += originalWidth - iw;
-				} else if (info.isLayoutCenter) {
-					info.relativeX += (originalWidth - iw)/2;
+		
+		int topHeight = 0;
+		synchronized(this.paintLock) {
+			Item info = this.infoItem;
+			if (info != null) {
+				//TODO use #if polish.css.clip-screen-info
+					//			if (this.infoItem != null && this.clipScreenInfo) {			
+					//				topHeight += this.infoHeight;
+					//			}
+				this.infoHeight = info.getItemHeight(width, width, height);
+				info.relativeX = x;
+				int iw = info.itemWidth;
+				if (iw < originalWidth) {
+					if (info.isLayoutRight) {
+						info.relativeX += originalWidth - iw;
+					} else if (info.isLayoutCenter) {
+						info.relativeX += (originalWidth - iw)/2;
+					}
 				}
 			}
-		}
-		int topHeight = 0;
-		//#if polish.css.clip-screen-info
-			if (this.clipScreenInfo) {
-				topHeight += this.infoHeight;
-			}
-		//#endif
-		if (isTitleAtTop) {
-			topHeight += this.titleHeight;
-		} else {
-			height -= this.titleHeight;
-		}
-		if (isSubTitleAtTop) {
-			topHeight += this.subTitleHeight;
-		} else {
-			height -= this.subTitleHeight;
-		}
-		y += topHeight;
-		if (info != null) {
-			info.relativeY = topHeight;
+			
 			//#if polish.css.clip-screen-info
-			if (this.clipScreenInfo) {
-				info.relativeY = topHeight - this.infoHeight;				
-			}
+				if (this.clipScreenInfo) {
+					topHeight += this.infoHeight;
+				}
 			//#endif
+			if (isTitleAtTop) {
+				topHeight += this.titleHeight;
+			} else {
+				height -= this.titleHeight;
+			}
+			if (isSubTitleAtTop) {
+				topHeight += this.subTitleHeight;
+			} else {
+				height -= this.subTitleHeight;
+			}
+			y += topHeight;
+			if (info != null) {
+				info.relativeY = topHeight;
+				//#if polish.css.clip-screen-info
+				if (this.clipScreenInfo) {
+					info.relativeY = topHeight - this.infoHeight;				
+				}
+				//#endif
+			}
 		}
 		//#if tmp.useExternalMenuBar
 			//TODO use #if polish.css.separate-menubar    
@@ -1053,14 +1064,18 @@ implements UiElement, Animatable
 			//#if polish.css.show-scrollbar
 				} else {
 					// ensure that container is initialized:
-					cont.getItemHeight(originalWidth, originalWidth, height);
+					if(cont != null) {
+						cont.getItemHeight(originalWidth, originalWidth, height);
+					}
 					this.scrollBar.isVisible = false;
 				}
 			//#endif
 			this.scrollBar.relativeX = x + width;
 		//#else 
 			// ensure that container is initialized:
-			cont.getItemHeight(originalWidth, originalWidth, height);
+			if (cont != null) {
+				cont.getItemHeight(originalWidth, originalWidth, height);
+			}
 		//#endif
 		//System.out.println("calculateContentArea: container.itemHeight=" + cont.itemHeight + ", screenHeight=" + this.screenHeight + ", cont.itemWidth=" + cont.itemWidth );
 		//#if polish.css.subtitle-position
@@ -1192,8 +1207,43 @@ implements UiElement, Animatable
 				if (this.isLayoutVerticalShrink) {
 					this.backgroundHeight -= (height - containerHeight);
 				}
-			} else {
-				cont.relativeY = y;
+
+				/*
+				//#if polish.css.repaint-previous-screen && polish.css.repaint-previous-screen-anchor
+					if (this.repaintPreviousScreen && this.repaintPreviousScreenAnchor != 0 && (this.previousScreen instanceof Screen)) {
+						Item previousFocused = ((Screen)this.previousScreen).getCurrentItem();
+						if (previousFocused != null) {
+							while (previousFocused instanceof Container && ((Container)previousFocused).getFocusedItem() != null) {
+								previousFocused = ((Container)previousFocused).getFocusedItem();
+							}
+							int absY = previousFocused.getAbsoluteY();
+							int target;
+							if (this.isLayoutVCenter) {
+								target = Math.max( absY - (containerHeight / 2), y );
+							} else  if (this.isLayoutBottom) {
+								target = absY;
+								if (target + containerHeight > y + height) {
+									target = y + height - containerHeight;
+								}
+							} else {
+								target = Math.max( absY - containerHeight, y );
+							}
+							int diff = target - cont.relativeY; 
+							cont.relativeY = target;
+							if (this.isLayoutVerticalShrink) {
+								this.backgroundY += diff;
+							}
+							//#if tmp.usingTitle
+								if (this.title != null) {
+									this.title.relativeY += diff;
+								}
+							//#endif
+						}
+					}
+					System.out.println("RESULT:::::::::::: cont.relativeY=" + cont.relativeY + ", title.relativeY=" + title.relativeY + ", backgroundY=" + backgroundY + ", bgHeight=" + backgroundHeight);
+				//#endif
+				 * 
+				 */
 			}
 			if (containerHeight > height) {
 				width -= getScrollBarWidth();
@@ -1250,7 +1300,7 @@ implements UiElement, Animatable
 			}
 			//#if polish.blackberry
 				else {
-					Display.getInstance().notifyFocusSet(getCurrentItem());
+					notifyFocusSet(getCurrentItem());
 				}
 			//#endif
 			//#if polish.css.repaint-previous-screen
@@ -1268,7 +1318,7 @@ implements UiElement, Animatable
 					// circumvent using screen change animations as the previous screen:
 					Displayable currentDisplayable = StyleSheet.currentScreen;
 					if (currentDisplayable == null || currentDisplayable == this) {
-						currentDisplayable = Display.getInstance().getCurrent();;
+						currentDisplayable = Display.getInstance().getCurrent();
 					}
 					//#if polish.css.screen-change-animation
 						if (currentDisplayable instanceof ScreenChangeAnimation) {
@@ -1319,6 +1369,13 @@ implements UiElement, Animatable
 							this.previousScreen = (Canvas) currentDisplayable;
 						}
 					}
+					/* TODO: more work required
+					//#if polish.css.repaint-previous-screen-anchor
+						if (this.repaintPreviousScreenAnchor != 0 && this.container != null) {
+							initContent(this.container);
+						}
+					//#endif
+					 */
 				}
 			//#endif
 			
@@ -1535,7 +1592,7 @@ implements UiElement, Animatable
 			this.style.releaseResources();
 		}
 	 	//#debug
-		System.out.println("Setting screen-style for " + getClass().getName() );
+		System.out.println("Setting screen-style for " + this );
 		this.style = style;
 		this.background = style.background;
 		this.border = style.border;
@@ -1753,6 +1810,18 @@ implements UiElement, Animatable
 					}
 				}
 				//#endif
+				/* TODO reenable repaint-previous-screen-anchor
+				//#if polish.css.repaint-previous-screen-anchor
+					if (this.repaintPreviousScreen) {
+						Integer repaintAnchorInt = style.getIntProperty("repaint-previous-screen-anchor");
+						if (repaintAnchorInt != null) {
+							this.repaintPreviousScreenAnchor = repaintAnchorInt.intValue();
+						}
+						
+					}
+				//#endif
+				 * 
+				 */
 			}
 		//#endif
 		//#if polish.css.separate-menubar
@@ -2513,7 +2582,11 @@ implements UiElement, Animatable
 				//#endif
 				)
 			{
-				t.paint( t.relativeX, t.relativeY, t.relativeX, t.relativeX + t.itemWidth, g);
+				int clipY = g.getClipY();
+				if (clipY < t.relativeY + t.itemHeight) {
+					// since most of the cases the title is at the top, this will remove most unecessary paint actions:
+					t.paint( t.relativeX, t.relativeY, t.relativeX, t.relativeX + t.itemWidth, g);
+				}
 			}
 		//#endif
 		Item st = this.subTitle;
@@ -2985,8 +3058,8 @@ implements UiElement, Animatable
 					item.screen = this;
 				} else {
 					this.titleHeight = 0;
-				}
-				if (this.isInitialized && super.isShown()) {
+				}				
+				if (this.isInitialized || super.isShown()) {
 					calculateContentArea( 0, 0, this.screenWidth, this.screenHeight );
 					requestRepaint();
 				}
@@ -3380,26 +3453,17 @@ implements UiElement, Animatable
 						return;
 					}
 				//#endif
-				//#if tmp.menuFullScreen && polish.key.ReturnKey:defined
+				//#if polish.key.ReturnKey:defined && tmp.trackKeyUsage
 					if (!processed) {
 						int backKey = 0;
 						//#= backKey = ${polish.key.ReturnKey};
-						if ( (keyCode == backKey)) {
-							Command cmd = this.backCommand;
-							//#ifdef tmp.useExternalMenuBar
-								if (cmd == null && this.menuBar.size() == 1 && this.menuBar.getCommand(0).getCommandType() == Command.OK ) {
-									cmd = this.menuBar.getCommand(0);
-								}
-							//#endif
-							if (cmd != null) {
-								//#debug
-								System.out.println("keyPressed: invoking commandListener for " + cmd.getLabel() );
-								callCommandListener( cmd );
-								processed = true;
-							}
+						if ( (keyCode == backKey) && this.backCommand != null) {
+							// this is handled in keyReleased():
+							processed = true;
 						}
 					}
 				//#endif
+
 				//#if tmp.trackKeyUsage
 					this.keyPressedProcessed = processed;
 				//#endif
@@ -3552,7 +3616,7 @@ implements UiElement, Animatable
 				//#endif
 				//#if tmp.menuFullScreen
 					// only trigger the OK command with the main FIRE key (keyCode == getKeyCode(FIRE))
-					if (!processed && gameAction == FIRE && keyCode != KEY_NUM5 && this.okCommand != null && !isMenuOpened()) {
+					if (!processed && gameAction == FIRE && keyCode != KEY_NUM5 && this.okCommand != null && !isMenuOpened() && this.container.isFocused) {
 						callCommandListener(this.okCommand);
 						processed = true;
 					} 
@@ -3568,6 +3632,26 @@ implements UiElement, Animatable
 							processed = true;
 						}
 					//#endif
+				//#endif
+				//#if polish.key.ReturnKey:defined
+					if (!processed) {
+						int backKey = 0;
+						//#= backKey = ${polish.key.ReturnKey};
+						if ( (keyCode == backKey)) {
+							Command cmd = this.backCommand;
+							//#ifdef tmp.useExternalMenuBar
+								if (cmd == null && this.menuBar.size() == 1 && this.menuBar.getCommand(0).getCommandType() == Command.OK ) {
+									cmd = this.menuBar.getCommand(0);
+								}
+							//#endif
+							if (cmd != null) {
+								//#debug
+								System.out.println("keyPressed: invoking commandListener for " + cmd.getLabel() );
+								callCommandListener( cmd );
+								processed = true;
+							}
+						}
+					}
 				//#endif
 				//#debug
 				System.out.println("keyReleased handled=" + processed);
@@ -3836,27 +3920,42 @@ implements UiElement, Animatable
 		}
 	//#endif
 
-	//#ifdef tmp.menuFullScreen
 	/* (non-Javadoc)
 	 * @see javax.microedition.lcdui.Displayable#addCommand(javax.microedition.lcdui.Command)
 	 */
 	public void addCommand(Command cmd) {
-		//#if tmp.useExternalMenuBar 
-			Style menuItemStyle = this.menuBar.getMenuItemStyle();
-			if(menuItemStyle != null)
-			{
-				addCommand(cmd, menuItemStyle);
-			}
-			else
-			{
-		//#endif
-			//#style menuitem, menu, default
-			addCommand( cmd );
-		//#if tmp.useExternalMenuBar 
-			}
+		//#ifdef tmp.menuFullScreen
+			//#if tmp.useExternalMenuBar 
+				Style menuItemStyle = this.menuBar.getMenuItemStyle();
+				if(menuItemStyle != null)
+				{
+					addCommand(cmd, menuItemStyle);
+				}
+				else
+				{
+			//#endif
+				//#style menuitem, menu, default
+				addCommand( cmd );
+			//#if tmp.useExternalMenuBar 
+				}
+			//#endif
+		//#else
+				super.addCommand(cmd);
+				//#ifdef tmp.triggerBackCommand
+					int cmdType = cmd.getCommandType();
+					if ((	   cmdType == Command.BACK 
+						//#if ! tmp.triggerCancelCommand
+							|| cmdType == Command.CANCEL 
+						//#endif
+							|| cmdType == Command.EXIT
+						) 
+						&& (this.backCommand == null || cmd.getPriority() < this.backCommand.getPriority())) 
+					{
+						this.backCommand = cmd;
+					}
+				//#endif
 		//#endif
 	}
-	//#endif
 	
 	//#ifdef tmp.menuFullScreen
 	/**
@@ -3889,7 +3988,7 @@ implements UiElement, Animatable
 			}
 		//#endif
 		
-		//#ifdef polish.key.ReturnKey:defined
+		//#ifdef tmp.triggerBackCommand
 			else if ( (cmdType == Command.BACK
 					//#if ! tmp.triggerCancelCommand
 					|| cmdType == Command.CANCEL 
@@ -4047,17 +4146,24 @@ implements UiElement, Animatable
 				requestRepaint();
 			}
 		//#endif
+		//#ifdef tmp.triggerBackCommand
+			this.backCommand = null;
+		//#endif
+		//#ifdef tmp.triggerCancelCommand
+			this.cancelCommand = null;
+		//#endif
 	}
 
 	//#ifdef tmp.menuFullScreen
-	/* (non-Javadoc)
-	 * @see de.enough.polish.ui.Displayable#getCommands()
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.Canvas#getCommands()
 	 */
 	public Object[] getCommands()
 	{
 		Object[] commands;
 		//#ifdef tmp.useExternalMenuBar
-			commands = this.menuBar.commands.getInternalArray();
+			commands = this.menuBar.getCommands();
 		//#else
 			commands = this.menuCommands.getInternalArray();
 		//#endif
@@ -4129,68 +4235,94 @@ implements UiElement, Animatable
 		//#endif
 	}
 	
-	//#ifdef tmp.menuFullScreen
 	/* (non-Javadoc)
 	 * @see javax.microedition.lcdui.Displayable#removeCommand(javax.microedition.lcdui.Command)
 	 */
 	public void removeCommand(Command cmd) {
 		//#debug
 		System.out.println("removing command " + cmd.getLabel() + " from screen " + this );
-		if (this.okCommand == cmd) {
-			this.okCommand = null;
-		}
-		//#ifdef tmp.useExternalMenuBar
-			this.menuBar.removeCommand(cmd);
-			if (this.isInitialized) {
-				initMenuBar();
+		//#ifdef tmp.triggerBackCommand
+			if (cmd == this.backCommand) {
+				this.backCommand = null;
+				Object[] commands = getCommands();
+				for (int i = 0; i < commands.length; i++) {
+					Command command = (Command) commands[i];
+					if (command == null) {
+						break;
+					}
+					int cmdType = command.getCommandType();
+					if (command != cmd && 
+							(cmdType == Command.BACK 
+							//#if ! tmp.triggerCancelCommand
+								|| cmdType == Command.CANCEL 
+							//#endif
+								|| cmdType == Command.EXIT
+							)
+							&& (this.backCommand == null || command.getPriority() < this.backCommand.getPriority())
+					) {
+						this.backCommand = command;
+					}
+				}
 			}
-			if (super.isShown()) {
-				requestRepaint();
+		//#endif
+		//#ifdef tmp.menuFullScreen
+			if (this.okCommand == cmd) {
+				this.okCommand = null;
 			}
-		//#else
-			if (this.menuSingleRightCommand == cmd) {
-				this.menuSingleRightCommand = null;
-				//move another suitable command-item to the right-pos:
-				if (this.menuCommands != null) {
-					Object[] commands = this.menuCommands.getInternalArray();
-					for (int i = 0; i < commands.length; i++) {
-						Command command = (Command) commands[i];
-						if (command == null) {
-							break;
-						}
-						int type = command.getCommandType(); 
-						if ( type == Command.BACK || type == Command.CANCEL ) {
-							//System.out.println("removing right command [" + cmd.getLabel() + "], now using " + command.getLabel() + ", menuContainer=" + this.menuContainer.size() + ", menuCommands=" + this.menuCommands.size() + ",i=" + i );
-							this.menuCommands.remove( i );
-							this.menuContainer.remove( i );
-							this.menuSingleRightCommand = command;
-							break;
+			//#ifdef tmp.useExternalMenuBar
+				this.menuBar.removeCommand(cmd);
+				if (this.isInitialized) {
+					initMenuBar();
+				}
+				if (super.isShown()) {
+					requestRepaint();
+				}
+			//#else
+				if (this.menuSingleRightCommand == cmd) {
+					this.menuSingleRightCommand = null;
+					//move another suitable command-item to the right-pos:
+					if (this.menuCommands != null) {
+						Object[] commands = this.menuCommands.getInternalArray();
+						for (int i = 0; i < commands.length; i++) {
+							Command command = (Command) commands[i];
+							if (command == null) {
+								break;
+							}
+							int type = command.getCommandType(); 
+							if ( type == Command.BACK || type == Command.CANCEL ) {
+								//System.out.println("removing right command [" + cmd.getLabel() + "], now using " + command.getLabel() + ", menuContainer=" + this.menuContainer.size() + ", menuCommands=" + this.menuCommands.size() + ",i=" + i );
+								this.menuCommands.remove( i );
+								this.menuContainer.remove( i );
+								this.menuSingleRightCommand = command;
+								break;
+							}
 						}
 					}
+					updateMenuTexts();
+					requestRepaint();
+					return;
+				}
+				if (this.menuCommands == null) {
+					return;
+				}
+				int index = this.menuCommands.indexOf(cmd);
+				if (index == -1) {
+					return;
+				}
+				this.menuCommands.remove(index);
+				if (this.menuSingleLeftCommand == cmd ) {
+					this.menuSingleLeftCommand = null;
+					this.menuContainer.remove(index);			
+				} else {
+					this.menuContainer.remove(index);			
 				}
 				updateMenuTexts();
 				requestRepaint();
-				return;
-			}
-			if (this.menuCommands == null) {
-				return;
-			}
-			int index = this.menuCommands.indexOf(cmd);
-			if (index == -1) {
-				return;
-			}
-			this.menuCommands.remove(index);
-			if (this.menuSingleLeftCommand == cmd ) {
-				this.menuSingleLeftCommand = null;
-				this.menuContainer.remove(index);			
-			} else {
-				this.menuContainer.remove(index);			
-			}
-			updateMenuTexts();
-			requestRepaint();
+			//#endif
+		//#else
+			super.removeCommand(cmd);
 		//#endif
 	}
-	//#endif
 
 	/**
 	 * Removes the given command as a subcommand.
@@ -4424,12 +4556,7 @@ implements UiElement, Animatable
 				if (command == null) {
 					break;
 				}
-				
-				//#ifdef tmp.useExternalMenuBar
-					this.menuBar.removeCommand(command);
-				//#else
-					removeCommand(command);
-				//#endif
+				removeCommand(command);
 			}
 		}
 		//#ifdef tmp.useExternalMenuBar
@@ -4443,7 +4570,9 @@ implements UiElement, Animatable
 				requestRepaint();
 			}
 		//#endif
-		this.itemCommands.clear();
+		if(this.itemCommands != null) {
+			this.itemCommands.clear();
+		}
 	}
 	
 	/**
@@ -4465,17 +4594,8 @@ implements UiElement, Animatable
 					break;
 				}
 				
-//				if(commandsFromItem != null && commandsFromItem.contains(command))
-//				{
-					//#ifdef tmp.useExternalMenuBar
-						this.menuBar.removeCommand(command);
-					//#else
-						removeCommand(command);
-					//#endif
-						
-//					this.itemCommands.remove(command);
-				}
-//			}
+				removeCommand(command);
+			}
 			this.itemCommands.clear();
 			//#ifdef tmp.useExternalMenuBar
 				if (this.menuBar.size() ==0) {
@@ -4551,9 +4671,11 @@ implements UiElement, Animatable
 		this.lastInteractionTime = System.currentTimeMillis();
 		try {
 			this.ignoreRepaintRequests = true;
+			// let the screen handle the pointer pressing:
+			boolean processed = false;
 			// check for scroll-indicator:
 			//#if tmp.useScrollIndicator
-				if (  this.paintScrollIndicator &&
+				if (  !processed && this.paintScrollIndicator &&
 						(x > this.scrollIndicatorX) &&
 						(y > this.scrollIndicatorY) &&
 						(x < this.scrollIndicatorX + this.scrollIndicatorWidth) &&
@@ -4591,13 +4713,12 @@ implements UiElement, Animatable
 			//#endif
 			//#ifdef tmp.menuFullScreen
 				//#ifdef tmp.useExternalMenuBar
-					if (this.menuBar.handlePointerPressed(x - this.menuBar.relativeX, y - this.menuBar.relativeY)) {
-						repaint();
-						return;
+					if (!processed) {
+						processed = this.menuBar.handlePointerPressed(x - this.menuBar.relativeX, y - this.menuBar.relativeY);
 					}
 				//#else
 					// check if one of the command buttons has been pressed:
-					if (this.menuOpened) {
+					if (!processed && this.menuOpened) {
 						if (y <= this.screenHeight) {
 							// a menu-item could have been selected:
 							if (this.menuContainer.handlePointerPressed( x - this.menuContainer.relativeX, y - this.menuContainer.relativeY )) {
@@ -4614,18 +4735,19 @@ implements UiElement, Animatable
 					}
 				//#endif
 			//#endif
-			if (this.subTitle != null && this.subTitle.handlePointerPressed(x - this.subTitle.relativeX, y - this.subTitle.relativeY)) {
-				repaint();
-				return;
+			if (!processed) {
+				processed = handlePointerPressed( x, y  );
+			}
+			if (!processed && this.subTitle != null) {
+				processed = this.subTitle.handlePointerPressed(x - this.subTitle.relativeX, y - this.subTitle.relativeY);
 			}
 			//#if tmp.useScrollBar
-				if (this.scrollBar.handlePointerPressed( x - this.scrollBar.relativeX, y - this.scrollBar.relativeY )) {
-					//repaint();
-					return;
+				if (!processed) {
+					this.scrollBar.handlePointerPressed( x - this.scrollBar.relativeX, y - this.scrollBar.relativeY );
+				} else {
+					this.scrollBar.isPointerPressedHandled = false;
 				}
 			//#endif
-			// let the screen handle the pointer pressing:
-			boolean processed = handlePointerPressed( x, y  );
 			//#ifdef tmp.usingTitle
 				//boolean processed = handlePointerPressed( x, y - (this.titleHeight + this.infoHeight + this.subTitleHeight) );
 				if (processed || this.isRepaintRequested) {
@@ -4718,15 +4840,15 @@ implements UiElement, Animatable
 		try {
 			this.ignoreRepaintRequests = true;
 			this.lastInteractionTime = System.currentTimeMillis();
+			boolean processed = false;
 			//#ifdef tmp.menuFullScreen
 				//#ifdef tmp.useExternalMenuBar
-					if (this.menuBar.handlePointerReleased(x - this.menuBar.relativeX, y - this.menuBar.relativeY)) {
-						repaint();
-						return;
+					if (!processed) {
+						processed = this.menuBar.handlePointerReleased(x - this.menuBar.relativeX, y - this.menuBar.relativeY);
 					}
 				//#else
 					// check if one of the command buttons has been pressed:
-					if (y > this.screenHeight) {
+					if (!processed && y > this.screenHeight) {
 		//				System.out.println("pointer at x=" + x + ", menuLeftCommandX=" + menuLeftCommandX );
 						if (x >= this.menuRightCommandX && this.menuRightCommandX != 0) {
 							if (this.menuOpened) {
@@ -4734,8 +4856,7 @@ implements UiElement, Animatable
 							} else if (this.menuSingleRightCommand != null) {
 								callCommandListener(this.menuSingleRightCommand );
 							}
-							repaint();
-							return;
+							processed = true;
 						} else if (x <= this.menuLeftCommandX){
 							// assume that the left command has been pressed:
 		//					System.out.println("x <= this.menuLeftCommandX: open=" + this.menuOpened );
@@ -4749,33 +4870,30 @@ implements UiElement, Animatable
 								openMenu( true );
 								//this.menuOpened = true;
 							}
-							repaint();
-							return;
+							processed = true;
 						}
-					} else if (this.menuOpened) {
+					} else if (!processed && this.menuOpened) {
 						// a menu-item could have been selected:
 						//int menuY = this.originalScreenHeight - (this.menuContainer.itemHeight + 1);
 						if (!this.menuContainer.handlePointerReleased( x - this.menuContainer.relativeX, y - this.menuContainer.relativeY )) {
 							openMenu( false );
 						}
-						repaint();
-						return;
+						processed = true;
 					}
 				//#endif
 			//#endif
-			if (this.subTitle != null && this.subTitle.handlePointerReleased(x - this.subTitle.relativeX, y - this.subTitle.relativeY)) {
-				repaint();
-				return;
+			if (!processed) {
+				processed = handlePointerReleased(x, y);
+			}
+			if (!processed && this.subTitle != null) {
+				processed = this.subTitle.handlePointerReleased(x - this.subTitle.relativeX, y - this.subTitle.relativeY);
 			}
 			//#if tmp.useScrollBar
-				if (this.scrollBar.handlePointerReleased( x - this.scrollBar.relativeX, y - this.scrollBar.relativeY )) {
-					repaint();
-					return;
+				if (!processed) {
+					processed = this.scrollBar.handlePointerReleased( x - this.scrollBar.relativeX, y - this.scrollBar.relativeY );
 				}
 			//#endif
 				
-			boolean processed = false;
-			processed = handlePointerReleased(x, y);
 			if (processed || this.isRepaintRequested) {
 				this.isRepaintRequested = false;
 				repaint();
@@ -4785,6 +4903,7 @@ implements UiElement, Animatable
 		}
 	}
 	//#endif
+	
 	
 	/**
 	 * Handles the pressing of a pointer.
@@ -4797,7 +4916,7 @@ implements UiElement, Animatable
 	 *  
 	 * @param x the absolute x position of the pointer pressing
 	 * @param y the absolute y position of the pointer pressing
-	 * @return true when the pressing of the pointer was actually handled by this item.
+	 * @return true when the pressing of the pointer was actually handled by this screen.
 	 */
 	protected boolean handlePointerPressed( int x, int y ) {
 		boolean handled = false;
@@ -4818,9 +4937,9 @@ implements UiElement, Animatable
 	 * The default implementation returns the result of calling the container's
 	 *  handlePointerReleased-method
 	 *  
-	 * @param x the absolute x position of the pointer pressing
-	 * @param y the absolute y position of the pointer pressing
-	 * @return true when releasing the pointer was actually handled by this item.
+	 * @param x the absolute x position of the pointer release
+	 * @param y the absolute y position of the pointer release
+	 * @return true when releasing the pointer was actually handled by this screen.
 	 */
 	protected boolean handlePointerReleased( int x, int y ) {
 		boolean handled = false;
@@ -4828,6 +4947,73 @@ implements UiElement, Animatable
 			if (this.container != null) {
 				handled = this.container.handlePointerReleased(x - this.container.relativeX, y - this.container.relativeY );
 			}
+			//#if polish.css.repaint-previous-screen
+				if (!handled && this.repaintPreviousScreen) {
+					if (this.container != null) {
+						int left = this.container.relativeX;
+						int top = this.container.relativeY;
+						int right = left + this.container.itemWidth;
+						int bottom = top + Math.min( this.contentHeight, this.container.itemHeight );
+						 //#if tmp.usingTitle
+							if (this.title != null) {
+								top -= this.title.itemHeight;
+							}
+						//#endif
+						if (x <= left || y <= top
+							 || x >= right || y >= bottom)
+						{
+							handlePointerReleasedOutsideScreenArea(x, y);
+						}
+					} else {
+						if (x <= this.marginLeft || y <= this.marginTop 
+						 || x >= this.screenWidth - this.marginRight || y >= this.screenHeight - this.marginBottom)
+						{
+							handlePointerReleasedOutsideScreenArea(x, y);
+						}
+					}
+				}
+			//#endif
+		//#endif
+		return handled;
+	}
+	
+	/**
+	 * Handles the release of a pointer outside of this screens area.
+	 * This method should be overwritten only when the polish.hasPointerEvents 
+	 * preprocessing symbol is defined.
+	 * When the screen could handle the pointer release, it needs to 
+	 * return true.
+	 * The default implementation fires the back command, if present. Otherwise it will fire the only command (when there is just one command on this screen).
+	 *  
+	 * @param x the absolute x position of the pointer release (outside of this screen's area)
+	 * @param y the absolute y position of the pointer release (outside of this screen's area)
+	 * @return true when releasing the pointer was actually handled by this screen.
+	 */
+	protected boolean handlePointerReleasedOutsideScreenArea( int x, int y ) {
+		boolean handled = false;
+		//#if polish.hasPointerEvents && polish.css.repaint-previous-screen
+			//#if tmp.triggerBackCommand
+				if (this.backCommand != null) {
+					handleCommand( this.backCommand );
+				} else {
+			//#endif
+					Object[] commands = getCommands();
+					if (commands != null) {
+						int commandCount = 0;
+						for (int i = 0; i < commands.length; i++) {
+							Object cmd = commands[i];
+							if (cmd == null) {
+								break;
+							}
+							commandCount++;
+						}
+						if (commandCount == 1) {
+							handleCommand( (Command) commands[0] );
+						}
+					}
+			//#if tmp.triggerBackCommand
+				}
+			//#endif
 		//#endif
 		return handled;
 	}
@@ -4841,9 +5027,9 @@ implements UiElement, Animatable
 	 * The default implementation returns the result of calling the container's
 	 * handlePointerDragged-method
 	 *  
-	 * @param x the absolute x position of the pointer pressing
-	 * @param y the absolute y position of the pointer pressing
-	 * @return true when the dragging of the pointer was actually handled by this item.
+	 * @param x the absolute x position of the pointer movement
+	 * @param y the absolute y position of the pointer movement
+	 * @return true when the dragging of the pointer was actually handled by this screen.
 	 */
 	protected boolean handlePointerDragged(int x, int y)
 	{
@@ -4856,7 +5042,69 @@ implements UiElement, Animatable
 		return handled;
 	}
 
+	/**
+	 * Handles a touch down/press event. 
+	 * This is similar to a pointerPressed event, however it is only available on devices with screens that differentiate
+	 * between press and touch events (read: BlackBerry Storm).
+	 * 
+	 * @param x the absolute horizontal pixel position of the touch event 
+	 * @param y  the absolute vertical pixel position of the touch event
+	 * @return true when the event was handled
+	 */
+	public boolean handlePointerTouchDown( int x, int y ) {
+		boolean handled = false;
+		//#ifdef polish.hasTouchEvents
+			Container cont = null;
+			if (!isMenuOpened()) {
+				cont = this.container;
+				if (cont != null) {
+					if (cont.handlePointerTouchDown(x - cont.relativeX, y - cont.relativeY)) {
+						return true;
+					}
+				}
+			}
+			Item item = getItemAt(x, y);
+			if (item != null) {
+				int offset = getScrollYOffset();
+				focus(item);
+				if (offset != getScrollYOffset()) {
+					setScrollYOffset(offset, false );
+				}
+				notifyScreenStateChanged();
+			}
+			// stop scrolling:
+			if (cont != null) {
+				cont.setScrollYOffset(cont.yOffset, false);
+			}
+			handled = true;
+		//#endif
+		return handled;
+	}
+	
 
+	/**
+	 * Handles a touch up/release event. 
+	 * This is similar to a pointerReleased event, however it is only available on devices with screens that differentiate
+	 * between press and touch events (read: BlackBerry Storm).
+	 * 
+	 * @param x the absolute horizontal pixel position of the touch event 
+	 * @param y  the absolute vertical pixel position of the touch event
+	 * @return true when the event was handled
+	 */
+	public boolean handlePointerTouchUp( int x, int y ) {
+		boolean handled = false;
+		//#ifdef polish.hasTouchEvents
+			this.lastInteractionTime = System.currentTimeMillis();
+			Container cont = this.container;
+			if (cont != null) {
+				if (cont.handlePointerTouchUp(x - cont.relativeX, y - cont.relativeY)) {
+					return true;
+				}
+			}
+			handled = true;
+		//#endif
+		return handled;
+	}
 	
 	/**
 	 * Tries to handle the specified command.
@@ -4883,7 +5131,10 @@ implements UiElement, Animatable
 			//#debug
 			System.out.println("ForwardCommandListener: processing command " + cmd.getLabel() + " for item " + item + " and screen " + Screen.this + ", itemCommandListener=" + (item == null ? null : item.itemCommandListener) + ", real commandListener=" + this.realCommandListener);
 			if ( item != null && item.handleCommand(cmd)) {
-				//System.out.println("command processed by item (or subitem) " + item);
+				return true;
+			}
+			// try to invoke command specific listener:
+			if (cmd.commandAction(item, this)) {
 				return true;
 			}
 			// now invoke the usual command listener:
@@ -5023,6 +5274,9 @@ implements UiElement, Animatable
 		int index;
 		if (item == null) {
 			index = -1;
+		} else if (item.isFocused){
+			// ignore:
+			return;
 		} else {
 			index = this.container.itemsList.indexOf(item);
 			if (index == -1) {
@@ -5041,7 +5295,7 @@ implements UiElement, Animatable
 								if (child.appearanceMode != Item.PLAIN || force ) {
 									Container parentContainer = (Container) child.parent;
 									//System.out.println("focusing " + child + " in parent " + parentContainer);
-									parentContainer.focusChild( parentContainer.indexOf(child), child, 0 );
+									parentContainer.focusChild( parentContainer.indexOf(child), child, 0, force );
 								} else {
 									//System.out.println("child is not focussable: " + child);
 									return;
@@ -5080,7 +5334,7 @@ implements UiElement, Animatable
 	 * @param index the index of the item which is already shown on this screen.
 	 */
 	public void focus(int index) {
-		focus( index, false );
+		focus( index, true );
 	}
 	
 	/**
@@ -5105,10 +5359,14 @@ implements UiElement, Animatable
 	 * @param force true when the item should be focused even when it is inactive (like a label for example)
 	 */
 	public void focus(int index, Item item, boolean force) {
+		if (item != null && item.isFocused){
+			// ignore refocusing of already focused item:
+			return;
+		}
 		if (index != -1 && item != null && (item.appearanceMode != Item.PLAIN || force ) ) {
 			//#debug
 			System.out.println("Screen: focusing item " + index + ": " + item );
-			this.container.focusChild( index, item, 0 );
+			this.container.focusChild( index, item, 0, force );
 			if (index == 0) {
 				this.container.setScrollYOffset( 0, false );
 			}
@@ -5217,6 +5475,7 @@ implements UiElement, Animatable
 			if (this.container != null) {
 				this.container.releaseResources();
 			}
+					
 			//#ifdef tmp.menuFullScreen
 				//#ifdef tmp.useExternalMenuBar
 					this.menuBar.releaseResources();
@@ -5235,6 +5494,31 @@ implements UiElement, Animatable
 				}
 			//#endif
 			this.isResourcesReleased = true;
+		}
+	}
+	
+	/**
+	 * Destroys the screen
+	 */
+	public void destroy() {
+		releaseResources();
+		
+		this.container.destroy();
+		
+		if(this.screenStateListener != null) {
+			this.screenStateListener = null;
+		}
+		
+		if(this.itemStateListener != null) {
+			this.itemStateListener = null;
+		}
+		
+		if(this.forwardCommandListener != null ) {
+			this.forwardCommandListener = null;
+		}
+		
+		if(this.realCommandListener != null) {
+			this.realCommandListener = null;	
 		}
 	}
 
@@ -5521,7 +5805,16 @@ implements UiElement, Animatable
 	 * @return the fully available height.
 	 */
 	public int getScreenFullHeight() {
-		return Display.getScreenHeight();
+		int height;
+		//#ifdef tmp.menuFullScreen
+			height = this.fullScreenHeight;
+		//#else
+			height = this.screenHeight;
+		//#endif
+		if (height == 0) {
+			height = Display.getScreenHeight();
+		}
+		return height;
 	}
 	
 	/**
@@ -5601,7 +5894,7 @@ implements UiElement, Animatable
 	 */
 	public int getScrollHeight() {
 		if (this.container != null) {
-			return this.container.itemHeight;
+			return this.container.getItemAreaHeight();
 		}
 		return 0;
 	}
@@ -5745,6 +6038,17 @@ implements UiElement, Animatable
 		//#if polish.blackberry
 			Display.getInstance().notifyFocusSet(item);
 		//#endif
+	}
+	
+	/**
+	 * Determines whether a native UI component is shown for the specified item.
+	 * This is currently only implemented for BlackBerry platforms - check for the preprocesing
+	 * symbol polish.blackberry.
+	 * 
+	 * @param item the item that has been focused
+	 */
+	protected boolean isNativeUiShownFor( Item item ) {
+		return Display.getInstance().isNativeUiShownFor(item);
 	}
 	
 	/**
@@ -5936,6 +6240,30 @@ implements UiElement, Animatable
 		return this.titleHeight;
 	}
 
+	/**
+	 * Sets the last interaction time for this screen.
+	 * This is being used for stopping animations after an activity timeout.
+	 * @param currentTimeMillis the time for the last interaction, typically System.currentTimeMillis()
+	 */
+	public void setLastInteractionTime(long currentTimeMillis) {
+		this.lastInteractionTime = currentTimeMillis;
+	}
+	
+	/**
+	 * Sets an UiEventListener for this screen and its items.
+	 * @param listener the listener, use null to remove a listener
+	 */
+	public void setUiEventListener(UiEventListener listener) {
+		this.uiEventListener = listener;
+	}
+
+	/**
+	 * Retrieves the UiEventListener for this screen
+	 * @return the listener or null, if none has been registered
+	 */
+	public UiEventListener getUiEventListener() {
+		return this.uiEventListener;
+	}
 
 
 //#ifdef polish.Screen.additionalMethods:defined

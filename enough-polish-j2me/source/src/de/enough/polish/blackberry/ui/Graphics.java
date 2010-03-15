@@ -1125,7 +1125,7 @@ public class Graphics extends Object
 	 */
 	public void drawSubstring( String str, int offset, int len, int x, int y, int anchor)
 	{
-		drawString( str.substring(offset, len), x, y, anchor );
+		drawString( str.substring(offset, offset + len), x, y, anchor );
 	}
 
 	/**
@@ -1510,9 +1510,12 @@ public class Graphics extends Object
 	public void drawRGB(int[] rgbData, int offset, int scanlength, int x, int y, int width, int height, boolean processAlpha)
 	{
 		 if ( processAlpha ) {
+			 /*
              Bitmap bitmap = new Bitmap( Bitmap.ROWWISE_16BIT_COLOR, width, height ); 
              bitmap.setARGB(rgbData, offset, scanlength, 0, 0, width, height);
              this.g.drawBitmap(x + this.translateX, y + this.translateY, width, height, bitmap, 0, 0 );
+             */
+			 this.g.drawARGB(rgbData, offset, scanlength, x + this.translateX, y + this.translateY, width, height);
 	     } else {
 	    	 this.g.drawRGB(rgbData, offset, scanlength, x + this.translateX, y + this.translateY, width, height);
 	     }

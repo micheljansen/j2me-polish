@@ -33,6 +33,7 @@ import javax.microedition.lcdui.Image;
 
 //#if polish.android1.5
 	import de.enough.polish.android.midlet.MIDlet;
+import de.enough.polish.android.midlet.MidletBridge;
 //#endif
 import de.enough.polish.util.ArrayList;
 import de.enough.polish.util.Locale;
@@ -836,10 +837,18 @@ implements Choice
 	public void deleteAll()
 	{
 		clear();
+	}
+	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.Container#clear()
+	 */
+	public void clear() {
 		this.selectedIndex = -1;
+		super.clear();
 	}
 
-	
 	/**
 	 * Gets a boolean value indicating whether this element is selected.
 	 * 
@@ -986,7 +995,7 @@ implements Choice
 				
 				if (this.isFocused) {
 					if ( isInitialized()) {
-						focusChild( elementNum, newSelected, 0 );
+						focusChild( elementNum, newSelected, 0, true );
 					} else {
 						this.autoFocusEnabled = true;
 						this.autoFocusIndex = elementNum;
@@ -1300,7 +1309,7 @@ implements Choice
 		}
 		//#if polish.android1.5
 			if (this.isShown) {
-				MIDlet.midletInstance.hideSoftKeyboard();
+				MidletBridge.instance.hideSoftKeyboard();
 			}
 		//#endif
 		getScreen().addCommandsLayer( new Command[]{ StyleSheet.OK_CMD, StyleSheet.CANCEL_CMD} );
@@ -1598,6 +1607,9 @@ implements Choice
 								selectCmd = List.SELECT_COMMAND;
 							}
 							scr.callCommandListener( selectCmd );
+							//#if polish.MenuBar.Position == invisible
+								handled = true;
+							//#endif
 						}
 					}
 				}
@@ -1634,7 +1646,7 @@ implements Choice
 		System.out.println("ChoiceGroup.handlePointerPressed(" + relX + ", " + relY + ") for " + this );
 		int index = this.focusedIndex;
 		boolean handled = super.handlePointerPressed(relX, relY); // focuses the appropriate item, might change this.focusedIndex...
-		relY -= this.yOffset + this.contentY;
+		relY -= this.contentY;
 		relX -= this.contentX;
 		boolean triggerKey = (    
 				(handled || isInItemArea(relX, relY, this.focusedItem))
@@ -1644,7 +1656,6 @@ implements Choice
 		);
 		//#debug
 		System.out.println("triggerKey=" + triggerKey + ", handled=" + handled + ", index=" + index + ", focusedIndex=" + this.focusedIndex + ", focusedItem=" + this.focusedItem  + ", isInItemArea(relX, relY, this.focusedItem)=" + isInItemArea(relX, relY, this.focusedItem));
-		relY += this.yOffset;
 		if (  triggerKey )  
 		{
 			this.isPointerReleaseShouldTriggerKeyRelease = true;
@@ -1683,7 +1694,7 @@ implements Choice
 			if (!handled) {
 				//#ifdef tmp.supportViewType
 					if (this.containerView != null) {
-						handled = this.containerView.handlePointerReleased(relX - this.contentX, relY - this.yOffset - this.contentY);
+						handled = this.containerView.handlePointerReleased(relX, relY - this.yOffset);
 					}
 				//#endif
 //				System.out.println("isInItemArea(relX - this.contentX, relY - this.yOffset - this.contentY, this.focusedItem)=" + isInItemArea(relX - this.contentX, relY - this.yOffset - this.contentY, this.focusedItem));

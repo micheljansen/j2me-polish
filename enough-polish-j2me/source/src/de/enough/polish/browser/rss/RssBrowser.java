@@ -49,6 +49,7 @@ public class RssBrowser
 {
 	private ItemCommandListener rssItemCommandListener;
 	private RssTagHandler rssTagHandler;
+	private Command linkCommand = HtmlTagHandler.CMD_LINK;
 
 	/**
 	 * Creates a new RSS reader
@@ -115,17 +116,26 @@ public class RssBrowser
 	}
 
 	/**
-	 * @return
+	 * @return the ItemCommandListener for the RssItems
 	 */
 	public ItemCommandListener getRssItemCommandListener() {
 		return this.rssItemCommandListener;
 	}
 
 	/**
-	 * @return
+	 * @return the Command triggered by links
 	 */
 	public Command getLinkCommand() {
-		return HtmlTagHandler.CMD_LINK;
+		return this.linkCommand  ;
+	}
+	
+	/**
+	 * Sets the command that is used for opening &lt;a href...&gt; links. 
+	 * @param link the new command
+	 */
+	public void setLinkCommand( Command link ) {
+		this.linkCommand = link;
+		this.rssTagHandler.setLinkCommand( link );
 	}
 	
 	
@@ -153,9 +163,8 @@ public class RssBrowser
 		{
 			Item rssItem = getFocusedItem();
 			String rssUrl = (String) rssItem.getAttribute(HtmlTagHandler.ATTR_HREF);
-			System.out.println("going to article, url=" + rssUrl);
 			if (rssUrl != null) {
-				this.rssTagHandler.onViewUrl(rssUrl);
+				this.rssTagHandler.onViewUrl(rssUrl, rssItem);
 			}
 			getRssItemCommandListener().commandAction(command, rssItem);
 			return true;

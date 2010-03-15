@@ -30,6 +30,7 @@ import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 
 import de.enough.polish.event.EventManager;
+import de.enough.polish.event.UiEventListener;
 import de.enough.polish.util.ArrayList;
 import de.enough.polish.util.HashMap;
 
@@ -140,6 +141,25 @@ public final class UiAccess {
 	 * @see #setInputMode(javax.microedition.lcdui.TextField, int)
 	 */
 	public static final int MODE_NATIVE = 4;
+	
+	/**
+	 * A constant for using the FIXED_POINT_DECIMAL constraint on TextFields.
+	 * Sample usage:
+	 * <pre>
+	 * TextField cashRegister = new TextField("Price: ",  null, 5, UiAccess.CONSTRAINT_FIXED_POINT_DECIMAL );
+	 * </pre>
+	 * @see TextField#FIXED_POINT_DECIMAL
+	 * @see #setNumberOfDecimalFractions(TextField, int)
+	 * @see #getNumberOfDecimalFractions(TextField)
+	 */
+	public static final int CONSTRAINT_FIXED_POINT_DECIMAL =
+		//#if polish.usePolishGui
+			TextField.FIXED_POINT_DECIMAL
+		//#else
+			//# 20
+		//#endif
+	;
+	
 	private static HashMap attributes;
 
 	/**
@@ -1583,6 +1603,59 @@ public final class UiAccess {
 		field.setCaretPosition( position ); 
 	}
 	//#endif
+	
+	//#if polish.midp
+	/**
+	 * Sets the number of decimal fractions that are allowed for FIXED_POINT_DECIMAL constrained TextFields
+	 * @param field the textfield the textfield for which the fractions are set
+	 * @param number the number (defaults to 2)
+	 * @see UiAccess#CONSTRAINT_FIXED_POINT_DECIMAL
+	 * @see TextField#FIXED_POINT_DECIMAL
+	 */
+	public static void setNumberOfDecimalFractions( javax.microedition.lcdui.TextField field, int number ) {
+		// ignore
+	}
+	//#endif
+	
+	//#if polish.usePolishGui
+	/**
+	 * Sets the number of decimal fractions that are allowed for FIXED_POINT_DECIMAL constrained TextFields
+	 * @param field the textfield the textfield for which the fractions are set
+	 * @param number the number (defaults to 2)
+	 * @see UiAccess#CONSTRAINT_FIXED_POINT_DECIMAL
+	 * @see TextField#FIXED_POINT_DECIMAL
+	 */
+	public static void setNumberOfDecimalFractions( TextField field, int number ) {
+		field.setNumberOfDecimalFractions( number ); 
+	}
+	//#endif
+	
+	//#if polish.midp
+	/**
+	 * Retrieves the number of decimal fractions that are allowed for FIXED_POINT_DECIMAL constrained TextFields
+	 * @param field the textfield the textfield for which the fractions are set
+	 * @return the number (defaults to 2)
+	 * @see UiAccess#CONSTRAINT_FIXED_POINT_DECIMAL
+	 * @see TextField#FIXED_POINT_DECIMAL
+	 */
+	public static int getNumberOfDecimalFractions( javax.microedition.lcdui.TextField field ) {
+		return 2;
+	}
+	//#endif
+	
+	//#if polish.usePolishGui
+	/**
+	 * Retrieves the number of decimal fractions that are allowed for FIXED_POINT_DECIMAL constrained TextFields
+	 * @param field the textfield the textfield for which the fractions are set
+	 * @return number the number (defaults to 2)
+	 * @see UiAccess#CONSTRAINT_FIXED_POINT_DECIMAL
+	 * @see TextField#FIXED_POINT_DECIMAL
+	 */
+	public static int getNumberOfDecimalFractions( TextField field ) {
+		return field.getNumberOfDecimalFractions(); 
+	}
+	//#endif
+
 
 	//#if polish.midp
 	/**
@@ -2228,7 +2301,7 @@ public final class UiAccess {
      */
     public static void scrollTo( Item item ) {
     	if (item.parent instanceof Container) {
-    		((Container)item.parent).scroll(0, item);
+    		((Container)item.parent).scroll(0, item, true);
     		return;
     	}
     	Screen screen = item.getScreen();
@@ -3300,6 +3373,11 @@ public final class UiAccess {
 	 */
 	public static int[] getRgbData( Item item, int opacity ) {
 		//#if polish.midp2
+			if (item.itemWidth < 1 || item.itemHeight < 1) {
+				//#debug error
+				System.out.println("Unable to retrieve RGB data for item with a dimension of " + item.itemWidth + "x" + item.itemHeight );
+				return new int[0];
+			}
 			Image image = Image.createImage( item.itemWidth, item.itemHeight );
 			int transparentColor = 0x12345678;
 			Graphics g = image.getGraphics();
@@ -4836,7 +4914,7 @@ public final class UiAccess {
 	 * @return the container belonging to the given screen
 	 */
 	public static Container getScreenContainer( Screen screen ) {
-		return screen.container;
+		return screen.getRootContainer();
 	}
 	//#endif
 	
@@ -4894,6 +4972,17 @@ public final class UiAccess {
 		item.init(firstLineWidth, availWidth, availHeight);
 	}
 	//#endif
+	
+	//#if polish.usePolishGui
+	/**
+	 * Intializes the specified screen
+	 * @param screen the screen
+	 */
+	public static void init(Screen screen)
+	{
+		screen.init(Display.getScreenWidth(),Display.getScreenHeight());
+	}
+	//#endif
 
 	//#if polish.usePolishGui
 	/**
@@ -4937,5 +5026,198 @@ public final class UiAccess {
 	}
 	//#endif
 
+	//#if polish.usePolishGui
+	/**
+	 * Set if the textfield should accept the enter key as an input which results in a new line.
+	 * 
+	 * @param textField the text field
+	 * @param noNewLine set if new lines should be ignored
+	 */
+	public static void setNoNewLine(TextField textField, boolean noNewLine) {
+		if(textField != null){
+			textField.setNoNewLine(noNewLine);
+		}
+	}
+	//#endif
+	
+	//#if polish.midp
+	/**
+	 * Set if the textfield should accept the enter key as an input which results in a new line.
+	 * 
+	 * @param textField the text field
+	 * @param noNewLine set if new lines should be ignored
+	 */
+	public static void setNoNewLine(javax.microedition.lcdui.TextField textField, boolean noNewLine) {
+		// ignore
+	}
+	//#endif
+	
+	/**
+	 * Enables or disables screen change animations
+	 * @param enable true if screen change animations should be run otherwise false
+	 */
+	public static void enableScreenChangeAnimations(boolean enable) {
+		//#if polish.usePolishGui && polish.css.screen-change-animation
+			Display display = Display.getInstance();
+			if(display != null) {
+				display.enableScreenChangeAnimations = enable;
+			}
+			else if (StyleSheet.midlet != null){
+				Display.getDisplay(StyleSheet.midlet).enableScreenChangeAnimations = enable;
+			}
+		//#endif
+	}
+	
+	//#if polish.usePolishGui 
+	/**
+	 * Enables or disables screen change animations for the specified screen
+	 * 
+	 * @param screen the screen
+	 * @param enable true if screen change animations should be run otherwise false
+	 */
+	public static void enableScreenChangeAnimation(Screen screen, boolean enable) {
+		//#if polish.usePolishGui && polish.css.screen-change-animation
+			screen.enableScreenChangeAnimation = enable;
+		//#endif
+	}
+	//#endif
+	
+	//#if polish.midp
+	/**
+	 * Enables or disables screen change animations for the specified screen
+	 * 
+	 * @param screen the screen
+	 * @param enable true if screen change animations should be run otherwise false
+	 */
+	public static void enableScreenChangeAnimation(javax.microedition.lcdui.Screen screen, boolean enable) {
+		// ignore
+	}
+	//#endif
+	
+	//#if polish.Display.useKeyValidator
+	/**
+	 * Sets the key validator for the current display. MUST be set after first Display.getDisplay().
+	 * @param validator the key validator  
+	 */
+	public static void setUserInputValidator(de.enough.polish.ui.Display.UserInputValidator validator) {
+		//#if polish.usePolishGui 
+		Display display = Display.getInstance();
+		if(display != null) {
+			display.setKeyValidator(validator);
+		}
+		else if (StyleSheet.midlet != null){
+			Display.getDisplay(StyleSheet.midlet).setKeyValidator(validator);
+		}
+		//#endif
+	}
+	//#endif
 
+	//#if polish.usePolishGui
+	/**
+	 * Repaints the specified item
+	 * @param item the item
+	 */
+	public static void repaint(Item item) {
+		item.repaint();
+	}
+	//#endif
+	
+	//#if polish.midp
+	/**
+	 * Repaints the specified item
+	 * @param item the item
+	 */
+	public static void repaint(javax.microedition.lcdui.Item item) {
+		// ignore
+	}
+	//#endif
+
+	//#if polish.midp
+	/**
+	 * Sets an UiEventListener for the specified screen and its items.
+	 * @param screen the screen
+	 * @param listener the listener, use null to remove a listener
+	 */
+	public static void setUiEventListener( javax.microedition.lcdui.Screen screen, UiEventListener listener) {
+		// ignore
+	}
+	//#endif
+	
+	//#if polish.midp
+	/**
+	 * Sets an UiEventListener for the specified item and its children.
+	 * @param item the item for which the listener should be registered
+	 * @param listener the listener, use null to remove a listener
+	 */
+	public static void setUiEventListener( javax.microedition.lcdui.Item item, UiEventListener listener) {
+		// ignore
+	}
+	//#endif
+
+	//#if polish.midp
+	/**
+	 * Retrieves an UiEventListener for the specified screen and its items.
+	 * @param screen the screen
+	 * @return the listener or null
+	 */
+	public static UiEventListener getUiEventListener( javax.microedition.lcdui.Screen screen) {
+		return null;
+	}
+	//#endif
+	
+	//#if polish.midp
+	/**
+	 * Retrieves an UiEventListener for the specified item
+	 * @param item the item
+	 * @return the listener of the item or one of its parents or null
+	 */
+	public static UiEventListener getUiEventListener( javax.microedition.lcdui.Item item ) {
+		return null;
+	}
+	//#endif
+
+	
+	//#if polish.usePolishGui
+	/**
+	 * Sets an UiEventListener for the specified screen and its items.
+	 * @param screen the screen
+	 * @param listener the listener, use null to remove a listener
+	 */
+	public static void setUiEventListener( Screen screen, UiEventListener listener) {
+		screen.setUiEventListener( listener );
+	}
+	//#endif
+	
+	//#if polish.usePolishGui
+	/**
+	 * Sets an UiEventListener for the specified item and its children.
+	 * @param item the item for which the listener should be registered
+	 * @param listener the listener, use null to remove a listener
+	 */
+	public static void setUiEventListener( Item item, UiEventListener listener) {
+		item.setUiEventListener( listener );
+	}
+	//#endif
+
+	//#if polish.usePolishGui
+	/**
+	 * Retrieves an UiEventListener for the specified screen and its items.
+	 * @param screen the screen
+	 * @return the listener or null
+	 */
+	public static UiEventListener getUiEventListener(Screen screen) {
+		return screen.getUiEventListener();
+	}
+	//#endif
+	
+	//#if polish.usePolishGui
+	/**
+	 * Retrieves an UiEventListener for the specified item
+	 * @param item the item
+	 * @return the listener of the item or one of its parents or null
+	 */
+	public static UiEventListener getUiEventListener(Item item ) {
+		return item.getUiEventListener();
+	}
+	//#endif
 }

@@ -977,7 +977,7 @@ public void setSelectedIndex(int elementNum, boolean selected)
 			
 			if (this.isFocused) {
 				if ( this.isInitialized) {
-					focusChild( elementNum, newSelected, 0 );
+					focusChild( elementNum, newSelected, 0, true);
 				} else {
 					this.autoFocusEnabled = true;
 					this.autoFocusIndex = elementNum;

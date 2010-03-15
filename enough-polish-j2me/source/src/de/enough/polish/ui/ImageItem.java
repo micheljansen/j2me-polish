@@ -274,7 +274,7 @@ public class ImageItem extends Item
 		if ((image != null && 
 			(this.imageWidth != image.getWidth() || 
 			this.imageHeight != image.getHeight()))
-			) {
+		) {
 			requestInit();
 		}
 		else if (this.isShown)
@@ -455,8 +455,10 @@ public class ImageItem extends Item
 			} else if (offset > 0) {
 				offset = 0;
 			}
-			this.xOffset = offset;
-			return true;
+			if (offset != this.xOffset) {
+				this.xOffset = offset;
+				return true;
+			}
 		}
 		return super.handlePointerPressed(relX, relY);
 	}

@@ -38,10 +38,12 @@ import de.enough.polish.ui.backgrounds.TranslucentSimpleBackground;
 import de.enough.polish.util.ArrayList;
 import de.enough.polish.util.DeviceControl;
 import de.enough.polish.util.HashMap;
+import de.enough.polish.util.IdentityArrayList;
 import de.enough.polish.util.Locale;
 
 //#if polish.android
 import de.enough.polish.android.midlet.MIDlet;
+import de.enough.polish.android.midlet.MidletBridge;
 //#endif
 
 //#if polish.api.windows
@@ -74,7 +76,7 @@ public class MenuBar extends Item {
 	//#endif
 	//#if (polish.MenuBar.Position == invisible) || (polish.blackberry && (polish.BlackBerry.useStandardMenuBar != true))
 		//#define tmp.useInvisibleMenuBar
-		private Command hideCommand;
+		//private Command hideCommand;
 		private Command positiveCommand;
 	//#endif
 	//#if ${lowercase(polish.MenuBar.OptionsPosition)} == right && ${lowercase(polish.MenuBar.OkPosition)} != right
@@ -88,7 +90,7 @@ public class MenuBar extends Item {
 		//#define tmp.LeftOptions
 	//#endif
 	
-	protected final ArrayList commandsList;
+	protected final IdentityArrayList commandsList;
 	protected final Container commandsContainer;
 	protected boolean isOpened;
 	protected Command singleLeftCommand;
@@ -146,7 +148,7 @@ public class MenuBar extends Item {
 	public MenuBar(Screen screen, Style style) {
 		super(style);
 		this.screen = screen;
-		this.commandsList = new ArrayList();
+		this.commandsList = new IdentityArrayList();
 		this.allCommands = new HashMap
 		//#if polish.java5
 			<Command,CommandItem>
@@ -226,23 +228,23 @@ public class MenuBar extends Item {
 		int priority = cmd.getPriority();
 		//#if tmp.useInvisibleMenuBar
 			//#if !polish.android
-				if ( this.hideCommand == null )	{
-					// add hide command:
-					//#ifdef polish.i18n.useDynamicTranslations
-						String text =  Locale.get("polish.command.hide");
-					//#elifdef polish.command.hide:defined
-						//#= String text =  "${polish.command.hide}";
-					//#else
-						//# String text =  "Hide";
-					//#endif
-					
-					//#if !polish.MenuBar.suppressHideCommand					
-					this.hideCommand = new Command( text, Command.CANCEL, 2000 );
-					addCommand( this.hideCommand, commandStyle );
-					//#endif
-				}
+//				if ( this.hideCommand == null )	{
+//					// add hide command:
+//					//#ifdef polish.i18n.useDynamicTranslations
+//						String text =  Locale.get("polish.command.hide");
+//					//#elifdef polish.command.hide:defined
+//						//#= String text =  "${polish.command.hide}";
+//					//#else
+//						//# String text =  "Hide";
+//					//#endif
+//					
+//					//#if !polish.MenuBar.suppressHideCommand					
+//					this.hideCommand = new Command( text, Command.CANCEL, 2000 );
+//					addCommand( this.hideCommand, commandStyle );
+//					//#endif
+//				}
 			//#endif
-			if ( (cmd != this.hideCommand) && 
+			if ( //(cmd != this.hideCommand) && 
 					(type == Command.BACK || type == Command.CANCEL || type == Command.EXIT) ) 
 			{
 				//#if tmp.RightOptions
@@ -1034,8 +1036,13 @@ public class MenuBar extends Item {
 	        //#else
 	        	g.setClip(0, this.topY, this.screen.screenWidth, maxClipHeight);
 	        //#endif
-            this.commandsContainer.paint( x + this.commandsContainer.relativeX, y + this.commandsContainer.relativeY, x + this.commandsContainer.relativeX, x + this.commandsContainer.relativeX + this.commandsContainer.itemWidth, g);
-			g.setClip( clipX, clipY, clipWidth, clipHeight );
+	        //#if polish.hideAllCommands
+	        	//#debug
+	        	//System.out.println("polish.hideAllCommands is used to suppress painting for a Command.");
+	        //#else
+	        	this.commandsContainer.paint( x + this.commandsContainer.relativeX, y + this.commandsContainer.relativeY, x + this.commandsContainer.relativeX, x + this.commandsContainer.relativeX + this.commandsContainer.itemWidth, g);
+			//#endif
+            g.setClip( clipX, clipY, clipWidth, clipHeight );
 		//#if !tmp.useInvisibleMenuBar
 			// paint menu-bar:
 			//#if polish.MenuBar.Position == right
@@ -1145,7 +1152,7 @@ public class MenuBar extends Item {
 			this.isInitialized = (open == this.isOpened);
 			this.isOpened = open;
 			//#if polish.blackberry
-				Display.getInstance().notifyFocusSet(this.screen.getCurrentItem());
+				this.screen.notifyFocusSet(this.screen.getCurrentItem());
 			//#endif
 		} else if (open && !this.isOpened) {
 			if (this.commandsContainer.size() == 0) {
@@ -1160,7 +1167,7 @@ public class MenuBar extends Item {
 				Display.getInstance().notifyFocusSet(null);
 			//#endif
 			//#if polish.android1.5
-				MIDlet.midletInstance.hideSoftKeyboard();
+				MidletBridge.instance.hideSoftKeyboard();
 			//#endif
 			//#if !polish.MenuBar.focusFirstAfterClose
 				// focus the first item again, so when the user opens the menu again, it will be "fresh" again
@@ -1216,11 +1223,11 @@ public class MenuBar extends Item {
 				return true;
 			} else {
 				//#if tmp.useInvisibleMenuBar && !polish.android
-					// handle hide command specifically:
-					if (  gameAction == Canvas.FIRE && ((CommandItem)this.commandsContainer.focusedItem).command == this.hideCommand ) {
-						//setOpen( false );
-						return true;
-					}
+//					// handle hide command specifically:
+//					if (  gameAction == Canvas.FIRE && ((CommandItem)this.commandsContainer.focusedItem).command == this.hideCommand ) {
+//						//setOpen( false );
+//						return true;
+//					}
 				//#endif
 //				if (gameAction == Canvas.FIRE) {
 //					int focusedIndex = this.commandsContainer.focusedIndex;
@@ -1440,10 +1447,10 @@ public class MenuBar extends Item {
 				this.isSoftKeyPressed = true;	
 				CommandItem commandItem = (CommandItem) this.commandsContainer.getFocusedItem();
 				//#if tmp.useInvisibleMenuBar && !polish.android
-					if (commandItem.command == this.hideCommand ) {
-						setOpen( false );
-						return true;
-					}
+//					if (commandItem.command == this.hideCommand ) {
+//						setOpen( false );
+//						return true;
+//					}
 				//#endif
 				return commandItem.handleKeyReleased(0, Canvas.FIRE);
 			} else  if (isCloseOptionsMenuKey(keyCode, gameAction)
@@ -1467,10 +1474,10 @@ public class MenuBar extends Item {
 			} else {
 				//#if tmp.useInvisibleMenuBar
 					// handle hide command specifically:
-					if (  gameAction == Canvas.FIRE && ((CommandItem)this.commandsContainer.focusedItem).command == this.hideCommand ) {
-						setOpen( false );
-						return true;
-					}
+//					if (  gameAction == Canvas.FIRE && ((CommandItem)this.commandsContainer.focusedItem).command == this.hideCommand ) {
+//						setOpen( false );
+//						return true;
+//					}
 				//#endif
 				boolean handled = this.commandsContainer.handleKeyReleased(keyCode, gameAction);
 				//System.out.println("menubar: container handled keyReleased " + keyCode + ": " + handled);
@@ -1582,10 +1589,10 @@ public class MenuBar extends Item {
 	//#ifdef polish.hasPointerEvents
 	protected boolean handlePointerPressed(int relX, int relY) {
 		// check if one of the command buttons has been pressed:
-		int leftCommandEndX = this.singleLeftCommandItem.relativeX + this.singleLeftCommandItem.itemWidth;
-		int rightCommandStartX = this.singleRightCommandItem.relativeX;
+		//int leftCommandEndX = this.singleLeftCommandItem.relativeX + this.singleLeftCommandItem.itemWidth;
+		int rightCommandStartX = this.contentWidth/2; //this.singleRightCommandItem.relativeX;
 		//#debug
-		System.out.println("MenuBar: handlePointerPressed( relX=" + relX + ", relY=" + relY + " )\nleftCommandEndX = " + leftCommandEndX + ", rightCommandStartXs = " + rightCommandStartX + " screenHeight=" + this.screen.screenHeight);
+		System.out.println("MenuBar: handlePointerPressed( relX=" + relX + ", relY=" + relY + " ), rightCommandStartXs = " + rightCommandStartX + " screenHeight=" + this.screen.screenHeight);
 		//#if !tmp.useInvisibleMenuBar
 		if (isInMenubar(relY)) {
 			//#if polish.api.windows
@@ -1612,7 +1619,7 @@ public class MenuBar extends Item {
 			//#endif			
 			if (relX > rightCommandStartX) {
 				selectedCommandItem = this.singleRightCommandItem;
-			} else if (relX < leftCommandEndX) {
+			} else {
 				selectedCommandItem = this.singleLeftCommandItem;
 			}
 			if (selectedCommandItem != null) {
@@ -1642,10 +1649,10 @@ public class MenuBar extends Item {
 	//#ifdef polish.hasPointerEvents
 	protected boolean handlePointerReleased(int relX, int relY) {
 		// check if one of the command buttons has been pressed:
-		int leftCommandEndX = this.singleLeftCommandItem.relativeX + this.singleLeftCommandItem.itemWidth;
-		int rightCommandStartX = this.singleRightCommandItem.relativeX;
+		//int leftCommandEndX = this.singleLeftCommandItem.relativeX + this.singleLeftCommandItem.itemWidth;
+		int rightCommandStartX = this.contentWidth/2; //this.singleRightCommandItem.relativeX;
 		//#debug
-		System.out.println("MenuBar: handlePointerReleased( relX=" + relX + ", relY=" + relY + " )\nleftCommandEndX = " + leftCommandEndX + ", rightCommandStartXs = " + rightCommandStartX + " screenHeight=" + this.screen.screenHeight);
+		System.out.println("MenuBar: handlePointerReleased( relX=" + relX + ", relY=" + relY + " ), rightCommandStartXs = " + rightCommandStartX + " screenHeight=" + this.screen.screenHeight);
 		//#if !tmp.useInvisibleMenuBar
 		if (isInMenubar(relY)) {
 			//#if polish.api.windows
@@ -1671,7 +1678,7 @@ public class MenuBar extends Item {
 			//#endif			
 			if (relX > rightCommandStartX) {
 				selectedCommandItem = this.singleRightCommandItem;
-			} else if (relX < leftCommandEndX) {
+			} else {
 				selectedCommandItem = this.singleLeftCommandItem;
 			}
 			if (selectedCommandItem != null) {
@@ -1687,14 +1694,14 @@ public class MenuBar extends Item {
 			//#if tmp.OkCommandOnLeft && tmp.RightOptions
 				isCloseKeySelected = relX > rightCommandStartX;
 				isOpenKeySelected =  isCloseKeySelected;
-				isSelectKeySelected = relX < leftCommandEndX;
+				isSelectKeySelected = !isCloseKeySelected;
 			//#elif tmp.RightOptions
-				isCloseKeySelected = relX < leftCommandEndX;
-				isOpenKeySelected = relX > rightCommandStartX;
+				isCloseKeySelected = relX < rightCommandStartX;
+				isOpenKeySelected = !isCloseKeySelected;
 				isSelectKeySelected = isOpenKeySelected;
 			//#else
-				isOpenKeySelected = relX < leftCommandEndX;
-				isCloseKeySelected = relX > rightCommandStartX;
+				isOpenKeySelected = relX < rightCommandStartX;
+				isCloseKeySelected = !isOpenKeySelected;
 				isSelectKeySelected = isOpenKeySelected;
 			//#endif
 			//System.out.println("isOpened=" + this.isOpened + ", isCloseKeySelected=" + isCloseKeySelected + ", isOpenKeySelected=" + isOpenKeySelected + ", isSelectKeySelected=" + isSelectKeySelected);
@@ -1765,6 +1772,24 @@ public class MenuBar extends Item {
 			this.commandsContainer.handlePointerDragged( x, y );
 			return true;
 		}
+		//#if polish.css.pressed-style
+			if (relY < 0) {
+				if (this.singleLeftCommandItem.isPressed) {
+					this.singleLeftCommandItem.notifyItemPressedEnd();
+					return true;
+				}
+				if (this.singleRightCommandItem.isPressed) {
+					this.singleRightCommandItem.notifyItemPressedEnd();
+					return true;
+				}
+				//#if tmp.useMiddleCommand
+				if (this.singleMiddleCommandItem.isPressed) {
+					this.singleMiddleCommandItem.notifyItemPressedEnd();
+					return true;
+				}
+				//#endif
+			}
+		//#endif
 		return super.handlePointerDragged( relX, relY );
 	}
 	//#endif
@@ -2348,6 +2373,10 @@ public class MenuBar extends Item {
 				this.singleMiddleCommandItem.showNotify();
 			}
 		//#endif
+	}
+
+	public Object[] getCommands() {
+		return this.allCommands.keys();
 	}
 
 	

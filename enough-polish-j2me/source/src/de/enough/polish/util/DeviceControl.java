@@ -1,15 +1,19 @@
 package de.enough.polish.util;
 
 //#if polish.usePolishGui
-import de.enough.polish.ui.StyleSheet;
+	import de.enough.polish.ui.Display;
+	import de.enough.polish.ui.StyleSheet;
 //#endif
-
 //#if polish.android
-import android.content.Context;
-import android.location.LocationManager;
-import de.enough.polish.android.midlet.MIDlet;
+	import de.enough.polish.android.midlet.MidletBridge;
 //#endif
-
+//#if polish.blackberry && polish.hasPointerEvents
+	//#if polish.usePolishGui
+		import de.enough.polish.blackberry.ui.BaseScreen;
+	//#endif
+	import net.rim.device.api.ui.VirtualKeyboard;
+//#endif
+	
 /**
  * 
  * <p>Controls backlight and vibration in an device-independent manner</p>
@@ -97,7 +101,7 @@ public class DeviceControl
 	{
 		
 		//#if polish.android
-			MIDlet.midletInstance.backlightOn();
+			MidletBridge.instance.backlightOn();
 			//# return true;
 		//#else
 		synchronized(lightsLock) {
@@ -129,7 +133,7 @@ public class DeviceControl
 	public static void lightOff()
 	{
 		//#if polish.android
-			MIDlet.midletInstance.backlightRelease();
+			MidletBridge.instance.backlightRelease();
 		//#else
 		synchronized(lightsLock) {
 			//#if tmp.useNokiaUi
@@ -226,33 +230,76 @@ public class DeviceControl
 
 	/**
 	 * Shows the softkeyboard if the device supports it. This method is only supported on the Android platform at the moment.
+	 * @see #hideSoftKeyboard()
+	 * @see #isSoftKeyboardShown()
 	 */
 	public static void showSoftKeyboard() {
 		//#if polish.android1.5
-		MIDlet.midletInstance.showSoftKeyboard();
+			MidletBridge.instance.showSoftKeyboard();
+		//#elif polish.blackberry && polish.hasPointerEvents && polish.usePolishGui
+			Display disp = Display.getInstance();
+			if (disp != null) {
+				VirtualKeyboard keyboard = ((BaseScreen)(Object)disp).getVirtualKeyboard();
+				if (keyboard != null) {
+					keyboard.setVisibility( VirtualKeyboard.SHOW );					
+				}
+			}
 		//#endif
 	}
 	
 	/**
 	 * Hides the softkeyboard if the device supports it. This method is only supported on the Android platform at the moment.
+	 * @see #showSoftKeyboard()
+	 * @see #isSoftKeyboardShown()
 	 */
 	public static void hideSoftKeyboard() {
 		//#if polish.android1.5
-		MIDlet.midletInstance.hideSoftKeyboard();
+			MidletBridge.instance.hideSoftKeyboard();
+		//#elif polish.blackberry && polish.hasPointerEvents && polish.usePolishGui
+			Display disp = Display.getInstance();
+			if (disp != null) {
+				VirtualKeyboard keyboard = ((BaseScreen)(Object)disp).getVirtualKeyboard();
+				if (keyboard != null) {
+					keyboard.setVisibility( VirtualKeyboard.HIDE );					
+				}
+			}
 		//#endif
+	}
+	
+	/**
+	 * Checks is a virtual keyboard is currently shown.
+	 * @return true when a virtual keyboard is supported and visible at the moment
+	 * @see #showSoftKeyboard()
+	 * @see #hideSoftKeyboard()
+	 */
+	public static boolean isSoftKeyboardShown() {
+		boolean result = false;
+		//#if polish.android1.5
+			result = MidletBridge.instance.isSoftKeyboadShown();
+		//#elif polish.blackberry && polish.hasPointerEvents && polish.usePolishGui
+			Display disp = Display.getInstance();
+			if (disp != null) {
+				VirtualKeyboard keyboard = ((BaseScreen)(Object)disp).getVirtualKeyboard();
+				if (keyboard != null) {
+					int visibility = keyboard.getVisibility();
+					result = (visibility ==  VirtualKeyboard.SHOW) || (visibility ==  VirtualKeyboard.SHOW_FORCE);
+				}
+			}
+		//#endif
+		return result;
 	}
 	
 	//#if polish.android
 	
 	public static void setSuicideOnExit(boolean suicideOnExit) {
-		MIDlet.midletInstance.setSuicideOnExit(suicideOnExit);
+		MidletBridge.instance.setSuicideOnExit(suicideOnExit);
 	}
 	
 	/**
 	 * This method allows the caller to disable the fallback to the network location provider when the GPS location provider is not available.
 	 * Normally the network location provider is used in case the GPS location provider goes offline for some reason. With this method you can
 	 * turn of this fallback. This is useful if you want to be sure that you always have full acurracy for your location or non at all.
-	 * @param setFallbackOnGpsDisabled value 'true' if you want to disable the fallback mechanism. Value 'false' otherwise.
+	 * @param setFallbackOnGpsDisabled <code>true</code> if you want to disable the fallback mechanism, <code>false</code> otherwise.
 	 * @deprecated
 	 */
 	public static void shouldFallbackToNetworkLocationOnGpsDisabled(boolean setFallbackOnGpsDisabled) {
@@ -261,7 +308,7 @@ public class DeviceControl
 
 	/**
 	 * This methods tells the caller if the fallback mechanism for the GPS location provider is enabled. See {@link #shouldFallbackToNetworkLocationOnGpsDisabled(boolean)} for details.
-	 * @return Value 'true' if the fallback is disabled. Value 'false' if the fallback is enabled (the default).
+	 * @return <code>true</code> if the fallback is disabled, <code>false</code> if the fallback is enabled (the default).
 	 * @deprecated
 	 */
 	public static boolean isFallbackToNetworkLocationOnGpsDisabled() {
@@ -270,13 +317,11 @@ public class DeviceControl
 
 	/**
 	 * 
-	 * @return
+	 * @return <code>true</code> if GPS is enabled, <code>false</code> otherwise.
 	 * @deprecated Use {@link de.enough.polish.location.LocationService#isGpsEnabled()}
 	 */
 	public static boolean isGpsEnabled() {
-		LocationManager locationManager = (LocationManager)MIDlet.midletInstance.getSystemService(Context.LOCATION_SERVICE);
-		boolean providerEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-		return providerEnabled;
+		return de.enough.polish.location.LocationService.isGpsEnabled();
 	}
 	
 	//#endif

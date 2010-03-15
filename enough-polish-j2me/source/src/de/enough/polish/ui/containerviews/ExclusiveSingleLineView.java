@@ -35,6 +35,8 @@ import javax.microedition.lcdui.Image;
 import de.enough.polish.ui.Background;
 import de.enough.polish.ui.ChoiceGroup;
 import de.enough.polish.ui.ChoiceItem;
+import de.enough.polish.ui.ClippingRegion;
+import de.enough.polish.ui.Color;
 import de.enough.polish.ui.Container;
 import de.enough.polish.ui.ContainerView;
 import de.enough.polish.ui.Item;
@@ -85,6 +87,20 @@ public class ExclusiveSingleLineView extends ContainerView {
 	private int leftArrowEndX;
 	private int rightArrowStartX;
 	private int rightArrowEndX;
+	//#if polish.css.exclusiveview-arrow-color-pressed || (polish.css.exclusiveview-left-arrow-pressed && polish.css.exclusiveview-right-arrow-pressed)
+		//#define tmp.supportPress
+		private boolean isLeftArrowPressed;
+		private boolean isRightArrowPressed;
+		private Color arrowColorPressed;
+		//#if polish.css.exclusiveview-left-arrow-pressed
+			private Image leftArrowPressed;
+			private Image rightArrowPressed;
+		//#endif
+		//#if polish.blackberry
+			private long bbKeyReleaseTime;
+		private boolean bbReleaseArrow;
+		//#endif
+	//#endif
 
 	/**
 	 * Creates a new view
@@ -100,7 +116,7 @@ public class ExclusiveSingleLineView extends ContainerView {
 	protected void initContent(Item parentItm, int firstLineWidth, int availWidth, int availHeight) 
 	{
 		//#debug
-		System.out.println("Initalizing ExclusiveSingleLineView");
+		System.out.println("Initalizing ExclusiveSingleLineView: available=" + availWidth + "x" + availHeight);
 		Container parent = (Container) parentItm;
 		int selectedItemIndex = ((ChoiceGroup) parent).getSelectedIndex();
 		if (selectedItemIndex == -1) {
@@ -205,7 +221,7 @@ public class ExclusiveSingleLineView extends ContainerView {
 				this.rightYOffset = (this.contentHeight - this.rightArrow.getHeight()) / 2; // always center vertically
 			}
 		//#endif
-
+		//System.out.println("content: " + this.contentWidth + "x" + this.contentHeight + ", available=" + availWidth + "x" + availHeight);
 		
 //		System.out.println("leftX=" + this.leftArrowStartX);
 //		System.out.println("rightX=" + this.rightArrowStartX);
@@ -213,7 +229,10 @@ public class ExclusiveSingleLineView extends ContainerView {
 	}
 	
 	
-
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.ContainerView#setStyle(de.enough.polish.ui.Style)
+	 */
 	protected void setStyle(Style style) {
 		//#ifdef polish.css.exclusiveview-expand-background
 			Boolean expandBackgroundBool = style.getBooleanProperty("exclusiveview-expand-background");
@@ -235,6 +254,17 @@ public class ExclusiveSingleLineView extends ContainerView {
 					System.out.println("Unable to load left arrow image [" + leftArrowUrl + "]" + e );
 				}
 			}
+			//#if tmp.supportPress && polish.css.exclusiveview-left-arrow-pressed
+				leftArrowUrl = style.getProperty("exclusiveview-left-arrow-pressed");
+				if (leftArrowUrl != null) {
+					try {
+						this.leftArrowPressed = StyleSheet.getImage( leftArrowUrl, null, true );
+					} catch (IOException e) {
+						//#debug error
+						System.out.println("Unable to load left arrow pressed image [" + leftArrowUrl + "]" + e );
+					}
+				}
+			//#endif
 		//#endif
 		//#ifdef polish.css.exclusiveview-right-arrow
 			String rightArrowUrl = style.getProperty("exclusiveview-right-arrow");
@@ -246,11 +276,28 @@ public class ExclusiveSingleLineView extends ContainerView {
 					System.out.println("Unable to load right arrow image [" + rightArrowUrl + "]" + e );
 				}
 			}
+			//#if tmp.supportPress && polish.css.exclusiveview-right-arrow-pressed
+				rightArrowUrl = style.getProperty("exclusiveview-right-arrow-pressed");
+				if (rightArrowUrl != null) {
+					try {
+						this.rightArrowPressed = StyleSheet.getImage( rightArrowUrl, null, true );
+					} catch (IOException e) {
+						//#debug error
+						System.out.println("Unable to load right arrow pressed image [" + rightArrowUrl + "]" + e );
+					}
+				}
+			//#endif
 		//#endif
 		//#ifdef polish.css.exclusiveview-arrow-color
-			Integer colorInt = style.getIntProperty("exclusiveview-arrow-color");
+			Color colorInt = (Color) style.getObjectProperty("exclusiveview-arrow-color");
 			if ( colorInt != null ) {
-				this.arrowColor = colorInt.intValue();
+				this.arrowColor = colorInt.getColor();
+			}
+		//#endif
+		//#if tmp.supportPress && polish.css.exclusiveview-arrow-color-pressed
+			Color colorPressed = (Color) style.getObjectProperty("exclusiveview-arrow-color-pressed");
+			if ( colorPressed != null ) {
+				this.arrowColorPressed = colorPressed;
 			}
 		//#endif
 		//#ifdef polish.css.exclusiveview-arrow-position
@@ -338,11 +385,22 @@ public class ExclusiveSingleLineView extends ContainerView {
 			}
 			
 			//#ifdef polish.css.exclusiveview-left-arrow
-				if (this.leftArrow != null) {
+				Image arrowImg = this.leftArrow;
+				//#if tmp.supportPress && polish.css.exclusiveview-left-arrow-pressed
+					if (this.isLeftArrowPressed && this.leftArrowPressed != null) {
+						arrowImg = this.leftArrowPressed;
+					}
+				//#endif
+				if (arrowImg != null) {
 					//System.out.println("Drawing left IMAGE arrow at " + startX );
-					g.drawImage( this.leftArrow, startX, y + this.leftYOffset, Graphics.LEFT | Graphics.TOP );
+					g.drawImage( arrowImg, startX, y + this.leftYOffset, Graphics.LEFT | Graphics.TOP );
 				} else {
 			//#endif
+				//#if tmp.supportPress && polish.css.exclusiveview-arrow-color-pressed
+					if (this.isLeftArrowPressed && this.arrowColorPressed != null) {
+						g.setColor( this.arrowColorPressed.getColor() );
+					}
+				//#endif
 				//#if polish.midp2
 					//System.out.println("Drawing left triangle arrow at " + startX );
 					g.fillTriangle( 
@@ -375,10 +433,23 @@ public class ExclusiveSingleLineView extends ContainerView {
 				startX = rightBorder; // - this.arrowWidth;
 			}
 			//#ifdef polish.css.exclusiveview-right-arrow
-				if (this.rightArrow != null) {
-					g.drawImage( this.rightArrow, startX, y + this.rightYOffset, Graphics.LEFT | Graphics.TOP );
+				Image arrowImg = this.rightArrow;
+				//#if tmp.supportPress && polish.css.exclusiveview-right-arrow-pressed
+					if (this.isRightArrowPressed && this.rightArrowPressed != null) {
+						arrowImg = this.rightArrowPressed;
+					}
+				//#endif
+				if (arrowImg != null) {
+					g.drawImage( arrowImg, startX, y + this.rightYOffset, Graphics.LEFT | Graphics.TOP );
 				} else {
 			//#endif
+				//#if tmp.supportPress && polish.css.exclusiveview-arrow-color-pressed
+					if (this.isRightArrowPressed && this.arrowColorPressed != null) {
+						g.setColor( this.arrowColorPressed.getColor() );
+					} else {
+						g.setColor( this.arrowColor );
+					}
+				//#endif
 				//#if polish.midp2
 					g.fillTriangle( 
 							startX + this.arrowWidth, y + this.contentHeight/2, 
@@ -397,6 +468,24 @@ public class ExclusiveSingleLineView extends ContainerView {
 			//#endif
 		}
 	}
+	
+	
+	//#if polish.blackberry && tmp.supportPress
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.ItemView#animate(long, de.enough.polish.ui.ClippingRegion)
+	 */
+	public void animate(long currentTime, ClippingRegion repaintRegion) {
+		super.animate(currentTime, repaintRegion);
+		if ( this.bbReleaseArrow && (currentTime - this.bbKeyReleaseTime) > 200 ) {
+			this.bbReleaseArrow = false;
+			this.isLeftArrowPressed = false;
+			this.isRightArrowPressed = false;
+			addFullRepaintRegion(this.parentItem, repaintRegion);
+		}
+
+	}
+	//#endif
 
 	/* (non-Javadoc)
 	 * @see de.enough.polish.ui.ContainerView#getNextItem(int, int)
@@ -414,12 +503,17 @@ public class ExclusiveSingleLineView extends ContainerView {
 		}
 		Item lastItem = this.currentItem;
 		//ChoiceItem currentItem = (ChoiceItem) items[ this.currentItemIndex ];
-	
-		//#ifdef polish.css.exclusiveview-roundtrip
-			if ( gameAction == Canvas.LEFT && (this.allowRoundTrip || this.currentItemIndex > 0 )) {
-		//#else
-			//# if ( gameAction == Canvas.LEFT && this.currentItemIndex > 0 ) {
-		//#endif
+		if ( gameAction == Canvas.LEFT && 
+				(
+					//#ifdef polish.css.exclusiveview-roundtrip
+						this.allowRoundTrip || 
+					//#endif
+						this.currentItemIndex > 0 
+				)
+		) {
+			//#if tmp.supportPress
+				this.isLeftArrowPressed = true;
+			//#endif
 			this.currentItem.select( false );
 			this.currentItemIndex--;
 			//#ifdef polish.css.exclusiveview-roundtrip
@@ -434,11 +528,17 @@ public class ExclusiveSingleLineView extends ContainerView {
 			choiceGroup.notifyStateChanged();
 			
 			return this.currentItem;
-		//#ifdef polish.css.exclusiveview-roundtrip
-			} else if ( gameAction == Canvas.RIGHT && (this.allowRoundTrip || this.currentItemIndex < items.length - 1  )) {
-		//#else
-			} else if ( gameAction == Canvas.RIGHT && this.currentItemIndex < items.length - 1 ) {
-		//#endif
+		} else if ( gameAction == Canvas.RIGHT && 
+				(
+			//#ifdef polish.css.exclusiveview-roundtrip
+						this.allowRoundTrip || 
+			//#endif
+						this.currentItemIndex < items.length - 1  
+				)
+		) {
+			//#if tmp.supportPress
+				this.isRightArrowPressed = true;
+			//#endif
 			this.currentItem.select( false );
 			this.currentItemIndex++;
 			//#ifdef polish.css.exclusiveview-roundtrip
@@ -457,6 +557,25 @@ public class ExclusiveSingleLineView extends ContainerView {
 		// in all other cases there is no next item:
 		return null;
 	}
+	
+	//#if tmp.supportPress
+		/*
+		 * (non-Javadoc)
+		 * @see de.enough.polish.ui.ItemView#handleKeyReleased(int, int)
+		 */
+		public boolean handleKeyReleased(int keyCode, int gameAction) {
+			//#if polish.blackberry
+				this.bbReleaseArrow = this.isLeftArrowPressed || this.isRightArrowPressed;
+				this.bbKeyReleaseTime = System.currentTimeMillis();
+				//# return super.handleKeyReleased(keyCode, gameAction);
+			//#else
+				this.isLeftArrowPressed = false;
+				this.isRightArrowPressed = false;
+				return true;
+			//#endif
+		}
+	//#endif
+	
 
 	//#ifdef polish.hasPointerEvents
 	/**
@@ -469,42 +588,117 @@ public class ExclusiveSingleLineView extends ContainerView {
 	 *         will forward the event to the affected item.
 	 */
 	public boolean handlePointerPressed(int x, int y) {
-		if (y < 0 || y > this.contentHeight ) {
+		if ( !this.parentContainer.isInItemArea(x, y) ) {
 			return false;
 		}
+		//#if tmp.supportPress
+	        x -= this.parentContainer.getContentX();
+			int index = this.currentItemIndex;
+			if ( (index > 0 || this.allowRoundTrip) && 
+				 (	
+					//#ifdef polish.css.exclusiveview-arrow-position
+						 (
+								 (this.arrowPosition == POSITION_BOTH_SIDES) &&
+					//#endif
+						 (x < this.contentWidth / 2)
+					//#ifdef polish.css.exclusiveview-arrow-position
+						 ) 
+						 || 	(x >= this.leftArrowStartX  && x <= this.leftArrowEndX) 
+					//#endif
+				 ) 
+			) {
+				// go left:
+				this.isLeftArrowPressed = true;
+			} else 
+				//#ifdef polish.css.exclusiveview-arrow-position
+					if (! (x >= this.leftArrowStartX  && x <= this.leftArrowEndX && index > 0))
+				//#endif
+			{
+				// go rigth:
+				this.isRightArrowPressed = true;
+			}
+			//#if polish.blackberry
+				this.bbReleaseArrow = false;
+			//#endif
+		//#endif
+		
+		return true;
+	}
+	//#endif
+	
+	
+	//#ifdef polish.hasPointerEvents
+	/**
+	 * Handles pointer pressed events.
+	 * This is an optional feature that doesn't need to be implemented by subclasses.
+	 * 
+	 * @param x the x position of the event
+	 * @param y the y position of the event
+	 * @return true when the event has been handled. When false is returned the parent container
+	 *         will forward the event to the affected item.
+	 */
+	public boolean handlePointerReleased(int x, int y) {
+		if ( !this.parentContainer.isInItemArea(x, y) ) {
+			return false;
+		}
+		//#if tmp.supportPress
+			this.isLeftArrowPressed = false;
+			this.isRightArrowPressed = false;
+		//#endif
+        x -= this.parentContainer.getContentX();
 		Item[] items = this.parentContainer.getItems();
 		this.currentItem.select( false );
 		int index = this.currentItemIndex;
-		if ( (index > 0 || this.allowRoundTrip) && x >= this.leftArrowStartX  && x <= this.leftArrowEndX ) {
+		if ( (index > 0 || this.allowRoundTrip) && 
+			 (	
+				//#ifdef polish.css.exclusiveview-arrow-position
+					 (
+							 (this.arrowPosition == POSITION_BOTH_SIDES) &&
+				//#endif
+					 (x < this.contentWidth / 2)
+				//#ifdef polish.css.exclusiveview-arrow-position
+					 ) 
+					 || 	(x >= this.leftArrowStartX  && x <= this.leftArrowEndX) 
+				//#endif
+			 ) 
+		) {
 			index--;
 			if (index < 0) {
 				index = items.length - 1;
 			}
-		} else if (! (x >= this.leftArrowStartX  && x <= this.leftArrowEndX && index > 0)) {
+		} else 
+			//#ifdef polish.css.exclusiveview-arrow-position
+				if (! (x >= this.leftArrowStartX  && x <= this.leftArrowEndX && index > 0))
+			//#endif
+		{
 			index = ( index + 1) % items.length;
 		}
 		this.currentItemIndex = index;
 		this.currentItem = (ChoiceItem) items[ index ];
 		//this.currentItem.select( true );
 		((ChoiceGroup) this.parentContainer).setSelectedIndex( this.currentItemIndex, true );
-		this.parentContainer.focusChild(this.currentItemIndex, this.currentItem, 0);
+		this.parentContainer.focusChild(this.currentItemIndex, this.currentItem, 0, true);
 		this.parentContainer.notifyStateChanged();
 		return true;
 	}
 	//#endif
 
-	//#ifdef polish.css.exclusiveview-expand-background
-		/* (non-Javadoc)
-		 * @see de.enough.polish.ui.ContainerView#defocus(de.enough.polish.ui.Style)
-		 */
-		protected void defocus(Style originalStyle) {
+	/* (non-Javadoc)
+	 * @see de.enough.polish.ui.ContainerView#defocus(de.enough.polish.ui.Style)
+	 */
+	protected void defocus(Style originalStyle) {
+		//#ifdef polish.css.exclusiveview-expand-background
 			if (this.expandBackground != null ) {
 				this.parentContainer.background = this.expandBackground;
 				this.expandBackground = null;
 			}
-			super.defocus(originalStyle);
-		}
-	//#endif		
+		//#endif	
+		//#if tmp.supportPress
+			this.isLeftArrowPressed = false;
+			this.isRightArrowPressed = false;
+		//#endif
+		super.defocus(originalStyle);
+	}
 
 	//#ifdef polish.css.exclusiveview-expand-background
 		/* (non-Javadoc)
@@ -528,5 +722,7 @@ public class ExclusiveSingleLineView extends ContainerView {
 	protected boolean isValid(Item parent, Style style) {
 		return (parent instanceof ChoiceGroup);
 	}
+
+	
 
 }

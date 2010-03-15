@@ -19,15 +19,21 @@ public class Connector {
 	
 	private static final int TYPE_HTTP = 2;
 	
-	private static final int TYPE_FILE = 3;
+	private static final int TYPE_HTTPS = 3;
 	
-	private static final int TYPE_SMS = 4;
+	private static final int TYPE_FILE = 4;
+	
+	private static final int TYPE_SMS = 5;
+	
 	
 	static final String SOCKET_PREFIX = "socket://";
 	
 	static final String HTTP_PREFIX = "http://";
-	
+
+	static final String HTTPS_PREFIX = "https://";
+
 	static final String FILE_PREFIX = "file://";
+
 	
 	private static String SMS_PREFIX = "sms://";
 	
@@ -58,6 +64,8 @@ public class Connector {
 				return createSocketConnection(name, mode, timeouts);				
 			case TYPE_HTTP:
 				return createHttpConnection(name, mode, timeouts);
+			case TYPE_HTTPS:
+				return createHttpsConnection(name, mode, timeouts);
 			case TYPE_FILE:
 				return createFileConnection(name, mode, timeouts);
 			case TYPE_SMS:
@@ -67,6 +75,7 @@ public class Connector {
 		}
 	}
 	
+
 	private static Connection createSmsConnection(String url, int mode, boolean timeouts) {
 		return new MessageConnectionImpl(url,mode,timeouts);
 	}
@@ -77,6 +86,9 @@ public class Connector {
 		}
 		else if (name.indexOf(HTTP_PREFIX)==0) {
 			return TYPE_HTTP;
+		} 
+		else if (name.indexOf(HTTPS_PREFIX)==0) {
+			return TYPE_HTTPS;
 		} 
 		else if (name.indexOf(FILE_PREFIX)==0) {
 			return TYPE_FILE;
@@ -94,15 +106,22 @@ public class Connector {
 		return new SocketConnectionImpl(url, mode);		
 	}
 	
-	private static HttpConnection createHttpConnection(String url, int mode,
-			boolean timeouts) throws IOException {
-		
+	private static HttpConnection createHttpConnection(String url, int mode, boolean timeouts) 
+	throws IOException 
+	{
 		return new HttpConnectionImpl(url, mode);		
 	}
 	
-	private static FileConnection createFileConnection(String url, int mode,
-			boolean timeouts) throws IOException {
-		
+	private static Connection createHttpsConnection(String url, int mode, boolean timeouts)
+	throws IOException 
+	{
+		return new HttpsConnectionImpl(url, mode);	
+	}
+
+	
+	private static FileConnection createFileConnection(String url, int mode, boolean timeouts) 
+	throws IOException 
+	{
 		return new FileConnectionImpl(url, mode);		
 	}
 }

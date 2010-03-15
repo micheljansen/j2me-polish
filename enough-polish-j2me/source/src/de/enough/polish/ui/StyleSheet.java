@@ -37,7 +37,9 @@ import javax.microedition.lcdui.Image;
 import javax.microedition.midlet.MIDlet;
 
 import de.enough.polish.ui.tasks.ImageTask;
+import de.enough.polish.util.DeviceInfo;
 import de.enough.polish.util.Locale;
+import de.enough.polish.util.TextUtil;
 
 /**
  * <p>Manages all defined styles of a specific project.</p>
@@ -263,7 +265,7 @@ public final class StyleSheet {
 	 */
 	public static Style getStyle( Item item ) {
 		if (item.screen == null) {
-			//#debug error
+			//#debug info
 			System.out.println("unable to retrieve style for item [" + item.getClass().getName() + "] without screen.");
 			return defaultStyle;
 		}
@@ -380,6 +382,228 @@ public final class StyleSheet {
 	}		
 	//#endif
 	
+	//#if !polish.css.mediaquery
+	/**
+	 * placeholder for showNotify method which is added when using media queries
+	 */
+	public static void showNotify() {
+		// placeholder for showNotify method which is added when using media queries
+		
+	}
+	//#endif
+	
+	//#if polish.css.mediaquery
+		/**
+		 * Adds a media query to this set of styles if the condition is fullfilled.
+		 * This method is only accessible when the preprocesing symbol <code>polish.css.mediaquery</code> is true.
+		 * 
+		 * @param condition the condition, compare http://www.w3.org/TR/css3-mediaqueries/
+		 * @param styles the styles that should be modified by this condition
+		 */
+		public static void addMediaQuery( String condition, Style[] styles ) {
+			if (isMediaQueryFulfilled(condition)) {
+				for (int i = 0; i < styles.length; i++) {
+					Style style = styles[i];
+					Style parent = getStyle( style.name );
+					if (parent != null) {
+						if (style.background != null) {
+							parent.background = style.background;
+						}
+						if (style.background != null) {
+							parent.border = style.border;
+						}
+						short[] keys = style.getRawAttributeKeys();
+						if (keys != null) {
+							Object[] values = style.getRawAttributeValues();
+							for (int j = 0; j < values.length; j++) {
+								parent.addAttribute(keys[j], values[j]);
+							}
+						}
+					}
+				}
+			}
+		}
+	//#endif
+		
+	//#if polish.css.mediaquery
+		private static boolean isMediaQueryFulfilled(String condition) {
+			String[] conditions = TextUtil.split(condition, ',');
+			StringBuffer buffer = new StringBuffer();
+			for (int i = 0; i < conditions.length; i++) {
+				condition = conditions[i];
+				try {
+					if (isMediaQueryConditionFulfilled(condition, buffer)) {
+						return true;
+					}
+				} catch (Exception e) {
+					//#debug error
+					System.out.println("Unable to parse media query condition " + condition + e);
+				}
+			}
+			return false;
+		}
+		private static boolean isMediaQueryConditionFulfilled(String condition, StringBuffer buffer) {
+			buffer.delete(0, buffer.length());
+			int screenWidth = Display.getScreenWidth();
+			int screenHeight = Display.getScreenHeight();
+			
+			char c;
+			boolean notFound = false;
+			boolean isFirstPart = true;
+			String part;
+			boolean result = true;
+			boolean isMinFound = false;
+			boolean isMaxFound = false;
+			String lastFeature = null;
+			boolean isExpectingFeatureName = false;
+			boolean isExpectingValue = false;
+			int length = condition.length()-1;
+			for (int i=0; i<=length;i++) {
+				c = condition.charAt(i);
+				if (c != ' ' && c != ')') {
+					if (c == '(') {
+						isExpectingFeatureName = true;
+					} else if (c == ':') {
+						isExpectingValue = true;
+					} else {
+						buffer.append(c);
+					}
+					if (i<length) {
+						continue;
+					}
+				}
+				if (buffer.length() > 0) {
+					// part ending here:
+					part = buffer.toString().toLowerCase();
+					//System.out.println("part=" + part + ", expectingFeatureName=" + isExpectingFeatureName + ", isExpectingValue=" + isExpectingValue);
+					buffer.delete(0, buffer.length());
+					if (isFirstPart && "only".equals(part)) {
+						continue;
+					}
+					if (isFirstPart && "not".equals(part)) {
+						notFound = true;
+						continue;
+					}
+					if (isFirstPart) {
+						isFirstPart = false;
+						if (!isExpectingFeatureName) {
+							if ("touchscreen".equals(part)) {
+								result = DeviceInfo.hasPointerEvents();
+								System.out.println("found touchscreen, result=" + result);
+							} else if (!("all".equals(part) || "screen".equals(part))) {
+								// this is a unsupported media type (otherwise a parentheses would have been necessary):
+								result = false;
+							}
+							continue;
+						}
+					}
+					if ("and".equals(part)) {
+						// now we (should) have this information for evaluating the last term:
+						isExpectingValue = false;
+						isMinFound = false;
+						isMaxFound = false;
+						continue;
+					}
+					if (isExpectingFeatureName) {
+						// either this is an unknown media type or this is a feature that needs to be supported:
+						if (part.startsWith("min-")) {
+							isMinFound = true;
+							part = part.substring(4);//"min-".length());
+						} else if (part.startsWith("max-")) {
+							isMaxFound = true;
+							part = part.substring(4);//"max-".length());
+						}
+						lastFeature = part;
+						isExpectingFeatureName = false;
+						if (!isExpectingValue) {
+							// this is a feature without value:
+							if ("color".equals(lastFeature)) {
+								result = (Display.getInstance().numColors() > 2);
+							} else {
+								result = false;
+							}
+						}
+					} else if (isExpectingValue){
+						int pixelValue = -1;
+						if (part.endsWith("px")) {
+							pixelValue = Integer.parseInt(part.substring(0, part.length() - 2));
+						}
+						if ("width".equals(lastFeature) || "device-width".equals(lastFeature)) {
+							if (isMinFound) {
+								result = (screenWidth >= pixelValue);
+							} else if (isMaxFound) {
+								result = (screenWidth <= pixelValue);
+							} else {
+								result = (screenWidth == pixelValue);
+							}
+						} else if ("height".equals(lastFeature) || "device-height".equals(lastFeature)) {
+							//TODO when using height we should use the viewport height which is less than the screenheight in fullscreen mode...
+							if (isMinFound) {
+								result = (screenHeight >= pixelValue);
+							} else if (isMaxFound) {
+								result = (screenHeight <= pixelValue);
+							} else {
+								result = (screenHeight == pixelValue);
+							}
+						} else if ("orientation".equals(lastFeature)) {
+							if ("landscape".equals(part)) {
+								result = screenWidth > screenHeight;
+							} else if ("portrait".equals(part)) {
+								result = screenHeight >= screenWidth;
+							}
+						} else if ("aspect-ratio".equals(lastFeature) || "device-aspect-ratio".equals(lastFeature)) {
+							int splitPos = part.indexOf('/');
+							if (splitPos == -1) {
+								result = false;
+							} else {
+								int w = Integer.parseInt(part.substring(0, splitPos));
+								int h = Integer.parseInt(part.substring(splitPos+1));
+								int given = (screenWidth << 8) / screenHeight;
+								int expected = (w << 8) / h;
+								if (isMinFound) {
+									result = (given >= expected);
+								} else if (isMaxFound) {
+									result = (given <= expected);
+								} else {
+									result = (given == expected);
+								}
+							}
+						} else if ("color".equals(lastFeature)) {
+							int given = Display.getInstance().numColors();
+							int expected = 2 ^ Integer.parseInt(part);
+							if (isMinFound) {
+								result = (given >= expected);
+							} else if (isMaxFound) {
+								result = (given <= expected);
+							} else {
+								result = (given == expected);
+							}
+						} else if ("vendor".equals(lastFeature)){
+							String given = DeviceInfo.getVendorName();
+							if (given == null) {
+								given = "unknown";
+							} else {
+								given = given.toLowerCase();
+							}
+							result = (part.equals(given));
+						}
+					//#if polish.debug.debug
+					} else {
+						//#debug
+						System.out.println("Warning: encountered invalid state in media query at term " + part);
+					//#endif
+					}
+					if (!result) {
+						break;
+					}
+				} // found space
+			} // for each character
+			if (notFound) {
+				result = !result;
+			}
+			return result;
+		}
+	//#endif
 	
 	/**
 	 * Releases all (memory intensive) resources such as images or RGB arrays of this style sheet.
@@ -417,6 +641,8 @@ public final class StyleSheet {
 			return new Style[]{ defaultStyle, focusedStyle };
 		//#endif
 	}
+
+
 	
 	
 //#ifdef polish.StyleSheet.additionalMethods:defined

@@ -234,16 +234,25 @@ public abstract class MIDlet extends UiApplication
 					System.out.println("Unable to read manifest" + e);
 				}
 				String[] lines = TextUtil.split( completeBuffer.toString(), '\n' );
+				String lastKey = null;
+				String lastValue = null;
 				for (int i = 0; i < lines.length; i++) {
 					String line = lines[i];
 					int colonPos = line.indexOf(':');
 					if (colonPos == -1) {
-						//#debug warn
-						System.out.println("Unable to to split Manifest line " + line);
+						if (lastKey == null || "".equals(line)) {
+							//#debug warn
+							System.out.println("Unable to to split line " + line);
+						} else {
+							lastValue += line.trim();
+							this.appProperties.put( lastKey, lastValue );
+						}
 						continue;
 					}
 					String attributeKey = line.substring( 0, colonPos );
 					String attributeValue = line.substring( colonPos + 2 );
+					lastKey = attributeKey;
+					lastValue = attributeValue;
 					//#debug
 					System.out.println("Adding: " + attributeKey + "=" + attributeValue );
 					this.appProperties.put( attributeKey, attributeValue );
@@ -442,34 +451,30 @@ public abstract class MIDlet extends UiApplication
 			midlet.startApp();	
 			midlet.enterEventDispatcher();
 		} catch (InstantiationException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (IllegalAccessException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (MIDletStateChangeException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 	
-	private class NativeMidlet extends javax.microedition.midlet.MIDlet {
-		
-
-			protected void startApp() throws javax.microedition.midlet.MIDletStateChangeException {
-				// nothing to do
-			}
-		
-			protected void pauseApp() {
-				// ignore
-			}
-		
-			protected void destroyApp(boolean arg0) throws javax.microedition.midlet.MIDletStateChangeException {
-				// ignore
-			}
-	}
+//	private class NativeMidlet extends javax.microedition.midlet.MIDlet {
+//		
+//
+//			protected void startApp() throws javax.microedition.midlet.MIDletStateChangeException {
+//				// nothing to do
+//			}
+//		
+//			protected void pauseApp() {
+//				// ignore
+//			}
+//		
+//			protected void destroyApp(boolean arg0) throws javax.microedition.midlet.MIDletStateChangeException {
+//				// ignore
+//			}
+//	}
 
 }

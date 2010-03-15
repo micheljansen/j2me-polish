@@ -176,12 +176,12 @@ public final class Font extends Object
 			int androidStyle = Typeface.NORMAL;
 			if ( (style & STYLE_BOLD) == STYLE_BOLD  ) {
 				if ( (style & STYLE_ITALIC) == STYLE_ITALIC  ) {
-					style = Typeface.BOLD_ITALIC;
+					androidStyle = Typeface.BOLD_ITALIC;
 				} else {
-					style = Typeface.BOLD;
+					androidStyle = Typeface.BOLD;
 				}
 			} else if ( (style & STYLE_ITALIC) == STYLE_ITALIC  ) {
-				style = Typeface.ITALIC;
+				androidStyle = Typeface.ITALIC;
 			}
 			Typeface family = Typeface.DEFAULT;
 			if (face == FACE_MONOSPACE) {
@@ -465,7 +465,7 @@ public final class Font extends Object
 	 */
 	public int charsWidth(char[] ch, int offset, int length)
 	{
-		return (int)this.paint.measureText(new String(ch), offset, length - offset);
+		return (int)this.paint.measureText(new String(ch), offset, length + offset);
 	}
 
 	/**
@@ -528,7 +528,7 @@ public final class Font extends Object
 	{
 		//#debug
 		System.out.println("Measuring test for string '"+str+"' with offset '"+offset+"' and length '"+len+"'");
-		return (int)this.paint.measureText(str, offset, len - offset);
+		return (int)this.paint.measureText(str, offset, len + offset);
 	}
 
 

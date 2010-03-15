@@ -36,7 +36,7 @@ import de.enough.polish.util.MathUtil;
  * <p>Copyright Enough Software 2008</p>
  * @author Robert Virkus, j2mepolish@enough.de
  */
-public abstract class CssAnimation
+public abstract class CssAnimation 
 {
 	
 	public static final int FUNCTION_EASE = 1;
@@ -104,13 +104,15 @@ public abstract class CssAnimation
 	 */
 	public abstract Object animate(Style style, Object styleValue, long passedTime);
 
-	
-	
+		
 	public static int calculatePointInRange( int startValue, int endValue, long passedTime, long duration, int function ) {
+
+				
 		if (passedTime >= duration) {
 			//System.out.println("too long, returning " + endValue + ", passedTime=" + passedTime + ", duration=" + duration);
 			return endValue;
 		}
+
 		int valueRange = endValue - startValue;
 		switch (function) {
 		case FUNCTION_EASE:

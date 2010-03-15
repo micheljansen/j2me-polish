@@ -25,6 +25,7 @@
  */
 package de.enough.polish.blackberry.ui;
 
+import de.enough.polish.ui.Screen;
 import de.enough.polish.ui.Style;
 import de.enough.polish.ui.StyleSheet;
 import net.rim.device.api.ui.component.EditField;
@@ -32,100 +33,88 @@ import net.rim.device.api.ui.component.EditField;
 public class PolishEditField extends EditField implements PolishTextField {
 
 
-        private boolean isFocused;
-        public boolean processKeyEvents = true;
-		private int fontColor;
+	private boolean isFocused;
+	public boolean processKeyEvents = true;
+	private int fontColor;
+	//#if ${ version(polish.JavaPlatform, BlackBerry) } >= ${version(4.6)}
+	private BackgroundWrapper backgroundWrapper;
+	//#endif
+
+	public PolishEditField(String label, String text, int numChars, long style) {
+		super(label, text, numChars, style);
+	}
+
+	public void focusAdd( boolean draw ) {
+		//System.out.println("EditField: focusAdd (" + getText() + ")");
+		super.focusAdd( draw );
+		this.isFocused = true;
+	}
+
+	public void focusRemove() {
+		//System.out.println("EditField: focusRemove (" + getText() + ")");
+		super.focusRemove();
+		this.isFocused = false;
+	}
+
+	public void layout( int width, int height) {
+		if (height < 0 || width < 0) {
+			//#debug info
+			System.out.println("ignoring invalid layout params: width=" + width + ", height=" + height );                
+			return;
+		}
+		super.layout( width, height );
+	}
+
+	public void paint( net.rim.device.api.ui.Graphics g ) {
+    	if (this.isFocused && !StyleSheet.currentScreen.isMenuOpened()) {
+    		g.setColor( this.fontColor );
+    		super.paint( g );
+    	}
+	}
+
+	public void setFont(Font font, int textColor) {
+		try {
+			super.setFont( font.font );
+		} catch (IllegalStateException e) {
+			//#debug
+			System.out.println("Layout error: " + e );
+		}
+		this.fontColor = textColor;
+	}
+
+	public void setFont(javax.microedition.lcdui.Font font, int textColor) {
+	}
+
+	public void setPaintPosition(int x, int y ) {
+		this.isFocused = true;
+		super.setPosition(x, y);
+	}
+
+
+	public int getInsertPositionOffset() {
+		return getCursorPosition();
+	}
+
+	public void setStyle(Style style) {
+		Font font = (Font)(Object)style.getFont();
+		if (font == null) {
+			font = Font.getDefaultFont();
+		}
+		try {
+			super.setFont( font.font );
+		} catch (IllegalStateException e) {
+			//#debug error
+			System.out.println("Layout error: " + e );
+		}
+		this.fontColor = style.getFontColor();
 		//#if ${ version(polish.JavaPlatform, BlackBerry) } >= ${version(4.6)}
-			private BackgroundWrapper backgroundWrapper;
+			setBackground(BackgroundWrapper.INSTANCE);
 		//#endif
+	}
 
-        public PolishEditField(String label, String text, int numChars, long style) {
-                super(label, text, numChars, style);
-        }
-
-        public void focusAdd( boolean draw ) {
-                //System.out.println("EditField: focusAdd (" + getText() + ")");
-                super.focusAdd( draw );
-                this.isFocused = true;
-        }
-
-        public void focusRemove() {
-                //System.out.println("EditField: focusRemove (" + getText() + ")");
-                super.focusRemove();
-                this.isFocused = false;
-        }
-
-        public void layout( int width, int height) {
-        	if (height < 0 || width < 0) {
-        		//#debug info
-        		System.out.println("ignoring invalid layout params: width=" + width + ", height=" + height );                
-        		return;
-            }
-            super.layout( width, height );
-        }
-        
-        public void paint( net.rim.device.api.ui.Graphics g ) {
-              if (this.isFocused && !StyleSheet.currentScreen.isMenuOpened()) {
-            	  //g.setFont( this.font.font );
-            	  g.setColor( this.fontColor );
-                  super.paint( g );
-              }
-        }
-        
-		public void setFont(Font font, int textColor) {
-			try {
-				super.setFont( font.font );
-			} catch (IllegalStateException e) {
-				//#debug
-				System.out.println("Layout error: " + e );
-			}
-			this.fontColor = textColor;
-		}
-
-		public void setFont(javax.microedition.lcdui.Font font, int textColor) {
-		}
-
-		public void setPaintPosition(int x, int y ) {
-            this.isFocused = true;
-            super.setPosition(x, y);
-		}
-		
-		public int getInsertPositionOffset() {
-			return getCursorPosition();
-		}
-
-		public void setStyle(Style style) {
-			Font font = (Font)(Object)style.getFont();
-			if (font == null) {
-				font = Font.getDefaultFont();
-			}
-			try {
-				super.setFont( font.font );
-			} catch (IllegalStateException e) {
-				//#debug error
-				System.out.println("Layout error: " + e );
-			}
-			this.fontColor = style.getFontColor();
-			//#if ${ version(polish.JavaPlatform, BlackBerry) } >= ${version(4.6)}
-				if (style.background != null) {
-					if (this.backgroundWrapper == null) {
-						this.backgroundWrapper = new BackgroundWrapper( style.background );
-						try {
-							setBackground(this.backgroundWrapper);
-						} catch (Exception e) {
-							//#debug error
-							System.out.println("Unable to set background" + e);
-						}
-					} else {
-						this.backgroundWrapper.setBackground(style.background);
-					}
-				}
-			//#endif
-		}
-
-//		public int drawText(Graphics arg0, int arg1, int arg2, int arg3, int arg4, DrawTextParam arg5) {
-//			// TODO Auto-generated method stub
-//			return 0;
-//		}
+//	public int drawText(Graphics arg0, int arg1, int arg2, int arg3, int arg4, DrawTextParam arg5) {
+//	// TODO Auto-generated method stub
+//	return 0;
+//	}
 
 }

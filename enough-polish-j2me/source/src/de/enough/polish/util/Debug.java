@@ -74,7 +74,7 @@ implements CommandListener
 			//#= handlers = new LogHandler[ ${ number( polish.log.handlers )} ];
 			int i = 0;
 			//#foreach handler in polish.log.handlers
-				//#= handlers[i] = new ${ classname( handler )}();
+				//#= handlers[i] = new ${ handler }();
 				i++;
 			//#next handler
 		}

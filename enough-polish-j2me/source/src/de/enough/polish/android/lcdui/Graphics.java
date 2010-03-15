@@ -15,6 +15,7 @@ import android.graphics.Region.Op;
 /**
  * Provides simple 2D geometric rendering capability.
  * 
+ * 
  * Provides simple 2D geometric rendering capability.
  * 
  * <p>Drawing primitives are provided for text, images, lines, rectangles,
@@ -1093,7 +1094,7 @@ public class Graphics
 		y += this.translateY;
 		this.paint.setStyle(Style.FILL);
 		RectF rect = new RectF(x,y,x+width,y+height);
-		this.canvas.drawArc(rect, startAngle, arcAngle, false, this.paint);
+		this.canvas.drawArc(rect, startAngle, arcAngle, true, this.paint);
 		this.paint.setStyle(Style.STROKE);
 	}
 
@@ -1220,7 +1221,7 @@ public class Graphics
 	 */
 	public void drawSubstring( String str, int offset, int len, int x, int y, int anchor)
 	{
-		drawString( str.substring( offset, len), x, y, anchor );
+		drawString( str.substring( offset, offset+len), x, y, anchor );
 	}
 
 	/**

@@ -48,7 +48,7 @@ import de.enough.polish.util.ArrayList;
  * history
  *        06-Aug-2008 - timon creation
  * </pre>
- * @author Timon Grützmacher, j2mepolish@enough.de
+ * @author Timon Gruetzmacher, j2mepolish@enough.de
  */
 public class AsynchronousRmsLogHandler extends LogHandler implements Runnable{
 	/** The record store to log in */

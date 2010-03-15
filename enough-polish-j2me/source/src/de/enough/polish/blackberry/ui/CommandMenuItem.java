@@ -28,6 +28,8 @@
 package de.enough.polish.blackberry.ui;
 
 import de.enough.polish.ui.Command;
+import de.enough.polish.ui.CommandListener;
+import de.enough.polish.ui.Display;
 import de.enough.polish.ui.Displayable;
 import de.enough.polish.ui.Screen;
 import de.enough.polish.ui.UiAccess;
@@ -61,6 +63,10 @@ public class CommandMenuItem extends MenuItem {
 	public void run() {
 		if (this.displayable instanceof Screen) {
 			UiAccess.handleCommand((Screen)this.displayable, this.cmd);
+		} else if (this.displayable instanceof CommandListener) {
+			((CommandListener)this.displayable).commandAction(this.cmd, this.displayable);
+//		} else {
+//			Display.getInstance().commandAction(this.cmd, this.displayable);
 		}
 	}
 

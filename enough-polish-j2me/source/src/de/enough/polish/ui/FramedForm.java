@@ -121,7 +121,128 @@ public class FramedForm extends Form {
 		}		
 		return this.container;
 	}
+
+	/**
+	 * Looks up the frame around the given position
+	 * @param x the absolute x position
+	 * @param y the absolute y position
+	 * @return the frame of the specified position, might be null
+	 */
+	public  Container getFrame(int x, int y) {
+		if (this.topFrame != null && y < this.topFrame.relativeY + this.topFrame.itemHeight) {
+			return this.topFrame;
+		}
+		if (this.bottomFrame != null && y > this.bottomFrame.relativeY) {
+			return this.bottomFrame;
+		}
+		if (this.leftFrame != null && x < this.leftFrame.relativeX + this.leftFrame.itemWidth) {
+			return this.leftFrame;
+		}
+		if (this.rightFrame != null && x > this.rightFrame.relativeX) {
+			return this.rightFrame;
+		}
+		if (this.container.isInItemArea( x - this.container.relativeX, y - this.container.relativeY)) {
+			return this.container;
+		}
+		return null;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.Screen#getItemAt(int, int)
+	 */
+	public Item getItemAt( int x, int y ) {
+        Container cont = this.container;
+        Item superItemAt = null;
+		if (isMenuOpened()) {
+            superItemAt = super.getItemAt(x, y);
+            if (superItemAt instanceof CommandItem) {
+                return superItemAt;
+            }
+        }
+		Container frame = this.topFrame;
+		if (frame != null && y >= frame.relativeY && y <= frame.relativeY + frame.itemHeight) {
+			return frame.getItemAt(x - frame.relativeX, y - frame.relativeY);
+		}
+		frame = this.bottomFrame;
+		if (frame != null && y >= frame.relativeY && y <= frame.relativeY + frame.itemHeight) {
+			return frame.getItemAt(x - frame.relativeX, y - frame.relativeY);
+		}
+		frame = this.leftFrame;
+		if (frame != null && x >= frame.relativeX && x <= frame.relativeX + frame.itemWidth &&  y >= frame.relativeY && y <= frame.relativeY + frame.itemHeight) {
+			return frame.getItemAt(x - frame.relativeX, y - frame.relativeY);
+		}
+		frame = this.rightFrame;
+		if (frame != null && x >= frame.relativeX && x <= frame.relativeX + frame.itemWidth &&  y >= frame.relativeY && y <= frame.relativeY + frame.itemHeight) {
+			return frame.getItemAt(x - frame.relativeX, y - frame.relativeY);
+		}
+		frame = this.currentlyActiveContainer;
+        if (frame != cont) {
+            Item item = frame.getItemAt(x - frame.relativeX, y - frame.relativeY);
+            if (item != null && item != frame) {
+                return item;
+            }
+        }
+        if (superItemAt != null) {
+        	return superItemAt;
+        } else {
+        	return super.getItemAt(x, y);
+        }
+	}
 	
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.Screen#focus(de.enough.polish.ui.Item, boolean)
+	 */
+	public void focus(Item item, boolean force) {
+		focus( item, force, false );
+	}
+	
+	/**
+	 * Focuses the specified item and optionally keeps the current frame focused
+	 * @param item the item
+	 * @param force when the item should be focused even when it is not interactive
+	 * @param keepCurrentFrame true when the currently active container should keep its focus
+	 */
+	public void focus(Item item, boolean force, boolean keepCurrentFrame) {
+		if (item.isFocused) {
+			//#debug
+			System.out.println("Ignoring focus for already focused item " + item);
+			return;
+		}
+		if (item.parent != null && item.parent.label == item) {
+            item = item.parent;
+        }
+		ArrayList children = new ArrayList();
+		while (item.parent != null) {
+			if (force || item.isInteractive()) {
+				children.add(item);
+			} 
+			item = item.parent;
+		}
+		Container frame = null;
+		int offset = 0;
+		if (!keepCurrentFrame && item != this.currentlyActiveContainer && item instanceof Container) {
+			frame = (Container)item;
+			offset = frame.getScrollYOffset();
+			setActiveFrame( frame, this.keepContentFocused, 0  );
+		}
+		for (int i=children.size(); --i >= 0; ) {
+			Item child = (Item) children.get(i);
+			if (!child.isFocused) {
+				if (item instanceof Container) {
+					Container cont = (Container) item;
+					cont.focusChild( cont.indexOf(child), child, 0, force );
+				}
+			}
+			item = child;
+		}
+		if (frame != null) {
+			frame.setScrollYOffset(offset, false);
+		}
+	}
+	
+
 	/**
 	 * Deletes all the items from all frames of this <code>FramedForm</code>, leaving  it with zero items.
 	 * This method does nothing if the <code>FramedForm</code> is already empty.
@@ -449,11 +570,12 @@ public class FramedForm extends Form {
 		this.contentWidth = width;
 		this.contentHeight = height;
 		
-//		// adjust scroll offset for bottom frame animation
-//		if(getScrollYOffset() < 0 && (getScrollYOffset() + cont.getContentHeight() < height) )
-//		{
-//			cont.setScrollYOffset(-1 * (cont.getContentHeight() - height));
-//		}
+		int yOffset = getScrollYOffset();
+		// adjust scroll offset for bottom frame animation
+		if(cont != null && yOffset < 0 && (yOffset + cont.getItemAreaHeight() < height) )
+		{
+			cont.setScrollYOffset( -(cont.getItemAreaHeight() - height));
+		}
 	}	
 	
 	
@@ -501,11 +623,15 @@ public class FramedForm extends Form {
 		if (this.rightFrame != null) {
 		 	Style frameStyle = this.rightFrame.style;
 			if (this.expandRightFrame) {
+		 		int leftFrameBackgroundWidth = 0;  
+		 		if(this.leftFrame != null) {
+		 			leftFrameBackgroundWidth = this.leftFrame.getBackgroundWidth();
+		 		}
 			 	if ( frameStyle.background != null ) {
-			 		frameStyle.background.paint( this.contentX + this.contentWidth + frameStyle.getMarginLeft(this.screenWidth), frameStyle.getMarginTop(this.screenHeight), this.leftFrame.backgroundWidth, this.originalContentHeight - frameStyle.getMarginTop(this.screenHeight) - frameStyle.getMarginBottom(this.screenHeight), g);
+			 		frameStyle.background.paint( this.contentX + this.contentWidth + frameStyle.getMarginLeft(this.screenWidth), frameStyle.getMarginTop(this.screenHeight), leftFrameBackgroundWidth, this.originalContentHeight - frameStyle.getMarginTop(this.screenHeight) - frameStyle.getMarginBottom(this.screenHeight), g);
 			 	}
 			 	if ( frameStyle.border != null ) {
-			 		frameStyle.border.paint( this.contentX + this.contentWidth + frameStyle.getMarginLeft(this.screenWidth), frameStyle.getMarginTop(this.screenHeight), this.leftFrame.backgroundWidth, this.originalContentHeight - frameStyle.getMarginTop(this.screenHeight) - frameStyle.getMarginBottom(this.screenHeight), g);
+			 		frameStyle.border.paint( this.contentX + this.contentWidth + frameStyle.getMarginLeft(this.screenWidth), frameStyle.getMarginTop(this.screenHeight), leftFrameBackgroundWidth, this.originalContentHeight - frameStyle.getMarginTop(this.screenHeight) - frameStyle.getMarginBottom(this.screenHeight), g);
 			 	}
 			}
 			int y = this.originalContentY;
@@ -893,7 +1019,16 @@ public class FramedForm extends Form {
 		}
 		this.currentlyActiveContainer = newFrame;
 		if (newFrame == this.container) {
-			newFrame.init( this.contentWidth, this.contentWidth, this.contentHeight );
+			int w = this.contentWidth;
+			int h = this.contentHeight;
+			if (newFrame.itemHeight > h) {
+				w -= getScrollBarWidth();
+				int ch = newFrame.getItemHeight( w, w, h );
+				if (ch <= h) {
+					w += getScrollBarWidth();
+					newFrame.init( w, w, h );
+				}
+			}
 			initContent(newFrame);
 		}
 		if (keepMainFocus && newFrame != this.container) {
@@ -904,14 +1039,23 @@ public class FramedForm extends Form {
 		}
 		
 	}
+	
+	
 
 	//#ifdef polish.hasPointerEvents
 	/* (non-Javadoc)
 	 * @see de.enough.polish.ui.Screen#handlePointerPressed(int, int)
 	 */
 	protected boolean handlePointerPressed(int x, int y) {
-		Container newFrame = null;
+		Container areaFrame = getFrame( x, y );
 		Container activeFrame = this.currentlyActiveContainer;
+		if (areaFrame != null && areaFrame != activeFrame && areaFrame.isInteractive()) {
+			setActiveFrame(areaFrame);
+			if (areaFrame.handlePointerPressed(x - areaFrame.relativeX, y - areaFrame.relativeY)) {
+				return true;
+			}
+		}
+		Container newFrame = null;
 		if ( activeFrame != null 
 				&& activeFrame.handlePointerPressed(x - activeFrame.relativeX, y - activeFrame.relativeY)) 
 		{ 
@@ -956,6 +1100,7 @@ public class FramedForm extends Form {
 		{ 
 			newFrame = activeFrame;
 		} else if ( this.container != activeFrame 
+				&& getFrame(x, y) == this.container
 				&& this.container.handlePointerDragged(x - this.container.relativeX, y - this.container.relativeY)) 
 		{
 			newFrame = this.container;
@@ -1022,6 +1167,58 @@ public class FramedForm extends Form {
 	}
 	//#endif
 	
+
+	//#ifdef polish.hasTouchEvents
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.Screen#handlePointerTouchDown(int, int)
+	 */
+	public boolean handlePointerTouchDown(int x, int y) {
+		Container frame = this.topFrame;
+		if (frame != null && frame.handlePointerTouchDown(x - frame.relativeX, y - frame.relativeY)) {
+			return true;
+		}
+		frame = this.bottomFrame;
+		if (frame != null && frame.handlePointerTouchDown(x - frame.relativeX, y - frame.relativeY)) {
+			return true;
+		}
+		frame = this.leftFrame;
+		if (frame != null && frame.handlePointerTouchDown(x - frame.relativeX, y - frame.relativeY)) {
+			return true;
+		}
+		frame = this.rightFrame;
+		if (frame != null && frame.handlePointerTouchDown(x - frame.relativeX, y - frame.relativeY)) {
+			return true;
+		}
+		return super.handlePointerTouchDown(x, y);
+	}
+	//#endif
+
+	//#if polish.hasTouchEvents
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.Screen#handlePointerTouchUp(int, int)
+	 */
+	public boolean handlePointerTouchUp(int x, int y) {
+		Container frame = this.topFrame;
+		if (frame != null && frame.handlePointerTouchUp(x - frame.relativeX, y - frame.relativeY)) {
+			return true;
+		}
+		frame = this.bottomFrame;
+		if (frame != null && frame.handlePointerTouchUp(x - frame.relativeX, y - frame.relativeY)) {
+			return true;
+		}
+		frame = this.leftFrame;
+		if (frame != null && frame.handlePointerTouchUp(x - frame.relativeX, y - frame.relativeY)) {
+			return true;
+		}
+		frame = this.rightFrame;
+		if (frame != null && frame.handlePointerTouchUp(x - frame.relativeX, y - frame.relativeY)) {
+			return true;
+		}
+		return super.handlePointerTouchUp(x, y);
+	}
+	//#endif
 	
 	/* (non-Javadoc)
 	 * @see de.enough.polish.ui.Screen#animate(long,ClippingRegion)
@@ -1247,6 +1444,51 @@ public class FramedForm extends Form {
 			this.bottomFrame.onScreenSizeChanged(width, height);
 		}
 	}
+	
+	/* (non-Javadoc)
+	 * @see de.enough.polish.ui.Screen#releaseResources()
+	 */
+	public void releaseResources() {
+		super.releaseResources();
+		
+		if (this.leftFrame != null) {
+			this.leftFrame.releaseResources();
+		}
+		if (this.rightFrame != null) {
+			this.rightFrame.releaseResources();
+		}
+		if (this.topFrame != null) {
+			this.topFrame.releaseResources();
+		}
+
+		if (this.bottomFrame != null) {
+			this.bottomFrame.releaseResources();
+		}
+	}
+
+	/* (non-Javadoc)
+	 * @see de.enough.polish.ui.Screen#destroy()
+	 */
+	public void destroy() {
+		super.destroy();
+		
+		if (this.leftFrame != null) {
+			this.leftFrame.destroy();
+		}
+		if (this.rightFrame != null) {
+			this.rightFrame.destroy();
+		}
+		if (this.topFrame != null) {
+			this.topFrame.destroy();
+		}
+
+		if (this.bottomFrame != null) {
+			this.bottomFrame.destroy();
+		}
+	}
+
+	
+	
 	
 	
 

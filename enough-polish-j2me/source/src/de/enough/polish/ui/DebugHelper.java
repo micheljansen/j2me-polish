@@ -124,4 +124,43 @@ public class DebugHelper {
 			e.printStackTrace();
 		}
 	}
+	
+	public static void print(Item item) {
+		if(item instanceof Container) {
+			print((Container)item);
+		}
+		else {
+			printItem(item,"");
+		}
+	}
+	
+	public static void print(Container container) {
+		print(container,0);
+	}
+	
+	static String getIndent(int depth) {
+		String indent = "";
+		
+		for (int i = 0; i < depth; i++) {
+			indent += "  ";
+		}
+		
+		return indent;
+	}
+	
+	static void print(Container container, int depth) {
+		printItem(container,getIndent(depth));
+		for (int i = 0; i < container.size(); i++) {
+			Item item = container.get(i);
+			printItem(item,getIndent(depth));
+			if(item instanceof Container) {
+				depth++;
+				print((Container)item,depth);
+			}
+		}
+	}
+	
+	static void printItem(Item item, String indent) {
+		System.out.println(indent + item);
+	}
 }

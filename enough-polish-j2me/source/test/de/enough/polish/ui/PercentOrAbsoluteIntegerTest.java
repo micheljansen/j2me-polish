@@ -55,11 +55,11 @@ public class PercentOrAbsoluteIntegerTest extends TestCase
 		
 		n = new Dimension(35, true);
 		assertEquals( 35, n.getValue(100) );
-		assertEquals( 35, n.getValue(1000) );
+		assertEquals( 350, n.getValue(1000) );
 
 		n = new Dimension(35, 1);
 		assertEquals( 35, n.getValue(100) );
-		assertEquals( 35, n.getValue(1000) );
+		assertEquals( 350, n.getValue(1000) );
 		
 		n = new Dimension(35, 10);
 		assertEquals( 3, n.getValue(100) );

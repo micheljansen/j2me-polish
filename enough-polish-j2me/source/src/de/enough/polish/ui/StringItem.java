@@ -27,7 +27,9 @@ package de.enough.polish.ui;
 
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
+import javax.microedition.lcdui.Image;
 
+import de.enough.polish.util.RgbImage;
 import de.enough.polish.util.TextUtil;
 
 /**
@@ -77,15 +79,28 @@ public class StringItem extends Item
 	//#endif
 	//#ifdef polish.css.max-lines
 		protected int maxLines = TextUtil.MAXLINES_UNLIMITED;
-		protected String maxLinesAppendix;
+		protected String maxLinesAppendix = TextUtil.MAXLINES_APPENDIX;
+		protected int maxLinesAppendixPosition = TextUtil.MAXLINES_APPENDIX_POSITION_AFTER;
 	//#endif
 	//#if polish.css.text-layout
-		private int textLayout;
+		protected int textLayout;
 	//#endif
 	//#if polish.css.text-visible
 		private boolean isTextVisible = true;
 	//#endif
-
+	protected boolean isTextInitializationRequired;
+	private int lastAvailableContentWidth;
+	private int lastContentWidth;
+	private int lastContentHeight;
+	//#if polish.css.text-filter && polish.midp2
+		private RgbFilter[] textFilters;
+		private boolean isTextFiltersActive;
+		private RgbImage textFilterRgbImage;
+		private RgbImage textFilterProcessedRgbImage;
+		private RgbFilter[] originalTextFilters;
+		private int textFilterLayout;
+	//#endif
+	
 	/**
 	 * Creates a new <code>StringItem</code> object.  Calling this
 	 * constructor is equivalent to calling
@@ -198,7 +213,7 @@ public class StringItem extends Item
 	
 	
 	
-	//#if tmp.useTextEffect
+	//#if tmp.useTextEffect || polish.css.text-wrap
 	/* (non-Javadoc)
 	 * @see de.enough.polish.ui.Item#animate(long, de.enough.polish.ui.ClippingRegion)
 	 */
@@ -254,6 +269,44 @@ public class StringItem extends Item
 	}
 	//#endif
 
+	//#if polish.css.text-filter
+	/* (non-Javadoc)
+	 * @see de.enough.polish.ui.Item#addRepaintArea(de.enough.polish.ui.ClippingRegion)
+	 */
+	public void addRepaintArea(ClippingRegion repaintRegion) {
+		super.addRepaintArea(repaintRegion);
+		RgbImage img = this.textFilterProcessedRgbImage;
+		if (img != null && (img.getHeight() > this.lastContentHeight || img.getWidth() > this.lastContentWidth)) {
+			int lo;
+			//#if polish.css.text-filter-layout
+				lo = this.textFilterLayout;
+			//#elif polish.css.text-layout
+				lo = this.textLayout;
+			//#else
+				lo = this.layout;
+			//#endif
+			int w = img.getWidth();
+			int h = img.getHeight();
+			int horDiff = w - this.lastContentWidth;
+			int verDiff = h - this.lastContentHeight;
+			w += this.contentWidth - this.lastContentWidth;
+			h += this.contentHeight - this.lastContentHeight;
+			int absX = getAbsoluteX();
+			int absY = getAbsoluteY();
+			if ((lo & LAYOUT_CENTER) == LAYOUT_CENTER) {
+				absX -= horDiff / 2;
+			} else if ((lo & LAYOUT_CENTER) == LAYOUT_RIGHT) {
+				absX -= horDiff;
+			}
+			if ((lo & LAYOUT_VCENTER) == LAYOUT_VCENTER) {
+				absY -= verDiff / 2; 
+			} else if ((lo & LAYOUT_VCENTER) == LAYOUT_TOP) {
+				absY -= verDiff; 
+			}
+			repaintRegion.addRegion( absX, absY, w, h );
+		}
+	}
+	//#endif
 	
 	//#if polish.css.text-wrap
 	/* (non-Javadoc)
@@ -345,6 +398,7 @@ public class StringItem extends Item
 			if (text == null) {
 				this.textLines = null;
 			}
+			this.isTextInitializationRequired = true;
 			requestInit();
 		}
 	}
@@ -352,7 +406,10 @@ public class StringItem extends Item
 	//#if tmp.useTextEffect
 	public void setTextEffect(TextEffect effect)
 	{
-		this.textEffect = effect;
+		if (effect != this.textEffect) {
+			this.textEffect = effect;
+			this.isTextInitializationRequired = true;
+		}
 	}
 	//#endif
 	
@@ -383,8 +440,10 @@ public class StringItem extends Item
 	 */
 	public void setFont( Font font)
 	{
-		this.font = font;
-		setInitialized(false);
+		if (font == null || !font.equals(this.font)) {
+			this.font = font;
+			setInitialized(false);
+		}
 	}
 
 	/**
@@ -424,6 +483,49 @@ public class StringItem extends Item
 				return;
 			}
 		//#endif
+		//#if polish.css.text-filter && polish.midp2
+			if (this.isTextFiltersActive && this.textFilters != null) {
+				RgbImage rgbImage = this.textFilterRgbImage;
+				if ( rgbImage == null) {
+					int w = this.lastContentWidth;
+					int h = this.lastContentHeight;
+					Image image = Image.createImage( w, h );
+					int transparentColor = 0x12345678;
+					Graphics imgG = image.getGraphics();
+					imgG.setColor(transparentColor);
+					imgG.fillRect(0, 0, w+1, h+1 );
+					int[] transparentColorRgb = new int[1];
+					image.getRGB(transparentColorRgb, 0, 1, 0, 0, 1, 1 );
+					transparentColor = transparentColorRgb[0];
+					paintText( 0, 0, 0, w, imgG );
+					int[] textRgbData = new int[ w*h ];
+					image.getRGB(textRgbData, 0, w, 0, 0, w, h );
+					// ensure transparent parts are indeed transparent
+					for (int i = 0; i < textRgbData.length; i++) {
+						if( textRgbData[i] == transparentColor ) {
+							textRgbData[i] = 0;
+						}
+					}
+					rgbImage = new RgbImage(textRgbData, w);
+					this.textFilterRgbImage = rgbImage;
+				} 
+				int lo;
+				//#if polish.css.text-filter-layout
+					lo = this.textFilterLayout;
+				//#elif polish.css.text-layout
+					lo = this.textLayout;
+				//#else
+					lo = this.layout;
+				//#endif
+				this.textFilterProcessedRgbImage = paintFilter( x, y, this.textFilters, rgbImage, lo, g );
+			} else {
+				paintText(x, y, leftBorder, rightBorder, g);
+			}
+		//#endif		
+	//#if polish.css.text-filter && polish.midp2
+	}
+	private void paintText( int x, int y, int leftBorder, int rightBorder, Graphics g) {
+	//#endif
 		String[] lines = this.textLines;
 		if (lines != null) {
 			//#if polish.css.text-wrap
@@ -450,7 +552,7 @@ public class StringItem extends Item
 			g.setFont( this.font );
 			g.setColor( this.textColor );
 			
-			int lineHeight = getFontHeight() + this.paddingVertical; 
+			int lineHeight = getLineHeight();
 			//#ifdef polish.css.text-horizontal-adjustment
 				x += this.textHorizontalAdjustment;
 				leftBorder += this.textHorizontalAdjustment;
@@ -480,27 +582,42 @@ public class StringItem extends Item
 					int centerX = 0;
 					boolean isCenter;
 					boolean isRight;
+					boolean isExpand;
 					//#if polish.css.text-layout
 						int lo = this.textLayout;
 						isCenter = (lo & LAYOUT_CENTER) == LAYOUT_CENTER;
 						isRight = (lo & LAYOUT_CENTER) == LAYOUT_RIGHT;
+						isExpand = (lo & LAYOUT_EXPAND) == LAYOUT_EXPAND;
 					//#else
 						isCenter = this.isLayoutCenter;
 						isRight = this.isLayoutRight;
 					//#endif
 					
 					if (isCenter) {
-						centerX = leftBorder + (rightBorder - leftBorder) / 2;
-						//#ifdef polish.css.text-horizontal-adjustment
+						//#if polish.css.text-layout && polish.text-layout.parentCenter
+						if(isExpand && this.parent != null) {
+							int parentLeft = this.parent.getAbsoluteX() + this.parent.getContentX(); 
+							int parentRight = parentLeft + this.parent.getContentWidth();
+							centerX = parentLeft + (parentRight - parentLeft) / 2;
+							//#ifdef polish.css.text-horizontal-adjustment
 							centerX += this.textHorizontalAdjustment;
+							//#endif
+						}
+						else
 						//#endif
+						{
+							centerX = leftBorder + (rightBorder - leftBorder) / 2;
+							//#ifdef polish.css.text-horizontal-adjustment
+							centerX += this.textHorizontalAdjustment;
+							//#endif
+						}
 					}
 					int lineX = x;
 					int lineY = y;
 					int orientation;
 					// adjust the painting according to the layout:
 					if (isRight) {
-						lineX = rightBorder;
+						lineX = x + this.backgroundWidth - this.paddingLeft - this.paddingRight; // rightBorder;
 						orientation = Graphics.RIGHT;
 					} else if (isCenter) {
 						lineX = centerX;
@@ -537,6 +654,14 @@ public class StringItem extends Item
 				}
 			//#endif
 		}
+	}
+	
+	/**
+	 * Returns the height of one line
+	 * @return the height of one line
+	 */
+	public int getLineHeight() {
+		return getFontHeight() + this.paddingVertical;
 	}
 	
 	/**
@@ -585,13 +710,14 @@ public class StringItem extends Item
 			}
 		//#endif
 	}
+	
 
 	/* (non-Javadoc)
 	 * @see de.enough.polish.ui.Item#initItem()
 	 */
 	protected void initContent(int firstLineWidth, int availWidth, int availHeight){
 		//#debug
-		System.out.println("initContent for " + this.text);
+		System.out.println("initContent for " + this.text + " with firstLineWidth=" + firstLineWidth + ", availWidth=" + availWidth + ", availHeight=" + this.availableHeight);
 		String body = this.text;
 		if (body != null && this.font == null) {
 			this.font = Font.getDefaultFont();
@@ -601,12 +727,18 @@ public class StringItem extends Item
 				|| !this.isTextVisible
 			//#endif
 		) {
-			this.contentHeight = 0;
 			this.contentWidth = 0;
+			this.contentHeight = 0;
 			this.textLines = null;
 			return;
 		}
-
+		if (!this.isTextInitializationRequired && availWidth == this.lastAvailableContentWidth) {
+			this.contentWidth = this.lastContentWidth; 
+			this.contentHeight = this.lastContentHeight; 
+			return;
+		}
+		this.isTextInitializationRequired = false;
+		this.lastAvailableContentWidth = availWidth;
 		//#if polish.css.text-wrap
 			if ( this.useSingleLine ) {
 				this.availableTextWidth = availWidth;
@@ -663,18 +795,31 @@ public class StringItem extends Item
 		//#if polish.css.text-wrap
 			}
 		//#endif
+		this.lastContentWidth = this.contentWidth;
+		this.lastContentHeight = this.contentHeight;
 	}
 	
+	/**
+	 * Wraps the specified text
+	 * @param body the text
+	 * @param firstLineWidth the available width for the first line
+	 * @param availWidth the available width for subsequent lines
+	 * @return an array of text lines that fit into the specified dimensions
+	 */
 	String[] wrap(String body, int firstLineWidth, int availWidth)
 	{
 		String[] result;
 		//#ifdef tmp.useTextEffect
 		if (this.textEffect != null) {
-			result = this.textEffect.wrap( this, body, this.textColor, this.font, firstLineWidth, availWidth );
+			//#ifdef polish.css.max-lines
+				result = this.textEffect.wrap(this, body, this.textColor, this.font, firstLineWidth, availWidth, this.maxLines, this.maxLinesAppendix, this.maxLinesAppendixPosition);
+			//#else
+				result = this.textEffect.wrap(this, body, this.textColor, this.font, firstLineWidth, availWidth);
+			//#endif
 		} else {
 		//#endif
 			//#ifdef polish.css.max-lines
-				result = TextUtil.wrap(body, this.font, firstLineWidth, availWidth, this.maxLines, this.maxLinesAppendix);
+				result = TextUtil.wrap(body, this.font, firstLineWidth, availWidth, this.maxLines, this.maxLinesAppendix, this.maxLinesAppendixPosition);
 			//#else
 				result = TextUtil.wrap(body, this.font, firstLineWidth, availWidth);
 			//#endif
@@ -685,13 +830,23 @@ public class StringItem extends Item
 	}
 	
 	
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.Item#setContentWidth(int)
+	 */
+	protected void setContentWidth(int width) {
+		if (width < this.contentWidth) {
+			initContent( width, width, this.availContentHeight );
+		}
+		super.setContentWidth(width);
+		
+	}
 
 	/* (non-Javadoc)
 	 * @see de.enough.polish.ui.Item#setStyle(de.enough.polish.ui.Style)
 	 */
 	public void setStyle(Style style)
 	{
-		super.setStyle(style);
 		//#ifdef tmp.useTextEffect
 			TextEffect effect = (TextEffect) style.getObjectProperty( "text-effect" );
 			if (effect != null)  {
@@ -707,12 +862,16 @@ public class StringItem extends Item
 						}
 					}
 					this.textEffect = effect;
+					this.textEffect.onAttach(this);
 				} else {
 					effect = this.textEffect;
 				}
 				effect.setStyle(style);
-			} else {
+				this.isTextInitializationRequired = true;
+			} else if (this.textEffect != null) {
+				this.textEffect.onDetach(this);
 				this.textEffect = null;
+				this.isTextInitializationRequired = true;
 			}
 		//#endif
 		//#if polish.css.text-layout
@@ -723,6 +882,38 @@ public class StringItem extends Item
 				this.textLayout = style.layout;
 			}
 		//#endif 
+		//#if polish.css.text-filter && polish.midp2
+			RgbFilter[] filterObjects = (RgbFilter[]) style.getObjectProperty("text-filter");
+			if (filterObjects != null) {
+				if (filterObjects != this.originalTextFilters) {
+					this.textFilters = new RgbFilter[ filterObjects.length ];
+					for (int i = 0; i < filterObjects.length; i++)
+					{
+						RgbFilter rgbFilter = filterObjects[i];
+						try
+						{
+							this.textFilters[i] = (RgbFilter) rgbFilter.getClass().newInstance();
+						} catch (Exception e)
+						{
+							//#debug warn
+							System.out.println("Unable to initialize filter class " + rgbFilter.getClass().getName() + e );
+						}
+					}
+					this.originalTextFilters = filterObjects;
+				}
+			} else if (this.textFilterRgbImage != null) {
+				this.originalTextFilters = null;
+				this.textFilters = null;
+				this.textFilterRgbImage = null;
+			}
+			//#if polish.css.text-filter-layout
+				Integer textFilterLayoutInt = style.getIntProperty("text-filter-layout");
+				if (textFilterLayoutInt != null) {
+					this.textFilterLayout = textFilterLayoutInt.intValue();
+				}
+			//#endif
+		//#endif
+		super.setStyle(style);
 	}
 
 	/* (non-Javadoc)
@@ -760,9 +951,13 @@ public class StringItem extends Item
 		//#if polish.css.text-wrap
 			Boolean textWrapBool = style.getBooleanProperty("text-wrap");
 			if (textWrapBool != null) {
-				this.useSingleLine = !textWrapBool.booleanValue();
-			} else if (resetStyle) {
+				if (textWrapBool.booleanValue() == this.useSingleLine) {
+					this.useSingleLine = !textWrapBool.booleanValue();
+					this.isTextInitializationRequired = true;
+				}
+			} else if (resetStyle && this.useSingleLine) {
 				this.useSingleLine = false;
+				this.isTextInitializationRequired = true;
 			}
 			//#if polish.css.text-wrap-animate
 				Boolean animateTextWrapBool = style.getBooleanProperty("text-wrap-animate");
@@ -791,9 +986,12 @@ public class StringItem extends Item
 		//#ifdef polish.css.max-lines
 			Integer maxLinesInt = style.getIntProperty("max-lines");
 			if (maxLinesInt != null) {
-				this.maxLines = maxLinesInt.intValue();
-				if (this.maxLines <= 0) {
-					this.maxLines = TextUtil.MAXLINES_UNLIMITED;
+				if (maxLinesInt.intValue() != this.maxLines) {
+					this.maxLines = maxLinesInt.intValue();
+					if (this.maxLines <= 0) {
+						this.maxLines = TextUtil.MAXLINES_UNLIMITED;
+					}
+					this.isTextInitializationRequired = true;
 				}
 			}
 			//#ifdef polish.css.max-lines-appendix
@@ -802,13 +1000,31 @@ public class StringItem extends Item
 					this.maxLinesAppendix = appendix; 
 				}
 			//#endif
+			//#ifdef polish.css.max-lines-appendix-position
+				Integer positionInt = style.getIntProperty("max-lines-appendix-position");
+				if (positionInt != null) {
+					this.maxLinesAppendixPosition = positionInt.intValue(); 
+				}
+			//#endif
 		//#endif
 		//#if polish.css.text-visible
 			Boolean textVisibleBool = style.getBooleanProperty("text-visible");
 			if (textVisibleBool != null) {
 				this.isTextVisible = textVisibleBool.booleanValue();
-			} else {
+			} else if (resetStyle){
 				this.isTextVisible = true;
+			}
+		//#endif
+		//#if polish.css.text-filter && polish.midp2
+			if (this.textFilters != null) {
+				boolean isActive = false;
+				for (int i=0; i<this.textFilters.length; i++) {
+					RgbFilter filter = this.textFilters[i];
+					filter.setStyle(style, resetStyle);
+					isActive |= filter.isActive();
+				}
+				this.isTextFiltersActive = isActive;
+				this.textFilterRgbImage = null;
 			}
 		//#endif
 	}

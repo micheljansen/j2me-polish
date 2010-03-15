@@ -186,22 +186,22 @@ public class SplashScreen extends Screen {
     
     private class Watchdog extends Thread {
         
-        private int timeout;
-        private long currentDisplayTimestamp;
+        private int wdTimeout;
+        private long wdCurrentDisplayTimestamp;
         
         private Watchdog(int timeout, long currentDisplayTimestamp) {
-            this.timeout = timeout;
-            this.currentDisplayTimestamp = currentDisplayTimestamp;
+            this.wdTimeout = timeout;
+            this.wdCurrentDisplayTimestamp = currentDisplayTimestamp;
         }
         
         public void run() {
             try {
-                Thread.sleep(this.timeout);
+                Thread.sleep(this.wdTimeout);
             } catch (InterruptedException ie) {
             }
             // doDismiss (only if current display timout matches) - this means this
             // splash screen is still being shown on the display
-            if (this.currentDisplayTimestamp == SplashScreen.this.currentDisplayTimestamp) {
+            if (this.wdCurrentDisplayTimestamp == SplashScreen.this.currentDisplayTimestamp) {
                 doDismiss();
             }
         }

@@ -34,15 +34,12 @@ import javax.microedition.lcdui.Image;
  *
  * <p>Copyright Enough Software 2004 - 2009</p>
 
- * <pre>
- * history
- *        09-Nov-2004 - rob creation
- * </pre>
  * @author Robert Virkus, j2mepolish@enough.de
  */
  
  /*
- * Last modified on 25.01.2006 by Radu Zah, Butterfly-effected, raduzah@yahoo.com.
+  * 
+ * Modifications on 25.01.2006 by Radu Zah, Butterfly-effected, raduzah@yahoo.com.
  * 
  * Problem 1 description: a text that needed more than 20 lines caused an ArrayIndexOutOfBounds exception.
  * Reason: The lineWidths array had an hardcoded size of 20 elements.
@@ -82,6 +79,8 @@ public class BitMapFontViewer {
 	private final int[] indeces;
 	private final byte[] actualCharacterWidths;
 	private int orientation;
+	private BitMapFontViewer maxLineAppendixViewer;
+	private int color;
 
 	/**
 	 * Views a specific input string with a specific bitmap font.
@@ -123,7 +122,9 @@ public class BitMapFontViewer {
 				this.usedCharactersWidths[i] = ABSOLUTE_LINE_BREAK;
 				linesIndex++;
 				//now check not to exceed the lineWidths array limit //use a grow factor of 10
-				if (linesIndex >= this.lineWidths.length) this.lineWidths = increaseShortArraySize(this.lineWidths, (byte)10);
+				if (linesIndex >= this.lineWidths.length) {
+					this.lineWidths = increaseShortArraySize(this.lineWidths, 10);
+				}
 			} else {
 				// this is a normal character
 				this.xPositions[i] = xPositions[ index ];
@@ -162,6 +163,7 @@ public class BitMapFontViewer {
 		if (color != -1 && color != 0) {
 			this.image = applyColor(image, COLORIZE_MASK, color);
 		}
+		this.color = color;
 	}
 	
 	/**
@@ -183,13 +185,27 @@ public class BitMapFontViewer {
 			
 			for (int i = 0; i < rgb.length; i++) {
 				int pixel = rgb[i];
-				rgb[i] = colorizePixel(pixel, color);
+				
+				if(isValidPixel(pixel, mask))
+				{
+					rgb[i] = colorizePixel(pixel, color);
+				}
 			}
 			
 			return Image.createRGBImage(rgb, w, h, true);
 		//#else
 			//# return img;
 		//#endif
+	}
+	
+	/**
+	 * @param argb the argb value
+	 * @param mask the mask
+	 * @return true, if the argb value matches the mask, otherwise false
+	 */
+	protected boolean isValidPixel(int argb, int mask)
+	{
+		return ((argb & 0x00FFFFFF) == (mask & 0x00FFFFFF));
 	}
 	
 	/**
@@ -237,6 +253,12 @@ public class BitMapFontViewer {
 			} else if (characterWidth < 0) {
 				// this is a line-break:
 				lineIndex++;
+				if (lineIndex == this.numberOfLines) {
+					if (this.maxLineAppendixViewer != null) {
+						this.maxLineAppendixViewer.paint(x, y, g);
+					}
+					break;
+				}
 				if (isLayoutCenter) {
 					x = startX - (this.lineWidths[ lineIndex ] / 2);
 				} else if (isLayoutRight) {
@@ -291,6 +313,23 @@ public class BitMapFontViewer {
 	 * @see #getWidth()
 	 */
 	public void layout( int firstLineWidth, int lineWidth, int paddingVertical, int orientationSetting ) {
+		layout( firstLineWidth, lineWidth, paddingVertical, orientationSetting, -1, null, null );
+	}
+	
+	/**
+	 * Layouts this text-viewer.
+	 * 
+	 * @param firstLineWidth the available width for the first line
+	 * @param lineWidth the available width for the following lines
+	 * @param paddingVertical the space between lines
+	 * @param orientationSetting the orientation of this viewer, either Grapics.LEFT, Graphics.RIGHT or Graphics.HCENTER
+	 * @param maxLines the maximum number of lines, -1 when this should be ignored
+	 * @param maxLinesAppendix the appendix that should be added to the last line when the line number is greater than maxLines, null when it should be ignored
+	 * @param maxLinesAppendixFont the font that should be used for the appendix
+	 * @see #getHeight()
+	 * @see #getWidth()
+	 */
+	public void layout(int firstLineWidth, int lineWidth, int paddingVertical, int orientationSetting, int maxLines, String maxLinesAppendix, BitMapFont maxLinesAppendixFont) {
 		this.orientation = orientationSetting;
 		this.verticalPadding = paddingVertical;
 		// remove all existing artificial line-breaks first.
@@ -300,7 +339,10 @@ public class BitMapFontViewer {
 		int lastSpaceIndex = -1;
 		int lastSpaceWidth = 0;
 		int lineStartIndex = 0;
-		for (int i = 0; i < this.usedCharactersWidths.length; i++ ) {
+		boolean maxLinesReached = false;
+		maxLines--;
+		int i = 0;
+		for (i = 0; i < this.usedCharactersWidths.length; i++ ) {
 			byte characterWidth = this.usedCharactersWidths[i];
 			if ( characterWidth == ARTIFICAL_LINE_BREAK) {
 				// restore original character width:
@@ -312,10 +354,16 @@ public class BitMapFontViewer {
 				if (currentLineWidth > maxLineWidth) {
 					maxLineWidth = currentLineWidth;
 				}
+				if (lineIndex == maxLines) {
+					maxLinesReached = true;
+					break;
+				}
 				lineStartIndex = (i + 1);
 				lineIndex++;
 				//now check not to exceed the lineWidths array limit //use a grow factor of 10
-				if (lineIndex >= this.lineWidths.length) this.lineWidths = increaseShortArraySize(this.lineWidths, (byte)10);
+				if (lineIndex >= this.lineWidths.length) {
+					this.lineWidths = increaseShortArraySize(this.lineWidths, 10);
+				}
 				currentLineWidth = 0;
 				continue;
 			} 
@@ -336,10 +384,16 @@ public class BitMapFontViewer {
 					if (lastSpaceWidth > maxLineWidth) {
 						maxLineWidth = (short) lastSpaceWidth;
 					}
+					if (lineIndex == maxLines) {
+						maxLinesReached = true;
+						break;
+					}
 					currentLineWidth -= (short) (lastSpaceWidth + this.actualCharacterWidths[ this.spaceIndex ]);
 					lineIndex++;
 					//now check not to exceed the lineWidths array limit //use a grow factor of 10
-					if (lineIndex >= this.lineWidths.length) this.lineWidths = increaseShortArraySize(this.lineWidths, (byte)10);
+					if (lineIndex >= this.lineWidths.length) {
+						this.lineWidths = increaseShortArraySize(this.lineWidths, 10);
+					}
 				// } else {
 					// System.out.println("Unable to break line without any prior space");
 				}
@@ -347,14 +401,33 @@ public class BitMapFontViewer {
 			firstLineWidth = lineWidth;
 		}
 		// store the width of the last-line: 
-		this.lineWidths[ lineIndex ] = currentLineWidth;
-		if ( currentLineWidth > maxLineWidth ) {
-			maxLineWidth = currentLineWidth;
+		if (maxLinesReached) {
+			if (maxLinesAppendix != null && maxLinesAppendixFont != null) {
+				BitMapFontViewer appendixViewer = maxLinesAppendixFont.getViewer(maxLinesAppendix, this.color);
+				appendixViewer.layout(firstLineWidth, lineWidth, paddingVertical, Graphics.LEFT );
+				int lastLineWidth = this.lineWidths[lineIndex];
+				lastLineWidth += appendixViewer.getWidth();
+				while (lastLineWidth  > firstLineWidth && i > 0) {
+					lastLineWidth -= this.usedCharactersWidths[i];
+					this.usedCharactersWidths[i] = ARTIFICAL_LINE_BREAK;
+					i--;
+				}
+				this.maxLineAppendixViewer = appendixViewer;
+				if (lastLineWidth > maxLineWidth) {
+					maxLineWidth = (short) lastLineWidth;
+				}
+			}
+		} else {
+			this.maxLineAppendixViewer = null;
+			this.lineWidths[ lineIndex ] = currentLineWidth;
+			if ( currentLineWidth > maxLineWidth ) {
+				maxLineWidth = currentLineWidth;
+			}			
 		}
 		this.numberOfLines = lineIndex + 1;
 		this.width = maxLineWidth;
-		this.height = this.numberOfLines * (this.fontHeight + paddingVertical) - paddingVertical;
-	}
+		this.height = this.numberOfLines * (this.fontHeight + paddingVertical) - paddingVertical;	}
+
 	
 	/**
 	 * Sets the orientation of the text
@@ -391,7 +464,7 @@ public class BitMapFontViewer {
 	 * @param growFactor the grow factor.
 	 * @return the increased array.
 	 */
-	private short[] increaseShortArraySize(short[] src, byte growFactor)
+	private short[] increaseShortArraySize(short[] src, int growFactor)
 	{
 		short dest[] = new short[src.length + growFactor];
 		System.arraycopy(src, 0, dest, 0, src.length);
@@ -442,6 +515,9 @@ public class BitMapFontViewer {
 				lines[lineIndex] = text.substring(start, i);
 				start = i + 1;
 				lineIndex++;
+				if (lineIndex >= this.numberOfLines) {
+					break;
+				}
 			}
 		}
 		if (lineIndex < this.numberOfLines) {
@@ -449,4 +525,5 @@ public class BitMapFontViewer {
 		}
 		return lines;
 	}
+
 }

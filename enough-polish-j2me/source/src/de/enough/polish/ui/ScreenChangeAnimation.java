@@ -234,6 +234,9 @@ implements Runnable
 						if (title != null) {
 							height += title.itemHeight;
 							contentY += title.itemHeight;
+							if (title.itemWidth > width) {
+ 								width = title.itemWidth;
+							}
 						}
 						// this creates an unmutable image and cannot be used:
 //						//#if polish.midp2
@@ -273,6 +276,15 @@ implements Runnable
 						this.nextContentX = 0;
 						this.nextContentY = 0;						
 					}
+					//#if polish.blackberry && polish.hasPointerEvents
+						if (screen != null && screen.getScreenFullHeight() < height) {
+							if (screen.background != null) {
+								screen.background.paint(0, 0, width, height, g );
+							} else {
+								g.fillRect( 0, 0, width, height );
+							}
+						}
+					//#endif
 					((Canvas)displayable).paint( g );				
 			//#if polish.css.repaint-previous-screen
 				}

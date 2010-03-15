@@ -28,6 +28,8 @@ public class HorizontalGrayOutContainerView extends ContainerView {
 	private boolean animateItems;
 	
 	private transient int[][] inactiveIcons = null;
+	private int[] inactivateIconWidhts;
+	private int[] inactivateIconHeights;
 	private boolean isInitialized;
 	
 	/**
@@ -53,7 +55,8 @@ public class HorizontalGrayOutContainerView extends ContainerView {
 		Item[] items = parent.getItems();
 		
 		this.inactiveIcons = new int[items.length][];
-		
+		this.inactivateIconWidhts = new int[items.length];
+		this.inactivateIconHeights = new int[items.length];
 		for (int i = 0; i < items.length; i++) {
 			Item item = items[i];
 			
@@ -61,11 +64,15 @@ public class HorizontalGrayOutContainerView extends ContainerView {
 			int itemWidth = item.itemWidth;
 			if (itemWidth == 0)  {
 				this.inactiveIcons[i] = new int[0];
+				this.inactivateIconWidhts[i] = 0;
+				this.inactivateIconHeights[i] = 0;
 				continue;
 			}
 			int rgbData[] = UiAccess.getRgbData(item);
 			convertToGrayScale(rgbData);
 			this.inactiveIcons[i] = rgbData;
+			this.inactivateIconWidhts[i] = itemWidth;
+			this.inactivateIconHeights[i] = itemHeight;
 			
 			if (itemHeight > height ) {
 				height = itemHeight;
@@ -172,12 +179,13 @@ public class HorizontalGrayOutContainerView extends ContainerView {
 		{
 			Item item = myItems[i];
 			int[] rgbData = this.inactiveIcons[i];
-			DrawUtil.drawRgb( rgbData, x + itemOffset, y, item.itemWidth, item.itemHeight, true, g );
+			int itemWidth = this.inactivateIconWidhts[i];
+			int itemHeight = this.inactivateIconHeights[i];
+			DrawUtil.drawRgb( rgbData, x + itemOffset, y, itemWidth, itemHeight, true, g );
 			itemOffset += item.itemWidth;
 		}
 		
 		if (this.focusedItem != null) {
-			
 			int focusOffset = x + (this.contentWidth >> 1) - (this.focusedItem.itemWidth >> 1);
 			g.clipRect(focusOffset, y, this.focusedItem.itemWidth, this.contentHeight);
 			

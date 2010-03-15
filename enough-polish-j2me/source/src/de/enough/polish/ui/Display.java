@@ -8,6 +8,7 @@ package de.enough.polish.ui;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
+import javax.microedition.lcdui.game.Sprite;
 import javax.microedition.midlet.MIDlet;
 
 import de.enough.polish.event.EventManager;
@@ -223,6 +224,10 @@ public class Display
 	//# implements de.enough.polish.ui.CommandListener
 //#elif polish.midp
 	implements javax.microedition.lcdui.CommandListener
+//#endif
+//#if ${polish.license} == GPL
+	//#define tmp.displayInfo
+	, Runnable
 //#endif
 	
 //#if polish.css.screen-transition || polish.css.screen-change-animation || polish.ScreenChangeAnimation.forward:defined
@@ -575,9 +580,8 @@ public class Display
 	//#if tmp.screenOrientation && polish.hasPointerEvents
 		private final Point pointerEventPoint;
 	//#endif
-	private boolean enableScreenChangeAnimations = true;
-	//#if ${polish.license} == GPL
-		//#define tmp.displayInfo
+	protected boolean enableScreenChangeAnimations = true;
+	//#if tmp.displayInfo
 		private boolean showInfo;
 		private int currentInfoColor;
 		private Displayable infoNextDisplayable;
@@ -607,6 +611,12 @@ public class Display
 	//#endif
 	private CommandListener commandListener;
 	protected int nonFullScreenHeight;
+	//#if polish.blackberry && polish.hasPointerEvents
+		private int bbMaxScreenHeight;
+		private int bbMinScreenHeight = Integer.MAX_VALUE;
+	//#endif
+
+	private Displayable nextOrCurrentDisplayable;
 		
 	//#if polish.build.classes.NativeDisplay:defined
 		//#= private Display( MIDlet midlet, ${polish.build.classes.NativeDisplay} nativeDisplay ) {
@@ -777,6 +787,21 @@ public class Display
 	{
 		return this.currentDisplayable;
 	}
+	
+	/**
+	 * Gets the <code>Displayable</code> that is going to be shown next. If that's not present then the current displayable will be returned.  
+	 * 
+	 * @return the MIDlet's next or current Displayable object
+	 * @see #setCurrent(Displayable)
+	 */
+	public Displayable getNextOrCurrent()
+	{
+		if (this.nextOrCurrentDisplayable != null) {
+			return this.nextOrCurrentDisplayable;
+		}
+		return this.currentDisplayable;
+	}
+
 
 	/**
 	 * Requests that a different <code>Displayable</code> object be
@@ -896,6 +921,8 @@ public class Display
 	{
 		//#debug
 		System.out.println("Display.setCurrent " + nextDisplayable + ", current=" + this.currentDisplayable + ", isShown=" + isShown() );
+		//try { throw new RuntimeException("for " + nextDisplayable); } catch (Exception e) { e.printStackTrace(); }
+		this.nextOrCurrentDisplayable = nextDisplayable;
 		
 		//#if tmp.displayInfo
 			if (this.showInfo) {
@@ -909,26 +936,23 @@ public class Display
 		//#endif
 		if (nextDisplayable == this.currentDisplayable) {
 			repaint();
+			this.nextOrCurrentDisplayable = null;
 			return;
 		}
-		//#if polish.midp && !polish.blackberry
-			if (nextDisplayable == null || !(nextDisplayable instanceof Canvas)) {
-				// this is a native Displayable
+		if (nextDisplayable == null || !(nextDisplayable instanceof Canvas)) {
+			// this is a native Displayable
+			if (nextDisplayable != null) {
 				if (this.currentCanvas != null) {
 					this.currentCanvas._hideNotify();
 					this.currentCanvas = null;
 				}
 				this.currentDisplayable = nextDisplayable;
-				((de.enough.polish.midp.ui.NativeDisplayImpl)this.nativeDisplay).setCurrent( nextDisplayable );
-				return;
 			}
-		//#endif
-		
-		if (this.currentDisplayable == nextDisplayable) {
-			repaint();
+			this.nativeDisplay.setCurrent( nextDisplayable );
+			this.nextOrCurrentDisplayable = null;
 			return;
 		}
-
+		
 		if (nextDisplayable instanceof Alert && this.currentDisplayable != nextDisplayable) {
 			Alert alert = (Alert)nextDisplayable;
 			if (alert.nextDisplayable == null) {
@@ -953,6 +977,9 @@ public class Display
 			{
 				ScreenChangeAnimation animation = (ScreenChangeAnimation)this.currentCanvas;
 				animation.abort();
+				if(animation.nextCanvas != null) {
+					animation.nextCanvas._hideNotify();
+				}
 			}
 		
 			// check if a screen transition should be played:
@@ -984,7 +1011,7 @@ public class Display
 							}
 						}
 					//#else					
-						if (nextScreen != null && nextScreen.style != null) {
+						if (nextScreen != null && nextScreen.style != null && nextScreen.enableScreenChangeAnimation) {
 							screenstyle = nextScreen.style;
 							screenAnimation = (ScreenChangeAnimation) screenstyle.getObjectProperty("screen-change-animation");
 						}
@@ -1011,7 +1038,7 @@ public class Display
 									}
 								}
 							//#endif							
-							if ( (screenAnimation == null || lastScreen instanceof Alert) && lastScreen.style != null) {
+							if ( (screenAnimation == null || lastScreen instanceof Alert) && lastScreen.style != null && lastScreen.enableScreenChangeAnimation) {
 								if (screenAnimation == null || lastScreen.style.getObjectProperty("screen-change-animation") != null) {
 									screenstyle = lastScreen.style;
 									screenAnimation = (ScreenChangeAnimation) screenstyle.getObjectProperty("screen-change-animation");
@@ -1034,6 +1061,18 @@ public class Display
 							width = getScreenWidth();
 							height = getScreenHeight();
 						}
+						//#if polish.blackberry && polish.hasPointerEvents
+							if (nextScreen != null) {
+								if (height < this.bbMaxScreenHeight) {
+									if (nextScreen.getCurrentItem() == null || nextScreen.getCurrentItem()._bbField == null) {
+										height = this.bbMaxScreenHeight;
+										nextScreen.sizeChanged( width, height );
+									}
+								} else if (nextScreen.getCurrentItem() != null && nextScreen.getCurrentItem()._bbField != null) {
+									nextScreen.sizeChanged( width, this.bbMinScreenHeight );
+								}
+							}
+						//#endif
 						this.currentDisplayable = nextDisplayable;
 						screenAnimation.onShow( screenstyle, this, width, height, lastDisplayable, nextDisplayable, isForwardAnimation );
 						
@@ -1056,6 +1095,7 @@ public class Display
 						} else {
 							repaint();
 						}
+						this.nextOrCurrentDisplayable = null;
 						return;
 					}
 				} catch (Exception e) {
@@ -1105,6 +1145,7 @@ public class Display
 		} else {
 			repaint();
 		}
+		this.nextOrCurrentDisplayable = null;
 	}
 
 //	//#if polish.midp2
@@ -1598,7 +1639,7 @@ public class Display
 		//#if polish.Bugs.NormalKeyMappedToFire
 			if ((gameAction == FIRE && (keyCode == Canvas.KEY_POUND || keyCode == Canvas.KEY_STAR || keyCode == 'a' || keyCode == 'j'))
 				|| (gameAction == UP && (keyCode == 'r' || keyCode == 'p'))
-				|| (gameAction == DOWN && (keyCode == 'v' || keyCode == 'y' || keyCode == 'z'))
+				|| (gameAction == DOWN && (keyCode == 'v' || keyCode == 'y' || keyCode == 'z' || keyCode == 'c'))
 				|| (gameAction == LEFT && (keyCode == 'd' || keyCode == 'l'))
 				|| (gameAction == RIGHT && keyCode == 'g')
 				|| (gameAction == GAME_A && keyCode == 'h')
@@ -1644,10 +1685,6 @@ public class Display
 	 */
 	protected void paint(Graphics g)
 	{
-//		int cx = g.getClipX();
-//		int cy = g.getClipY();
-//		int cw = g.getClipWidth();
-//		int ch = g.getClipHeight();
 		
 		//#if tmp.displayInfo
 			if (this.showInfo) {
@@ -1658,17 +1695,7 @@ public class Display
 				Font font = g.getFont();
 				g.drawString("powered by", this.screenWidth/2, this.screenHeight/2 - 2, Graphics.BOTTOM | Graphics.HCENTER );
 				g.drawString("J2ME Polish", this.screenWidth/2, this.screenHeight/2 + font.getHeight() + 2, Graphics.BOTTOM | Graphics.HCENTER );
-				
-				col += 0x030303;
-				if (col >= 0xffffff || (System.currentTimeMillis() - this.infoStartTime) > 1500) {
-					this.showInfo = false;
-					if (this.infoNextDisplayable != null) {
-						setCurrent( this.infoNextDisplayable );
-						this.infoNextDisplayable = null;
-					}
-				}
-				this.currentInfoColor = col;
-				repaint();
+				this.nativeDisplay.callSerially(this);
 				return;
 			}
 		//#endif
@@ -1758,22 +1785,19 @@ public class Display
 				if (originalGraphics != null) {
 					Image bufferImage = this.screenOrientationBuffer;
 					if (bufferImage != null) {
-						int[] rgb = new int[ rotatedClipWidth * rotatedClipHeight ];
-						bufferImage.getRGB(rgb, 0, rotatedClipWidth, rotatedClipX, rotatedClipY, rotatedClipWidth, rotatedClipHeight );
+						originalGraphics.drawRegion(bufferImage, rotatedClipX, rotatedClipY, rotatedClipWidth, rotatedClipHeight, getSpriteTransform(this.screenOrientationDegrees),  clipX, clipY, Graphics.LEFT | Graphics.TOP );
 						//System.out.println("bufferImage.width=" + bufferImage.getWidth() + "x" + bufferImage.getHeight() );
-						int[] targetRgb;
+						//originalGraphics.drawRGB( targetRgb, 0, clipWidth, clipX, clipY, clipWidth, clipHeight, false);
 						//#if tmp.RemoteScreen
+							int[] rgb = new int[ rotatedClipWidth * rotatedClipHeight ];
+							bufferImage.getRGB(rgb, 0, rotatedClipWidth, rotatedClipX, rotatedClipY, rotatedClipWidth, rotatedClipHeight );
+							int[] targetRgb;
 							if (this.screenOrientationDegrees == 0) {
 								targetRgb = rgb;
 							} else {
-						//#endif
 								targetRgb = new int[ rgb.length ];
 								ImageUtil.rotateSimple(rgb, targetRgb, rotatedClipWidth, rotatedClipHeight, this.screenOrientationDegrees );
-						//#if tmp.RemoteScreen
 							}
-						//#endif
-						originalGraphics.drawRGB( targetRgb, 0, clipWidth, clipX, clipY, clipWidth, clipHeight, false);
-						//#if tmp.RemoteScreen
 							this.remoteScreen.updateScreen(rotatedClipX, rotatedClipY, rotatedClipWidth, rotatedClipHeight,rgb);
 						//#endif
 					}
@@ -1796,6 +1820,16 @@ public class Display
 				}
 			}
 		//#endif
+	}
+
+	private int getSpriteTransform(int degrees) {
+		switch (degrees) {
+		case 0: return Sprite.TRANS_NONE;
+		case 90: return Sprite.TRANS_ROT90;
+		case 180: return Sprite.TRANS_ROT180;
+		case 270: return Sprite.TRANS_ROT270;
+		default: return Sprite.TRANS_NONE;
+		}
 	}
 
 	/**
@@ -1858,7 +1892,7 @@ public class Display
 			}
 		//#endif
 		if (this.currentCanvas != null) { 
-			this.currentCanvas._hideNotify();
+			this.currentCanvas._hideNotifyExternal();
 		}
 	}
 	
@@ -1875,6 +1909,9 @@ public class Display
 				return;
 			}
 		//#endif
+		//#if polish.css.mediaquery
+			StyleSheet.showNotify();
+		//#endif
 		if (this.nonFullScreenHeight == 0) {
 			this.nonFullScreenHeight = getHeight();
 		}
@@ -1887,7 +1924,15 @@ public class Display
 			startAnimationThread = true;
 		}
 		getScreenWidth();
-		getScreenHeight();
+		int h = getScreenHeight();
+		//#if polish.blackberry && polish.hasPointerEvents
+			if (h > this.bbMaxScreenHeight) {
+				this.bbMaxScreenHeight = h;
+			}
+			if (h < this.bbMinScreenHeight) {
+				this.bbMinScreenHeight = h;
+			}
+		//#endif
 		if (this.currentCanvas != null) { 
 			this.currentCanvas._showNotify();
 			if (this.screenWidth != 0) {
@@ -1903,6 +1948,12 @@ public class Display
 	 * @see javax.microedition.lcdui.Canvas#keyPressed(int)
 	 */
 	protected void keyPressed(int keyCode) {
+		//#if polish.Display.useUserInputValidation
+		if(this.validator != null && !this.validator.isKeyPressValid(keyCode)) {
+			return;
+		}
+		//#endif
+		
 		//#debug
 		System.out.println("Display.keyPressed " + keyCode);
 		//#if tmp.keyRepeatOverload
@@ -1925,6 +1976,12 @@ public class Display
 	 * @see javax.microedition.lcdui.Canvas#keyRepeated(int)
 	 */
 	protected void keyRepeated(int keyCode) {
+		//#if polish.Display.useUserInputValidation
+		if(this.validator != null && !this.validator.isKeyRepeatedValid(keyCode)) {
+			return;
+		}
+		//#endif
+		
 		//#debug
 		System.out.println("Display.keyRepeated " + keyCode );
 		if (this.currentCanvas != null) { 
@@ -1966,6 +2023,12 @@ public class Display
 	 * @see javax.microedition.lcdui.Canvas#keyReleased(int)
 	 */
 	protected void keyReleased(int keyCode) {
+		//#if polish.Display.useUserInputValidation
+		if(this.validator != null && !this.validator.isKeyReleaseValid(keyCode)) {
+			return;
+		}
+		//#endif
+		
 		//#debug
 		System.out.println("Display.keyReleased " + keyCode);
 		//#if tmp.keyRepeatOverload
@@ -1988,6 +2051,12 @@ public class Display
 	 * @see javax.microedition.lcdui.Canvas#pointerPressed(int,int)
 	 */
 	protected void pointerPressed(int x, int y) {
+		//#if polish.Display.useUserInputValidation
+		if(this.validator != null && !this.validator.isPointerPressValid(x, y)) {
+			return;
+		}
+		//#endif
+		
 		if (this.currentCanvas != null) { 
 			//#if tmp.screenOrientation
 				Point p = translatePoint( x, y );
@@ -2004,6 +2073,12 @@ public class Display
 	 * @see javax.microedition.lcdui.Canvas#pointerPressed(int,int)
 	 */
 	protected void pointerReleased(int x, int y) {
+		//#if polish.Display.useUserInputValidation
+		if(this.validator != null && !this.validator.isPointerReleaseValid(x, y)) {
+			return;
+		}
+		//#endif
+		
 		if (this.currentCanvas != null) { 
 			//#if tmp.screenOrientation
 				Point p = translatePoint( x, y );
@@ -2020,6 +2095,12 @@ public class Display
 	 * @see javax.microedition.lcdui.Canvas#pointerPressed(int,int)
 	 */
 	protected void pointerDragged(int x, int y) {
+		//#if polish.Display.useUserInputValidation
+		if(this.validator != null && !this.validator.isPointerDragValid(x, y)) {
+			return;
+		}
+		//#endif
+		
 		if (this.currentCanvas != null) {
 			//#if tmp.screenOrientation
 				Point p = translatePoint( x, y );
@@ -2028,6 +2109,54 @@ public class Display
 			//#endif
 			this.currentCanvas.pointerDragged(x, y);
 		}
+	}
+	//#endif
+	
+	
+	//#ifdef polish.hasTouchEvents
+	/**
+	 * Handles a touch down/press event. 
+	 * This is similar to a pointerPressed event, however it is only available on devices with screens that differentiate
+	 * between press and touch events (read: BlackBerry Storm).
+	 * 
+	 * @param x the absolute horizontal pixel position of the touch event 
+	 * @param y  the absolute vertical pixel position of the touch event
+	 * @return true when the event was handled
+	 */
+	public boolean handlePointerTouchDown( int x, int y ) {
+		if (this.currentCanvas != null) {
+			//#if tmp.screenOrientation
+				Point p = translatePoint( x, y );
+				x = p.x;
+				y = p.y;
+			//#endif
+			return this.currentCanvas.handlePointerTouchDown(x, y);
+		}
+		return false;
+	}
+	//#endif
+	
+
+	//#ifdef polish.hasTouchEvents
+	/**
+	 * Handles a touch up/release event. 
+	 * This is similar to a pointerReleased event, however it is only available on devices with screens that differentiate
+	 * between press and touch events (read: BlackBerry Storm).
+	 * 
+	 * @param x the absolute horizontal pixel position of the touch event 
+	 * @param y  the absolute vertical pixel position of the touch event
+	 * @return true when the event was handled
+	 */
+	public boolean handlePointerTouchUp( int x, int y ) {
+		if (this.currentCanvas != null) {
+			//#if tmp.screenOrientation
+				Point p = translatePoint( x, y );
+				x = p.x;
+				y = p.y;
+			//#endif
+			return this.currentCanvas.handlePointerTouchUp(x, y);
+		}
+		return false;
 	}
 	//#endif
 	
@@ -2078,6 +2207,22 @@ public class Display
 	public void sizeChanged(int width, int height, boolean isRotated) {
 		//#debug
 		System.out.println("sizeChanged=" + width +"x" + height);
+		//#if polish.blackberry && polish.hasPointerEvents
+			if (width == 360) {
+				this.bbMaxScreenHeight = 480;
+				this.bbMinScreenHeight = 248;
+			} else if (width == 480) {
+				this.bbMaxScreenHeight = 360;
+				this.bbMinScreenHeight = 156;
+			} else {
+				if (height > this.bbMaxScreenHeight) {
+					this.bbMaxScreenHeight = height;
+				}
+				if (height < this.bbMinScreenHeight) {
+					this.bbMinScreenHeight = height;
+				}
+			}
+		//#endif
 		//try { throw new RuntimeException(); } catch (Exception e) { e.printStackTrace(); }
 		//#if tmp.screenOrientation
 			//#debug
@@ -2110,6 +2255,20 @@ public class Display
 		// ignore
 	}
 	//#endif
+	
+	//#if !polish.blackberry
+	/**
+	 * Determines whether a native UI component is shown for the specified item.
+	 * This is currently only implemented for BlackBerry platforms - check for the preprocesing
+	 * symbol polish.blackberry.
+	 * 
+	 * @param item the item that has been focused
+	 */
+	protected boolean isNativeUiShownFor( Item item ) {
+		return false;
+	}
+	//#endif
+
 
 	//#if polish.LibraryBuild 
 	/**
@@ -2124,6 +2283,10 @@ public class Display
 	}
 	//#endif
 	
+	/**
+	 * Retrieves the height of screens including space used for title and menubar (when in fullscreen mode).
+	 * @return the height in pixels
+	 */
 	public static int getScreenHeight() {
 		int h = 0;
 		if (instance != null) {
@@ -2164,6 +2327,10 @@ public class Display
 		return h;
 	}
 	
+	/**
+	 * Retrieves the width of screens including space used for a scrollbar (when used).
+	 * @return the width in pixels
+	 */
 	public static int getScreenWidth() {
 		int w = 0;
 		if (instance != null) {
@@ -2503,6 +2670,37 @@ public class Display
 		//#endif
 	}
 	
+	//#if polish.Display.useUserInputValidation
+	
+	/**
+	 * The key validator
+	 */
+	UserInputValidator validator;
+	
+	/**
+	 * Sets the key validator for this display
+	 * @param validator
+	 */
+	public void setKeyValidator(UserInputValidator validator) {
+		this.validator = validator;
+	}
+	
+	/**
+	 * An interface to implement to filter certain key actions
+	 * @author Andre
+	 *
+	 */
+	public interface UserInputValidator {
+		public boolean isKeyPressValid(int keyCode);
+		public boolean isKeyReleaseValid(int keyCode);
+		public boolean isKeyRepeatedValid(int keyCode);
+		public boolean isPointerPressValid(int x, int y);
+		public boolean isPointerReleaseValid(int x, int y);
+		public boolean isPointerDragValid(int x, int y);
+		
+	}
+	//#endif
+	
 	//#if tmp.wrapperScreen
 	class WrapperCanvas extends javax.microedition.lcdui.Canvas {
 		
@@ -2575,6 +2773,22 @@ public class Display
 			Display.this.pointerPressed(x, y);
 		}
 		//#endif
+	}
+	//#endif
+	
+	//#if tmp.displayInfo
+	public void run() {
+		int col = this.currentInfoColor + 0x030303;
+		if (col >= 0xffffff || (System.currentTimeMillis() - this.infoStartTime) > 1500) {
+			this.showInfo = false;
+			if (this.infoNextDisplayable != null) {
+				setCurrent( this.infoNextDisplayable );
+				this.infoNextDisplayable = null;
+			}
+		} else {
+			this.currentInfoColor = col;
+			repaint();
+		}
 	}
 	//#endif
 }

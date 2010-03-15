@@ -92,6 +92,20 @@ implements Externalizable
 	}
 	
 	/**
+	 * Returns the property value corresponding to the given key,
+	 * or if no value exists the default value. 
+	 * @param key the key
+	 * @param defaultValue the default value
+	 * @return the String value corresponding to the key, or the
+	 * default value
+	 */
+	public String getProperty(String key, String defaultValue)
+	{
+		String value = (String) this.get(key);
+		return value != null ? value : defaultValue;
+	}
+	
+	/**
 	 * Inserts a property with the given key and the corresponding value
 	 * @param key the key to be placed into this property list.
      * @param value the value corresponding to key

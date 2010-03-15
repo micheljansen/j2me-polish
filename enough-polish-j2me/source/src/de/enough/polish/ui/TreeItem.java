@@ -497,9 +497,9 @@ public class TreeItem
 			if (valueExpected.equals(valuePresent)) {
 				if (node != null) {
 					node.setExpanded(true);
-					container.focusChild( i, node, Canvas.UP );
+					container.focusChild( i, node, Canvas.UP, true );
 				} else {
-					container.focusChild( i, item, 0 );
+					container.focusChild( i, item, 0, true );
 				}
 				if (index < values.length - 1) {
 					if (node != null) {

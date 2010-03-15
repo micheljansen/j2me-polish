@@ -499,7 +499,7 @@ public final class Serializer {
 				extern = (Externalizable) Class.forName( className ).newInstance();
 			} catch (Exception e) {
 				//#debug error
-				System.out.println("Unable to instantiate Serializable \"" + className + "\"" + e);
+				System.out.println("Unable to instantiate serializable \"" + className + "\"" + e);
 				throw new IOException( e.toString() );
 			}
 			extern.read( in );

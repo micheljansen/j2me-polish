@@ -177,4 +177,9 @@ public class NativeDisplayImpl implements NativeDisplay
 		screen.notifyDisplayableChange( currentDisplayable, nextDisplayable );
 	}
 
+	public void setCurrent(Displayable nextDisplayable) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

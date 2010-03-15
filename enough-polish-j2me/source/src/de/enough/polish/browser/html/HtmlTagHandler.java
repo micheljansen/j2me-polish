@@ -27,17 +27,10 @@
  */
 package de.enough.polish.browser.html;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Hashtable;
-
-import javax.microedition.lcdui.Image;
-
 import de.enough.polish.browser.Browser;
 import de.enough.polish.browser.RedirectThread;
 import de.enough.polish.browser.TagHandler;
 import de.enough.polish.browser.css.CssInterpreter;
-import de.enough.polish.io.ResourceLoader;
 import de.enough.polish.ui.Choice;
 import de.enough.polish.ui.ChoiceGroup;
 import de.enough.polish.ui.ChoiceItem;

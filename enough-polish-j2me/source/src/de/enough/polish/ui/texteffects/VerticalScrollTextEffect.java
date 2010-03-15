@@ -31,13 +31,14 @@ import javax.microedition.lcdui.Graphics;
 
 import de.enough.polish.ui.AnimationThread;
 import de.enough.polish.ui.ClippingRegion;
-import de.enough.polish.ui.CommandItem;
 import de.enough.polish.ui.Container;
 import de.enough.polish.ui.DebugHelper;
+import de.enough.polish.ui.FramedForm;
 import de.enough.polish.ui.Item;
+import de.enough.polish.ui.Screen;
+import de.enough.polish.ui.StringItem;
 import de.enough.polish.ui.Style;
 import de.enough.polish.ui.TextEffect;
-import de.enough.polish.ui.UiAccess;
 
 /**
  * <p>A text effect that scrolls through the wrapped lines</p>
@@ -58,11 +59,14 @@ public class VerticalScrollTextEffect extends TextEffect{
 	
 	int stageInterval = 2000;
 	
+	int maxLines = 1;
+	
+	int lines = 1;
+	
 	int lineHeight = 0;
+	int drawCount = 0;
 		
 	String[] textLines = null;
-	String[] firstLine = null;
-	
 	String[] drawLines = null;
 	
 	long stageTime = 0;
@@ -73,64 +77,69 @@ public class VerticalScrollTextEffect extends TextEffect{
 	
 	int lastLineWidth = -1;
 	
+	boolean needsAnimation = false;
+	
 	public VerticalScrollTextEffect()
 	{
 		this.isTextSensitive = true;
 	}
-
-	/* (non-Javadoc)
+	
+	/*
+	 * (non-Javadoc)
 	 * @see de.enough.polish.ui.TextEffect#animate(de.enough.polish.ui.Item, long, de.enough.polish.ui.ClippingRegion)
 	 */
-	public void animate(Item parent, long currentTime,
-			ClippingRegion repaintRegion) {
-		super.animate(parent, currentTime, repaintRegion);
-		
-		if(this.textLines != null && this.textLines.length == 1)
-		{
-			return;
+	public void animate(Item parent, long currentTime, ClippingRegion repaintRegion) 
+	{
+		if (animate()) {
+			parent.addRelativeToContentRegion( repaintRegion, 0, 0, parent.itemWidth, parent.itemHeight );
 		}
-		
-		boolean addRepaintRegion = false;
-		if (this.stageTime == 0) {
-			this.stageTime = currentTime;
-			addRepaintRegion = true;
-		}
-		
-		// get the time passed since last animation
-		long timePassed = currentTime - this.stageTime;
-		
-		switch(this.stageCurrent)
-		{
-			case STAGE_SHOW : 
-				if (timePassed > this.stageInterval) {
-					//#debug debug
-					System.out.println("stage changed to STAGE_SCROLL");
-
-					this.stageCurrent = STAGE_SCROLL;
-					this.stageTime = currentTime;
-					addRepaintRegion = true;
-				}
-				break;
-			case STAGE_SCROLL : 
-				this.lineOffset = getLineOffset(timePassed, this.lineHeight );
-				addRepaintRegion = true;
-				// if the interval time has passed ... 
-				if (timePassed > this.stageInterval) {
-					//#debug debug
-					System.out.println("stage change to STAGE_SHOW");
+	}
+	
+	/* (non-Javadoc)
+	 * @see de.enough.polish.ui.TextEffect#animate()
+	 */
+	public boolean animate() {
+		if(this.textLines != null && this.textLines.length != 1){
+			long currentTime = System.currentTimeMillis();
+			
+			if (this.stageTime == 0) {
+				this.stageTime = currentTime;
+				return true;
+			}
+			
+			// get the time passed since last animation
+			long timePassed = currentTime - this.stageTime;
+			
+			switch(this.stageCurrent)
+			{
+				case STAGE_SHOW : 
+					if (timePassed > this.stageInterval) {
+						//#debug debug
+						System.out.println("stage changed to STAGE_SCROLL");
+	
+						this.stageCurrent = STAGE_SCROLL;
+						this.stageTime = currentTime;
+					}
+					return false;
+				case STAGE_SCROLL : 
+					this.lineOffset = getLineOffset(timePassed, this.lineHeight );
 					
-					this.lineIndex = (this.lineIndex + 1) % this.textLines.length;
-					this.lineOffset = 0;
-					
-					this.stageCurrent = STAGE_SHOW;
-					this.stageTime = currentTime;
-				}
-				break;
-		};
-		
-		if (addRepaintRegion) {
-			parent.addRepaintArea(repaintRegion);
+					// if the interval time has passed ... 
+					if (timePassed > this.stageInterval) {
+						//#debug debug
+						System.out.println("stage change to STAGE_SHOW");
+						
+						this.lineIndex = (this.lineIndex + 1) % this.textLines.length;
+						this.lineOffset = 0;
+						
+						this.stageCurrent = STAGE_SHOW;
+						this.stageTime = currentTime;
+					}
+					return true;
+			};
 		}
+		
+		return false;
 	}
 	
 	/**
@@ -152,6 +161,7 @@ public class VerticalScrollTextEffect extends TextEffect{
 	public void drawStrings(Item parent, String[] textLines, int textColor, int x, int y,
 			int leftBorder, int rightBorder, int lineHeight, int maxWidth,
 			int layout, Graphics g) {
+		
 		this.lineHeight = lineHeight;
 		
 		int index = this.lineIndex;
@@ -164,10 +174,14 @@ public class VerticalScrollTextEffect extends TextEffect{
 		int clipWidth = g.getClipWidth();
 		int clipHeight = g.getClipHeight();
 		
+		int linesHeight;
+		
+		linesHeight = lineHeight * (this.lines);
+		
 		//#if polish.Bugs.needsBottomOrientiationForStringDrawing
-			g.setClip(x, y + lineHeight, maxWidth, lineHeight);
+			g.clipRect(x, y + linesHeight, rightBorder - leftBorder, linesHeight);
 		//#else
-			g.setClip(x, y, maxWidth, lineHeight);
+			g.clipRect(x, y, rightBorder - leftBorder, linesHeight);
 		//#endif
 		
 		leftBorder = x;
@@ -177,39 +191,63 @@ public class VerticalScrollTextEffect extends TextEffect{
 		
 		g.setClip(clipX, clipY, clipWidth, clipHeight);
 	}
+	
+	
+
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.TextEffect#wrap(de.enough.polish.ui.Item, java.lang.String, int, javax.microedition.lcdui.Font, int, int, int, java.lang.String, int)
+	 */
+	public String[] wrap(Item item, String text, int textColor, Font font, int firstLineWidth, int lineWidth, int maxLinesParam, String maxLinesAppendix, int maxLinesAppendixPosition) {
+		return wrap( item, text, textColor, font, firstLineWidth, lineWidth );
+	}
 
 	/* (non-Javadoc)
 	 * @see de.enough.polish.ui.TextEffect#wrap(java.lang.String, int, javax.microedition.lcdui.Font, int, int)
 	 */
 	public String[] wrap(Item parent, String text, int textColor, Font font,
 			int firstLineWidth, int lineWidth) {
-		if(this.lastLineWidth != firstLineWidth)
+		StringItem parentItem = (StringItem)parent;
+		
+		this.textLines = super.wrap(text, textColor, font, firstLineWidth, lineWidth);
+		
+		if(this.textLines.length > this.maxLines)
 		{
-			this.textLines = super.wrap(text, textColor, font, firstLineWidth, lineWidth);
+			 this.drawLines = new String[this.maxLines + 1];
+			 this.lines = this.maxLines;
+			 
+			 this.needsAnimation = true;
+			 
+			 AnimationThread.addAnimationItem(parent);
+		}
+		else
+		{
+			this.drawLines = this.textLines;
+			this.lines = this.textLines.length;
 			
-			if(this.textLines.length > 1)
-			{
-				this.drawLines = new String[2];
-			}
-			else
-			{
-				this.drawLines = new String[1];
-			}
+			this.needsAnimation = false;
 			
-			this.firstLine = new String[]{this.textLines[0]};
-			this.lastLineWidth = firstLineWidth;
-			
-			if(this.textLines != null && this.textLines.length > 1)
-			{
-				AnimationThread.addAnimationItem(parent);
-			}
-			else
-			{
-				AnimationThread.removeAnimationItem(parent);
-			}
+			AnimationThread.removeAnimationItem(parent);
+		}
+
+		
+		String[] resultLines = new String[this.lines];
+		
+		for (int index = 0; index < resultLines.length; index++) {
+			resultLines[index] = this.textLines[index];
 		}
 		
-		return this.firstLine;
+		return resultLines;
+	}
+	
+	public void onAttach(Item parent) {
+		if(parent.isInitialized() && this.needsAnimation) {
+			AnimationThread.addAnimationItem(parent);
+		}
+	}
+	
+	public void onDetach(Item parent) {
+		AnimationThread.removeAnimationItem(parent);
 	}
 
 	/* (non-Javadoc)
@@ -217,6 +255,9 @@ public class VerticalScrollTextEffect extends TextEffect{
 	 */
 	public void drawString(String text, int textColor, int x, int y,
 			int anchor, Graphics g) {
+		//#if polish.blackberry
+		g.setFont(style.getFont());
+		//#endif
 		g.setColor(textColor);
 		g.drawString(text, x, y, anchor);
 	}
@@ -232,6 +273,14 @@ public class VerticalScrollTextEffect extends TextEffect{
 		if(stageIntervalInt != null)
 		{
 			this.stageInterval = stageIntervalInt.intValue();
+		}
+		//#endif
+		
+		//#if polish.css.vertical-scroll-max-lines
+		Integer maxLinesInt = style.getIntProperty("vertical-scroll-max-lines");
+		if(maxLinesInt != null)
+		{
+			this.maxLines = maxLinesInt.intValue();
 		}
 		//#endif
 	}

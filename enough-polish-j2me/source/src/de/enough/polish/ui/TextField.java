@@ -26,11 +26,18 @@ package de.enough.polish.ui;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.microedition.lcdui.Canvas;
 
 
 import de.enough.polish.ui.Displayable;
+
+//#if polish.TextField.useVirtualKeyboard
+import de.enough.polish.ui.keyboard.view.KeyboardView;
+//#endif
+
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 //#if polish.TextField.useDirectInput && polish.TextField.usePredictiveInput && !(polish.blackberry || polish.android)
@@ -38,8 +45,10 @@ import javax.microedition.lcdui.Graphics;
 	import de.enough.polish.predictive.trie.TrieProvider;
 //#endif
 import de.enough.polish.util.ArrayList;
+import de.enough.polish.util.DeviceControl;
 import de.enough.polish.util.DeviceInfo;
 import de.enough.polish.util.DrawUtil;
+import de.enough.polish.util.IntHashMap;
 import de.enough.polish.util.Locale;
 import de.enough.polish.util.Properties;
 
@@ -47,6 +56,7 @@ import de.enough.polish.util.Properties;
 	import de.enough.polish.blackberry.ui.PolishTextField;
 	import de.enough.polish.blackberry.ui.PolishEditField;
 	import de.enough.polish.blackberry.ui.PolishPasswordEditField;
+    import de.enough.polish.blackberry.ui.PolishEmailAddressEditField;
 	import net.rim.device.api.system.Application;
 	import net.rim.device.api.ui.Field;
 	import net.rim.device.api.ui.FieldChangeListener;
@@ -56,11 +66,11 @@ import de.enough.polish.util.Properties;
 //#endif
 
 //#if polish.api.windows
-import de.enough.polish.windows.Keyboard;
+	import de.enough.polish.windows.Keyboard;
 //#endif
 
 //#if polish.android1.5
-import de.enough.polish.android.midlet.MIDlet;
+import de.enough.polish.android.midlet.MidletBridge;
 //#endif
 
 /**
@@ -350,7 +360,7 @@ public class TextField extends StringItem
 	//#define tmp.forceDirectInput
 	//#define tmp.directInput
 //#endif
-//#if tmp.directInput && polish.TextField.usePredictiveInput && !(polish.blackberry || polish.android)
+//#if polish.TextField.useDirectInput && polish.TextField.usePredictiveInput && !(polish.blackberry || polish.android)
 	//#define tmp.usePredictiveInput
 //#endif
 //#if tmp.directInput && polish.TextField.useDynamicCharset
@@ -500,6 +510,29 @@ public class TextField extends StringItem
 	 * @since MIDP 2.0
 	 */
 	public static final int DECIMAL = 5;
+	
+	/**
+	 * The user is allowed to enter numeric values with two decimal
+	 * fractions, for example &quot;-123.00&quot;, &quot;0.13&quot;, or
+	 * &quot;0.50&quot;.
+	 * 
+	 * <p>Numbers are appended in the last decimal fraction by default, so when &quot;1&quot; is pressed this results
+	 * in &quot;0.01&quot;. Similarly pressing &quot;1&quot;, &quot;2&quot; and &quot;3&quot; results in &quot;1.23&quot;.
+	 * </p>
+	 * <p>Sample usage:</p>
+	 * <pre>
+	 * TextField cashRegister = new TextField("Price: ",  null, 5, UiAccess.CONSTRAINT_FIXED_POINT_DECIMAL );
+	 * </pre>
+	 * 
+	 * <p>Constant <code>20</code> is assigned to <code>FIXED_POINT_DECIMAL</code>.</p>
+	 * 
+	 * @since J2ME Polish 2.1.3
+	 * @see UiAccess#CONSTRAINT_FIXED_POINT_DECIMAL
+	 * @see #setNumberOfDecimalFractions(int)
+	 * @see #getNumberOfDecimalFractions()
+	 * @see #convertToFixedPointDecimal(String)
+	 */
+	public static final int FIXED_POINT_DECIMAL = 20;
 
 	/**
 	 * Indicates that the text entered is confidential data that should be
@@ -677,50 +710,54 @@ public class TextField extends StringItem
 
 	// clear command is used in DateField, too:
 	//#ifdef polish.command.clear.priority:defined
-	//#= private final static int CLEAR_PRIORITY = ${polish.command.clear.priority};
+		//#= private final static int CLEAR_PRIORITY = ${polish.command.clear.priority};
 	//#else
 		private final static int CLEAR_PRIORITY = 8;
 	//#endif
-	//#ifdef polish.i18n.useDynamicTranslations
-			public static Command CLEAR_CMD = new Command( Locale.get("polish.command.clear"), Command.ITEM, CLEAR_PRIORITY );
-	//#elifdef polish.command.clear:defined
-		//#= public static final Command CLEAR_CMD = new Command( "${polish.command.clear}", Command.ITEM, CLEAR_PRIORITY );
+	//#ifdef polish.command.clear.type:defined
+		//#= private final static int CLEAR_TYPE = ${polish.command.clear.type};
 	//#else
-		//# public static final Command CLEAR_CMD = new Command( "Clear", Command.ITEM, CLEAR_PRIORITY ); 
+		private final static int CLEAR_TYPE = Command.ITEM;
+	//#endif
+	//#ifdef polish.i18n.useDynamicTranslations
+			public static Command CLEAR_CMD = new Command( Locale.get("polish.command.clear"), CLEAR_TYPE, CLEAR_PRIORITY );
+	//#elifdef polish.command.clear:defined
+		//#= public static final Command CLEAR_CMD = new Command( "${polish.command.clear}", CLEAR_TYPE, CLEAR_PRIORITY );
+	//#else
+		//# public static final Command CLEAR_CMD = new Command( "Clear", CLEAR_TYPE, CLEAR_PRIORITY ); 
 	//#endif
 
 		
 	//#ifndef tmp.suppressCommands
 	
-		//#ifdef polish.command.delete.priority:defined
-		//#= private final static int DELETE_PRIORITY = ${polish.command.delete.priority};
-		//#else
-			private final static int DELETE_PRIORITY = 1;
-		//#endif
-			
 		//#if (polish.TextField.suppressDeleteCommand != true) && !polish.blackberry && !polish.TextField.keepDeleteCommand
 			//#define tmp.updateDeleteCommand
 		//#endif
 			
+		//#ifdef polish.command.delete.priority:defined
+			//#= private final static int DELETE_PRIORITY = ${polish.command.delete.priority};
+		//#else
+			private final static int DELETE_PRIORITY = 1;
+		//#endif
+		
+			
 		// the delete command is a Command.ITEM type when the extended menubar is used in conjunction with a defined return-key, 
 		// because CANCEL will be mapped on special keys like the return key on Sony Ericsson devices.
-		//#if polish.MenuBar.useExtendedMenuBar && polish.key.ReturnKey:defined
-			//#ifdef polish.i18n.useDynamicTranslations
-				//#	public static Command DELETE_CMD = new Command( Locale.get("polish.command.delete"), Command.ITEM, DELETE_PRIORITY );
-			//#elifdef polish.command.delete:defined
-				//#= public static final Command DELETE_CMD = new Command( "${polish.command.delete}", Command.ITEM, DELETE_PRIORITY );
-			//#else
-				//# public static final Command DELETE_CMD = new Command( "Delete", Command.ITEM, DELETE_PRIORITY ); 
-			//#endif
+		private final static int DELETE_TYPE = 
+				//#ifdef polish.command.delete.type:defined
+					//#= ${polish.command.delete.type};
+				//#elif polish.MenuBar.useExtendedMenuBar && (polish.key.ReturnKey:defined || polish.css.repaint-previous-screen && polish.hasPointerEvents)
+					//# Command.ITEM;
+				//#else
+					Command.CANCEL;
+				//#endif
+		//#ifdef polish.i18n.useDynamicTranslations
+			public static Command DELETE_CMD = new Command( Locale.get("polish.command.delete"), DELETE_TYPE, DELETE_PRIORITY );
+		//#elifdef polish.command.delete:defined
+			//#= public static final Command DELETE_CMD = new Command( "${polish.command.delete}", DELETE_TYPE, DELETE_PRIORITY );
 		//#else
-			//#ifdef polish.i18n.useDynamicTranslations
-				public static Command DELETE_CMD = new Command( Locale.get("polish.command.delete"), Command.CANCEL, DELETE_PRIORITY );
-			//#elifdef polish.command.delete:defined
-				//#= public static final Command DELETE_CMD = new Command( "${polish.command.delete}", Command.CANCEL, DELETE_PRIORITY );
-			//#else
-				//# public static final Command DELETE_CMD = new Command( "Delete", Command.CANCEL, DELETE_PRIORITY ); 
-			//#endif
-	  	//#endif
+			//# public static final Command DELETE_CMD = new Command( "Delete", DELETE_TYPE, DELETE_PRIORITY ); 
+		//#endif
 	//#endif	
 	
 	//#if polish.key.maybeSupportsAsciiKeyMap
@@ -749,7 +786,8 @@ public class TextField extends StringItem
 	private String passwordText;
 	private boolean isPassword;
 	private boolean enableDirectInput;
-	
+	private boolean noNewLine = false;
+
 	//#if (!tmp.suppressCommands && !tmp.supportsSymbolEntry) || tmp.supportsSymbolEntry
 		private ItemCommandListener additionalItemCommandListener;
 	//#endif
@@ -896,8 +934,8 @@ public class TextField extends StringItem
 		/** map of characters that can be triggered witht the 0..9 and #, * keys */
 		public static String[] CHARACTERS = new String[]{ charactersKey0, charactersKey1, charactersKey2, charactersKey3, charactersKey4, charactersKey5, charactersKey6, charactersKey7, charactersKey8, charactersKey9 };
 		//#if tmp.useDynamicCharset
-		public static String[] CHARACTERS_UPPER = new String[]{ charactersKey0, charactersKey1, charactersKey2, charactersKey3, charactersKey4, charactersKey5, charactersKey6, charactersKey7, charactersKey8, charactersKey9 };
-		public static boolean usesDynamicCharset;
+			public static String[] CHARACTERS_UPPER = new String[]{ charactersKey0, charactersKey1, charactersKey2, charactersKey3, charactersKey4, charactersKey5, charactersKey6, charactersKey7, charactersKey8, charactersKey9 };
+			public static boolean usesDynamicCharset;
 		//#endif
 		private static final String[] EMAIL_CHARACTERS = new String[]{ VALID_LOCAL_EMAIL_ADDRESS_CHARACTERS + "0", VALID_LOCAL_EMAIL_ADDRESS_CHARACTERS + "1", "abc2", "def3", "ghi4", "jkl5", "mno6", "pqrs7", "tuv8", "wxyz9" };
 		private String[] characters;
@@ -919,16 +957,40 @@ public class TextField extends StringItem
 	//#endif
 	protected char emailSeparatorChar = ';';
 	//#if polish.blackberry
+		private int originalContentWidth;
 		private PolishTextField editField;
 		//#if polish.Bugs.ItemStateListenerCalledTooEarly
 			private long lastFieldChangedEvent;
 		//#endif
 		private int bbLastCursorPosition;
 	//#endif
-	//#if polish.midp && !polish.blackberry && !polish.api.windows
+	//#if polish.midp && !polish.blackberry && !polish.api.windows && !polish.TextField.useVirtualKeyboard
 		//#define tmp.useNativeTextBox
 		private de.enough.polish.midp.ui.TextBox midpTextBox;
+		//#if polish.TextField.passCharacterToNativeEditor
+			//Variable passedChar used as container for char which is passed to native TextBox.
+			//So when key is pressed (e.g. '2') view goes to native mode and 'a' character is appended to the current text
+			private char passedChar;
+			//Timer responsible for checking delay between two, subsequent presses 
+			private final Timer keyDelayTimer = new Timer();
+			private TimerTask keyDelayTimerTask = null;
+			//last time when button was pressed
+			private long lastTimeKeyPressed;
+			//number of presses of one phone button
+			private int keyPressCounter = 0;
+			//latest key pressed keyCode
+			private int latestKey;
+			//maximum delay between subseqent key presses. If exceeded, will timer will call native editor.
+			private int delayBetweenKeys =
+			//#if polish.nativeEditor.delayBetweenKeys:defined
+				//#= ${polish.nativeEditor.delayBetweenKeys};
+			//#else
+				200;
+			//#endif
+		//#endif
+		private boolean skipKeyReleasedEvent = false;
 	//#endif
+	private boolean cskOpensNativeEditor = true;
 	
 	
 	//#if tmp.usePredictiveInput
@@ -956,11 +1018,16 @@ public class TextField extends StringItem
 		//#define tmp.supportsAsciiKeyMap
 	//#endif
 	private boolean isKeyPressedHandled;
-
+	
 	//#if polish.android1.5
 		private long androidFocusedTime;
 		private long androidLastPointerPressedTime;
-		private long androidLastInvalidCharacterTime;	
+		private long androidLastInvalidCharacterTime;
+	//#endif
+	private int numberOfDecimalFractions = 2;
+	
+	//#if polish.TextField.useVirtualKeyboard
+	static IntHashMap keyboardViews = new IntHashMap();
 	//#endif
 
 	//#if tmp.useDynamicCharset
@@ -980,10 +1047,10 @@ public class TextField extends StringItem
 	 * Reads the .properties files for lowercase
 	 * and uppercase letters and maps the values of the predefined keys
 	 * to the character maps. Uses UTF-8 as encoding.
-	 * @param lowercaseUrl the properties file for lower case
-	 * @param uppercaseUrl the properties file for upper case
+	 * @param lowercaseStream the input stream of properties for lower case
+	 * @param uppercaseStream the input stream of properties for upper case
 	 */
-	public static void loadCharacterSets(InputStream lowercaseStream,InputStream uppercaseStream)
+	public static void loadCharacterSets(InputStream lowercaseStream, InputStream uppercaseStream)
 	{
 		loadCharacterSets(lowercaseStream, uppercaseStream,"UTF8");
 	}
@@ -1197,7 +1264,8 @@ public class TextField extends StringItem
 			this.isPassword = true;
 		}
 		//#ifndef polish.hasPointerEvents
-			if ((constraints & NUMERIC) == NUMERIC && (constraints & DECIMAL) != DECIMAL) {
+			int fieldType = constraints & 0xffff;
+			if (fieldType == NUMERIC) {
 				this.enableDirectInput = true;
 			}
 		//#endif
@@ -1236,7 +1304,9 @@ public class TextField extends StringItem
 				useAsciiKeyMap = true;
 			//#endif
 		//#endif
-
+		//#if polish.TextField.noNewLine
+			this.noNewLine = true;
+		//#endif
 		setString(text);
 	}
 	
@@ -1251,7 +1321,12 @@ public class TextField extends StringItem
 		if (!this.isUneditable) {
 			this.midpTextBox.addCommand(StyleSheet.CANCEL_CMD);
 		}
-		this.midpTextBox.setCommandListener( this );	
+		this.midpTextBox.setCommandListener( this );
+		//#if polish.midp2
+			if ((this.constraints & TextField.INITIAL_CAPS_NEVER) == TextField.INITIAL_CAPS_NEVER){
+				this.midpTextBox.setInitialInputMode("MIDP_LOWERCASE_LATIN");
+			}
+		//#endif
 	}
 	//#endif
 	
@@ -1334,6 +1409,18 @@ public class TextField extends StringItem
 	{
 		//#debug
 		System.out.println("setString [" + text + "]"); // for textfield [" + (this.label != null ? this.label.getText() : "no label") + "].");
+		if (text != null && text.length() > 0) {
+			int fieldType = this.constraints & 0xffff;
+			if (fieldType == FIXED_POINT_DECIMAL) {
+				int lengthBefore = text.length();
+				text = convertToFixedPointDecimal(text);
+				//#if !polish.blackberry
+				if (text.length() > lengthBefore) {
+					setCaretPosition( getCaretPosition() + text.length() - lengthBefore);
+				}
+				//#endif
+			}
+		}
 		//#if tmp.useNativeTextBox
 			if (this.midpTextBox != null) {
 				this.midpTextBox.setString( text );
@@ -1347,7 +1434,8 @@ public class TextField extends StringItem
 				}
 				synchronized (bbLock) {
                     if (this.isFocused && this.isShown) {
-                    	Display.getInstance().notifyFocusSet(null);
+                    	// don't want to have endless loops of change events:
+                    	this.screen.notifyFocusSet(null);
                     }
                     if (text != null) {
                         this.editField.setText(text);
@@ -1355,7 +1443,7 @@ public class TextField extends StringItem
                         this.editField.setText(""); // setting null triggers an IllegalArgumentException
                     }
                     if (this.isFocused && this.isShown) {
-                    	Display.getInstance().notifyFocusSet(this);
+                    	this.screen.notifyFocusSet(this);
                     }
 				}
 			}
@@ -1411,6 +1499,71 @@ public class TextField extends StringItem
 			}
 		//#endif
 	}
+	
+	/**
+	 * Sets the number of decimal fractions that are allowed for FIXED_POINT_DECIMAL constrained TextFields
+	 * @param number the number (defaults to 2)
+	 * @see UiAccess#CONSTRAINT_FIXED_POINT_DECIMAL
+	 * @see #FIXED_POINT_DECIMAL
+	 */
+	public void setNumberOfDecimalFractions(int number) {
+		this.numberOfDecimalFractions = number;
+	}
+	
+	/**
+	 * Retrieves the number of decimal fractions that are allowed for FIXED_POINT_DECIMAL constrained TextFields
+	 * @return the number (defaults to 2)
+	 * @see UiAccess#CONSTRAINT_FIXED_POINT_DECIMAL
+	 * @see #FIXED_POINT_DECIMAL
+	 */
+	public int getNumberOfDecimalFractions() {
+		return this.numberOfDecimalFractions;
+	}
+
+	/**
+	 * Converts the given entry into cash format.
+	 * Subclasses may override this to implement their own behavior.
+	 * @param original the original text, e.g. "1"
+	 * @return the processed text, e.g. "0.01"
+	 * @see #FIXED_POINT_DECIMAL
+	 * @see UiAccess#CONSTRAINT_FIXED_POINT_DECIMAL
+	 * @see #getNumberOfDecimalFractions()
+	 * @see #setNumberOfDecimalFractions(int)
+	 */
+	protected String convertToFixedPointDecimal(String original) {
+		int fractions = this.numberOfDecimalFractions;
+		StringBuffer buffer = new StringBuffer( original.length() + 3 );
+		int added = 0;
+		for (int i=original.length(); --i >= 0; ) {
+			char c = original.charAt(i);
+			if (c >= '0' && c <= '9') {
+				buffer.insert(0, c);
+				added++;
+				if (added == fractions) {
+					buffer.insert(0, Locale.DECIMAL_SEPARATOR);
+				}
+			}
+		}
+		fractions++;
+		while (added > fractions) {
+			char c = buffer.charAt(0);
+			if (c == '0') {
+				buffer.deleteCharAt(0);
+				added--;
+			} else {
+				break;
+			}
+		}
+		while (added < fractions) {
+			buffer.insert(0, '0');
+			added++;
+			if (added == fractions-1) {
+				buffer.insert(0, Locale.DECIMAL_SEPARATOR);
+			}
+		}
+		original = buffer.toString();
+		return original;
+	}
 	 	
 	protected void updateDeleteCommand(String newText) {
 		//#if tmp.updateDeleteCommand
@@ -1422,14 +1575,16 @@ public class TextField extends StringItem
 				if ( newText == null 
 					//#ifdef tmp.directInput
 						|| (this.caretPosition == 0    &&    this.caretChar == this.editingCaretChar)
-					//#else
+					//#else 
 						|| newText.length() == 0 
 					//#endif
 				) {
 					removeCommand( DELETE_CMD );
 				} else if ((this.text == null || this.text.length() == 0)
-					//#ifdef tmp.directInput
-						|| this.caretPosition == 1
+					//#if tmp.directInput
+						// needed for native input as the string is passed as a whole
+						// and thus skips caretPosition == 1
+						|| this.caretPosition > 0
 					//#endif						
 				) {
 					addCommand( DELETE_CMD );
@@ -1533,13 +1688,7 @@ public class TextField extends StringItem
 	 */
 	public void insert( String src, int position)
 	{
-		String txt = getString();
-		if(txt == null)
-			txt = "";
-		
-		if (this.isPassword) {
-			txt = this.passwordText;
-		}
+		String txt = getString(); // cannot be null
 		String start = txt.substring( 0, position );
 		String end = txt.substring( position );
 		setString( start + src + end );
@@ -1780,11 +1929,13 @@ public class TextField extends StringItem
 		//#if polish.blackberry
 			
 			long bbStyle = Field.FOCUSABLE;
-			if (!this.isUneditable) {
-				bbStyle |= Field.EDITABLE;
+			if (this.isUneditable) {
+				bbStyle |= Field.READONLY;
+			} else {
+				bbStyle |= Field.EDITABLE;				
 			}
 			
-			if ( fieldType == DECIMAL) {
+			if ( fieldType == DECIMAL || fieldType == FIXED_POINT_DECIMAL) {
 				bbStyle |= BasicEditField.FILTER_REAL_NUMERIC;
 			} else if (fieldType == NUMERIC) {
 				bbStyle |= BasicEditField.FILTER_INTEGER;
@@ -1795,26 +1946,42 @@ public class TextField extends StringItem
 			} else if ( fieldType == URL ) {
 				bbStyle |= BasicEditField.FILTER_URL;
 			}
+			if ((constraints & SENSITIVE) == SENSITIVE) {
+				bbStyle |= BasicEditField.NO_LEARNING; 
+			}
+			if ((constraints & NON_PREDICTIVE) == NON_PREDICTIVE) {
+				bbStyle |= BasicEditField.NO_LEARNING; 
+			}
+			if(this.noNewLine){
+				bbStyle |= BasicEditField.NO_NEWLINE;
+			}
 			if (this.editField != null) {
 				// remove the old edit field from the blackberry screen:
-				Object lock = Application.getEventLock();
-				synchronized ( lock ) {
+				Object bbLock = Application.getEventLock();
+				synchronized ( bbLock ) {
 					Manager manager = this._bbField.getManager();
 					if (manager != null) {
 						manager.delete(this._bbField);
 					}
 					if (this.isFocused) {
-						Display.getInstance().notifyFocusSet(this);
+						getScreen().notifyFocusSet(this);
 					}					
 				}
 			}
+			int max = this.maxSize;
+			if (fieldType == FIXED_POINT_DECIMAL) {
+				max++;
+			}
+			this.isPassword = false;
 			if ((constraints & PASSWORD) == PASSWORD) {
 				this.isPassword = true;
-				this.editField = new PolishPasswordEditField( null, getString(), this.maxSize, bbStyle );
-			} else {
-				this.isPassword = false;
-				this.editField = new PolishEditField( null, getString(), this.maxSize, bbStyle );
-			}
+				this.editField = new PolishPasswordEditField( null, getString(), max, bbStyle );
+			}else if((bbStyle & BasicEditField.FILTER_EMAIL) == BasicEditField.FILTER_EMAIL) {
+                this.editField = new PolishEmailAddressEditField( null, getString(), max, bbStyle );
+            } else {
+                    this.editField = new PolishEditField( null, getString(), max, bbStyle );
+            } 
+
 			if (this.style != null) {
 				this.editField.setStyle( this.style );
 			}
@@ -1841,7 +2008,7 @@ public class TextField extends StringItem
 			} else {
 				this.isNumeric = false;
 			}
-			if (fieldType == DECIMAL) {
+			if (fieldType == DECIMAL || fieldType == FIXED_POINT_DECIMAL) {
 				this.isNumeric = true;
 				this.isDecimal = true;
 				this.inputMode = MODE_NUMBERS;
@@ -1964,7 +2131,11 @@ public class TextField extends StringItem
 					setConstraints(this.constraints);
 				}
 				if (this.isFocused) {
+					if(getScreen() != null) {
+					getScreen().notifyFocusSet(this);
+				} else {
 					Display.getInstance().notifyFocusSet(this);
+				}
 				}
 			}
 			else
@@ -2034,28 +2205,50 @@ public class TextField extends StringItem
 	
 	public void paintContent(int x, int y, int leftBorder, int rightBorder, Graphics g) {
 		//#if polish.blackberry
-        	if (this.isFocused && !StyleSheet.currentScreen.isMenuOpened() ) {
+        	if (this.isFocused && getScreen().isNativeUiShownFor(this)) {
+        		x--;
+        		int diff = this.backgroundWidth - this.originalContentWidth - this.paddingLeft - this.paddingRight;
+        		if (diff != 0) {
+        			//#if polish.css.text-layout
+	        			if (this.textLayout != 0) {
+	        				if ((this.textLayout & LAYOUT_CENTER) == LAYOUT_CENTER) {
+	        					x += diff / 2;
+	        				} else if ((this.textLayout & LAYOUT_CENTER) == LAYOUT_RIGHT) {
+	        					x += diff - 1;
+	        				}
+	        			} else 
+        			//#endif
+        			if (this.isLayoutCenter) {
+        				x += diff / 2;
+        			} else if (this.isLayoutRight) {
+        				x += diff;
+        			}
+        		}
 				this.editField.setPaintPosition( x + g.getTranslateX(), y + g.getTranslateY() );
 			} else {
-				super.paintContent(x, y, leftBorder, rightBorder, g);
+				if (this.isUneditable || !this.isFocused) {
+					//#if polish.TextField.showHelpText
+						if(this.text == null || this.text.length() == 0)
+						{
+							this.helpItem.paint(x, y, leftBorder, rightBorder, g);
+						} else
+					//#endif
+		    			super.paintContent(x, y, leftBorder, rightBorder, g);
+					return;
+				}else{
+					super.paintContent(x, y, leftBorder, rightBorder, g);
+				}
 			}
 		//#else
         
-        //#if tmp.includeInputInfo
-    		if (this.isUneditable || !this.isFocused) {
-        //#endif
-    			super.paintContent(x, y, leftBorder, rightBorder, g);
-    	//#if tmp.includeInputInfo
-    		}
-		//#endif
-    		
 		if (this.isUneditable || !this.isFocused) {
 			//#if polish.TextField.showHelpText
-			if(this.text == null || this.text.length() == 0)
-			{
-				this.helpItem.paint(x, y, leftBorder, rightBorder, g);
-			}
+				if(this.text == null || this.text.length() == 0)
+				{
+					this.helpItem.paint(x, y, leftBorder, rightBorder, g);
+				} else
 			//#endif
+    			super.paintContent(x, y, leftBorder, rightBorder, g);
 			return;
 		}
 		
@@ -2081,15 +2274,62 @@ public class TextField extends StringItem
 						}
 					}
 				//#endif
-				super.paintContent(x, y, leftBorder, rightBorder, g);
-
 				//#if polish.TextField.showHelpText
-				if(this.text == null || this.text.length() == 0)
-				{
-					this.helpItem.paint(x, y, leftBorder, rightBorder, g);
-				}
+					if(this.text == null || this.text.length() == 0)
+					{
+						this.helpItem.paint(x, y, leftBorder, rightBorder, g);
+					} else
 				//#endif
-				
+				if (this.isPassword && !(this.showCaret || this.isNumeric || this.caretChar == this.editingCaretChar)) {
+					int cX = getCaretXPosition(x, rightBorder, availWidth);
+					int cY = y + this.caretY;
+					int clipX = g.getClipX();
+					int clipY = g.getClipY();
+					int clipWidth = g.getClipWidth();
+					int clipHeight = g.getClipHeight();
+					g.clipRect( x, y, cX - x, clipHeight );
+					super.paintContent(x, y, leftBorder, rightBorder, g);
+					g.setClip( clipX, clipY, clipWidth, clipHeight );
+					int w = this.caretWidth;
+                	int starWidth = charWidth('*');
+                	if (starWidth > w) {
+                		w = starWidth;
+                	}
+                	if (this.caretX + w < this.contentWidth) {
+						g.clipRect( cX + w, y, clipWidth, clipHeight );
+						super.paintContent(x, y, leftBorder, rightBorder, g);
+						g.setClip( clipX, clipY, clipWidth, clipHeight );
+                	}
+					if (cY > y) {
+						g.clipRect( clipX, clipY, clipWidth, cY - clipY );
+						super.paintContent(x, y, leftBorder, rightBorder, g);
+						g.setClip( clipX, clipY, clipWidth, clipHeight );
+					}
+					int h = getFontHeight();
+					if (this.caretY + h < this.contentHeight) {
+						g.clipRect( x, cY + h, clipWidth, clipHeight );
+						super.paintContent(x, y, leftBorder, rightBorder, g);
+						g.setClip( clipX, clipY, clipWidth, clipHeight );
+					}
+					g.setColor( this.textColor);
+                    int anchor = Graphics.TOP | Graphics.LEFT;
+        			//#if polish.Bugs.needsBottomOrientiationForStringDrawing
+                    	cY += h;
+                    	anchor = Graphics.BOTTOM | Graphics.LEFT;
+                    //#endif
+                    //#if polish.css.text-effect
+                    	if (this.textEffect != null) {
+                    		this.textEffect.drawChar( this.caretChar, cX, cY, anchor, g);
+                    	} else {
+                    //#endif
+                    		g.drawChar( this.caretChar, cX, cY, anchor );
+                    //#if polish.css.text-effect
+                    	}
+                    //#endif
+				} else {
+					super.paintContent(x, y, leftBorder, rightBorder, g);
+				}
+
 
 		  		//#ifdef polish.css.text-wrap
 		        	if (this.useSingleLine) {
@@ -2104,20 +2344,7 @@ public class TextField extends StringItem
 					//#else
 						g.setColor( this.textColor );
 					//#endif
-					int cX;
-					if (!this.isLayoutCenter && !this.isLayoutRight) {
-						cX = x + this.caretX;
-					} else {
-						if (this.isLayoutCenter) {
-							cX = x + (((availWidth) - this.caretRowWidth) >> 1 ) + this.caretX;
-						} else  {
-							//#if polish.i18n.rightToLeft
-								cX = rightBorder -  this.caretX;
-							//#else
-								cX = rightBorder - this.caretRowWidth + this.caretX;
-							//#endif
-						}
-					}
+					int cX = getCaretXPosition(x, rightBorder, availWidth);
 					int cY = y + this.caretY;
                     if (this.caretChar != this.editingCaretChar) {
                     	// draw background rectangle
@@ -2163,11 +2390,12 @@ public class TextField extends StringItem
 
 				return;
 			//#ifdef tmp.allowDirectInput
+			} else { 
+				super.paintContent(x, y, leftBorder, rightBorder, g);
 			}
 			//#endif
-				
-				
 		//#else
+			super.paintContent(x, y, leftBorder, rightBorder, g);
 			// no direct input possible, but paint caret
 			if (this.showCaret && this.isFocused ) {
 				//#ifndef polish.css.textfield-caret-color
@@ -2192,6 +2420,31 @@ public class TextField extends StringItem
 		//#endif
 	}
 
+	//#ifdef tmp.directInput
+	/**
+	 * Calculates the exact horizontal caret position. 
+	 * @param x the x position of this field
+	 * @param rightBorder the right border
+	 * @param availWidth the available width
+	 * @return the caret position
+	 */
+	private int getCaretXPosition(int x, int rightBorder, int availWidth) {
+		int cX;
+		if (this.isLayoutCenter) {
+			cX = x + (((availWidth) - this.caretRowWidth) >> 1 ) + this.caretX;
+		} else if (this.isLayoutRight) {
+			//#if polish.i18n.rightToLeft
+				cX = rightBorder -  this.caretX;
+			//#else
+				cX = rightBorder - this.caretRowWidth + this.caretX;
+			//#endif
+		} else {
+			cX = x + this.caretX;
+		}
+		return cX;
+	}
+	//#endif
+
 	/* (non-Javadoc)
 	 * @see de.enough.polish.ui.Item#initItem()
 	 */
@@ -2210,6 +2463,13 @@ public class TextField extends StringItem
 			}
 		//#endif
 		super.initContent(firstLineWidth, availWidth, availHeight);
+		//#if polish.blackberry
+			this.originalContentWidth = this.contentWidth;
+		//#endif
+		//#if polish.TextField.showHelpText
+		UiAccess.init(this.helpItem, firstLineWidth, availWidth, availHeight);
+		//#endif
+		
 		//#if tmp.includeInputInfo
 			if (this.infoItem != null && this.isFocused && this.isShowInputInfo) {
 				this.contentWidth += this.infoItem.itemWidth;
@@ -2320,7 +2580,7 @@ public class TextField extends StringItem
 			this.screen = getScreen();
 			if (this.isFocused && this.parent instanceof Container ) {
 				// ensure that the visible area of this TextField is shown:
-				((Container)this.parent).scroll(0, this); // problem: itemHeight is not yet set
+				((Container)this.parent).scroll(0, this, true); // problem: itemHeight is not yet set
 			}
 		//#endif
 	}
@@ -2538,7 +2798,7 @@ public class TextField extends StringItem
 		boolean nextCharInputHasChanged = false;
 		//#if polish.TextField.suppressAutoInputModeChange
 			if ( this.inputMode == MODE_FIRST_UPPERCASE  
-				&& (insertChar == ' ' ||  ( insertChar == '.' && !(this.isEmail || this.isUrl || (constraints & INITIAL_CAPS_NEVER) == INITIAL_CAPS_NEVER)) )) 
+				&& (insertChar == ' ' ||  ( insertChar == '.' && !(this.isEmail || this.isUrl || (this.constraints & INITIAL_CAPS_NEVER) == INITIAL_CAPS_NEVER)) )) 
 			{
 				this.nextCharUppercase = true;
 			} else {
@@ -2548,7 +2808,7 @@ public class TextField extends StringItem
 			nextCharInputHasChanged = this.nextCharUppercase;
 			if ( ( (this.inputMode == MODE_FIRST_UPPERCASE || this.nextCharUppercase) 
 					&& insertChar == ' ') 
-				|| ( insertChar == '.' && !(this.isEmail || this.isUrl || (constraints & INITIAL_CAPS_NEVER) == INITIAL_CAPS_NEVER))) 
+				|| ( insertChar == '.' && !(this.isEmail || this.isUrl || (this.constraints & INITIAL_CAPS_NEVER) == INITIAL_CAPS_NEVER))) 
 			{
 				this.nextCharUppercase = true;
 			} else {
@@ -2824,39 +3084,78 @@ public class TextField extends StringItem
 	protected boolean handleKeyPressed(int keyCode, int gameAction) {
 		//#debug
 		System.out.println("handleKeyPressed " + keyCode );
-		this.isKeyPressedHandled = false;
-		//#ifndef tmp.directInput
-			//#if polish.bugs.inversedGameActions
-				if ((gameAction == Canvas.UP && keyCode != Canvas.KEY_NUM8)
-					|| (gameAction == Canvas.DOWN && keyCode != Canvas.KEY_NUM2)
-					|| (gameAction == Canvas.LEFT && keyCode != Canvas.KEY_NUM6)
-					|| (gameAction == Canvas.RIGHT && keyCode != Canvas.KEY_NUM4)
-					|| (gameAction == Canvas.FIRE && keyCode != Canvas.KEY_NUM5)
-					|| (this.screen.isSoftKey(keyCode, gameAction))
-				) 
-				{
-					return false;
+	
+		//#if  tmp.useNativeTextBox
+			//#if polish.TextField.passCharacterToNativeEditor
+			if (keyCode >0)
+			{
+				String alphabet = null;
+				if (keyCode == Canvas.KEY_POUND) {
+					alphabet = charactersKeyPound;
+				} else if (keyCode == Canvas.KEY_STAR) {
+					alphabet = charactersKeyStar;
+				} else {
+					int index = keyCode - Canvas.KEY_NUM0;
+					if (index >= 0 && index <= CHARACTERS.length) {
+						alphabet = CHARACTERS[ index ];
+					}
 				}
-			//#else
-				if ((gameAction == Canvas.UP && keyCode != Canvas.KEY_NUM2) 
-						|| (gameAction == Canvas.DOWN && keyCode != Canvas.KEY_NUM8)
-						|| (gameAction == Canvas.LEFT && keyCode != Canvas.KEY_NUM4)
-						|| (gameAction == Canvas.RIGHT && keyCode != Canvas.KEY_NUM6)
+				if (alphabet != null && (alphabet.length() >= 0)) {
+					if(this.keyDelayTimerTask==null || this.latestKey != keyCode){
+						this.keyPressCounter=0;
+						this.passedChar = alphabet.charAt(this.keyPressCounter++);
+						this.latestKey = keyCode;
+					}
+					else {
+						this.passedChar = alphabet.charAt(this.keyPressCounter++);
+						this.latestKey = keyCode;
+						if (this.keyPressCounter == alphabet.length()){
+							this.keyPressCounter=0;	
+						}
+					}
+					if ((this.constraints & NUMERIC) == NUMERIC){
+						this.passedChar = (char)keyCode;
+					}
+				}
+			}
+			//#endif
+		//#endif
+		
+		this.isKeyPressedHandled = false;
+		
+		//#ifndef tmp.directInput
+			if (keyCode < 32 || keyCode > 126) {
+				//#if polish.bugs.inversedGameActions
+					if ((gameAction == Canvas.UP && keyCode != Canvas.KEY_NUM8)
+						|| (gameAction == Canvas.DOWN && keyCode != Canvas.KEY_NUM2)
+						|| (gameAction == Canvas.LEFT && keyCode != Canvas.KEY_NUM6)
+						|| (gameAction == Canvas.RIGHT && keyCode != Canvas.KEY_NUM4)
 						|| (gameAction == Canvas.FIRE && keyCode != Canvas.KEY_NUM5)
 						|| (this.screen.isSoftKey(keyCode, gameAction))
 					) 
-				{
-					return false;
-				}
-			//#endif
+					{
+						return false;
+					}
+				//#else
+					if ((gameAction == Canvas.UP && keyCode != Canvas.KEY_NUM2) 
+							|| (gameAction == Canvas.DOWN && keyCode != Canvas.KEY_NUM8)
+							|| (gameAction == Canvas.LEFT && keyCode != Canvas.KEY_NUM4)
+							|| (gameAction == Canvas.RIGHT && keyCode != Canvas.KEY_NUM6)
+							|| (gameAction == Canvas.FIRE && keyCode != Canvas.KEY_NUM5)
+							|| (this.screen.isSoftKey(keyCode, gameAction))
+						) 
+					{
+						return false;
+					}
+				//#endif
+			}
 		//#elif !polish.blackberry
 			if (this.inputMode == MODE_NATIVE) {
 				if ((gameAction == Canvas.UP && keyCode != Canvas.KEY_NUM2) 
 						|| (gameAction == Canvas.DOWN && keyCode != Canvas.KEY_NUM8)
 						|| (gameAction == Canvas.LEFT && keyCode != Canvas.KEY_NUM4)
 						|| (gameAction == Canvas.RIGHT && keyCode != Canvas.KEY_NUM6)
-						|| (gameAction == Canvas.FIRE && keyCode != Canvas.KEY_NUM5)
-						|| (this.screen.isSoftKey(keyCode, gameAction))
+						|| (!(gameAction == Canvas.FIRE && this.cskOpensNativeEditor) && this.screen.isSoftKey(keyCode, gameAction))
 						) 
 				{
 					return false;
@@ -2870,13 +3169,40 @@ public class TextField extends StringItem
 		//#endif
 				//#ifdef tmp.directInput
 					//#if !polish.blackberry
+						if (this.inputMode == MODE_NATIVE && keyCode != KEY_CHANGE_MODE
 						//#if polish.key.ChangeNumericalAlphaInputModeKey:defined
-						//#= if (this.inputMode == MODE_NATIVE && keyCode != KEY_CHANGE_MODE && keyCode != ${polish.key.ChangeNumericalAlphaInputModeKey}  ) {
-						//#else
-						if (this.inputMode == MODE_NATIVE && keyCode != KEY_CHANGE_MODE) {
+								//#= && keyCode != ${polish.key.ChangeNumericalAlphaInputModeKey}  
 						//#endif
+						) {
 							//#if tmp.useNativeTextBox
+								//#if polish.TextField.passCharacterToNativeEditor
+								this.lastTimeKeyPressed = System.currentTimeMillis();
+								if (this.keyDelayTimerTask==null && !((this.constraints & UNEDITABLE) == UNEDITABLE)){
+									final int localGameAction = gameAction;
+									final int localKeyCode = keyCode;
+									this.keyDelayTimerTask = new TimerTask(){
+	
+										public void run() {
+											if(System.currentTimeMillis()-TextField.this.lastTimeKeyPressed < (TextField.this.delayBetweenKeys+20) ) return;
+											showTextBox();
+											if (TextField.this.midpTextBox!=null && (localGameAction != Canvas.FIRE || localKeyCode == Canvas.KEY_NUM5)){
+												String oldText =TextField.this.midpTextBox.getString();
+												if (oldText.length()==0 && !((TextField.this.constraints & INITIAL_CAPS_NEVER) == INITIAL_CAPS_NEVER)){
+													TextField.this.passedChar = Character.toUpperCase(TextField.this.passedChar);
+												}
+												TextField.this.midpTextBox.insert(String.valueOf(TextField.this.passedChar), TextField.this.getCaretPosition());
+											}
+											TextField.this.keyDelayTimerTask.cancel();
+											TextField.this.keyDelayTimerTask = null;
+										}
+										
+									};
+									
+									this.keyDelayTimer.schedule(this.keyDelayTimerTask, 0,this.delayBetweenKeys);
+								}
+								//#else
 								showTextBox();
+								//#endif	
 								return true;
 							//#endif
 						}
@@ -2960,13 +3286,14 @@ public class TextField extends StringItem
                         }
 	                        
 						// Navigate the caret
-						if (   (gameAction == Canvas.UP 	|| 
+						if (  !handled && 
+								(gameAction == Canvas.UP 	|| 
 								gameAction == Canvas.DOWN 	||
 								gameAction == Canvas.LEFT 	||
 								gameAction == Canvas.RIGHT  ||
-								gameAction == Canvas.FIRE)  &&
-								!handled) 
-						{
+								gameAction == Canvas.FIRE
+								)
+						) {
 							handled = handleKeyNavigation(keyCode, gameAction);
 							if (!handled && getScreen().isGameActionFire(keyCode, gameAction) && this.defaultCommand != null) {
 								notifyItemPressedStart();
@@ -3090,10 +3417,13 @@ public class TextField extends StringItem
 						&& this.inputMode != MODE_NUMBERS 
 						&& !this.isNumeric
 						&& this.screen.isKeyboardAccessible() 
-						&& !( 	   (gameAction == Canvas.UP     &&  insertChar != '2' && keyCode == this.screen.getKeyCode(Canvas.UP) ) 
-								|| (gameAction == Canvas.DOWN   &&  insertChar != '8' && keyCode == this.screen.getKeyCode(Canvas.DOWN)  )
+						&& !( 	(insertChar < 'a' || insertChar > 'z')
+								&& 
+								(  (gameAction == Canvas.UP     &&  insertChar != '2' && keyCode == this.screen.getKeyCode(Canvas.UP)   ) 
+								|| (gameAction == Canvas.DOWN   &&  insertChar != '8' && keyCode == this.screen.getKeyCode(Canvas.DOWN) )
 								|| (gameAction == Canvas.LEFT   &&  insertChar != '4' && keyCode == this.screen.getKeyCode(Canvas.LEFT)	)
 								|| (gameAction == Canvas.RIGHT  &&  insertChar != '6' && keyCode == this.screen.getKeyCode(Canvas.RIGHT))
+								)
 								//|| (gameAction == Canvas.FIRE   &&  keyCode == this.screen.getKeyCode(Canvas.FIRE) )  
 							)
 						) 
@@ -3125,7 +3455,7 @@ public class TextField extends StringItem
 					return true;
 				}
 				//#if polish.TextField.numerickeys.1:defined
-					String numericKeyStr = null;
+					String numericKeyStr = "";
 					int foundNumber = -1;
 					//#= numericKeyStr = "${polish.TextField.numerickeys.1}";
 					if (numericKeyStr.indexOf(insertChar) != -1) {
@@ -3179,12 +3509,12 @@ public class TextField extends StringItem
 				//#endif
 				if ( this.isDecimal ) {
 					//System.out.println("handling key for DECIMAL TextField");
-					if (currentLength < this.maxSize 
-							&& ( keyCode == Canvas.KEY_POUND || keyCode == Canvas.KEY_STAR )
-							&& (this.text.indexOf( Locale.DECIMAL_SEPARATOR) == -1)
-							) 
+					if (this.text == null || 
+						(currentLength < this.maxSize 
+						&& ( keyCode == Canvas.KEY_POUND || keyCode == Canvas.KEY_STAR )
+						&& this.text.indexOf( Locale.DECIMAL_SEPARATOR) == -1)
+						) 
 					{
-						
 						insertChar = Locale.DECIMAL_SEPARATOR;
 						insertCharacter(insertChar, true, true );
 						return true;								
@@ -3677,7 +4007,7 @@ public class TextField extends StringItem
 		//return super.handleKeyRepeated(keyCode, gameAction);
 	}
 	//#endif
-
+	
 	//#if !polish.blackberry && tmp.directInput
 	/* (non-Javadoc)
 	 * @see de.enough.polish.ui.Item#handleKeyReleased(int, int)
@@ -3685,6 +4015,12 @@ public class TextField extends StringItem
 	protected boolean handleKeyReleased( int keyCode, int gameAction ) {
 		//#debug
 		System.out.println("handleKeyReleased  " + keyCode );
+		//#if tmp.useNativeTextBox && !(polish.Vendor == Samsung)
+			if(this.skipKeyReleasedEvent) {
+				this.skipKeyReleasedEvent = false;
+				return true;
+			}
+		//#endif
 		this.isKeyDown = false;
 		this.deleteKeyRepeatCount = 0;
 		
@@ -3779,15 +4115,22 @@ public class TextField extends StringItem
 	protected boolean handlePointerReleased( int x, int y ) {
 		if (isInItemArea(x, y)) {
 			//#if tmp.useNativeTextBox
-				notifyItemPressedEnd();
-				showTextBox();
-				//# return true;
+				int fieldType = this.constraints & 0xffff;
+				if (fieldType != FIXED_POINT_DECIMAL) {
+					notifyItemPressedEnd();
+					showTextBox();
+					return true;
+				}
 			//#elif polish.android1.5
 				if (this.isFocused && ((System.currentTimeMillis() - this.androidFocusedTime) > 1000)) {
 					notifyItemPressedEnd();
-					MIDlet.midletInstance.toggleSoftKeyboard();
+					MidletBridge.instance.toggleSoftKeyboard();
 					return true;
 				}
+			//#elif polish.TextField.useVirtualKeyboard
+				Form keyboardView = KeyboardView.getInstance(getLabel(), this, getScreen());
+				Display.getInstance().setCurrent(keyboardView);
+				return true;
 			//#endif
 		}
 		return super.handlePointerReleased(x, y);
@@ -3850,7 +4193,10 @@ public class TextField extends StringItem
 	/**
 	 * Shows the TextBox for entering texts.
 	 */
-	private void showTextBox() {
+	protected void showTextBox() {
+	//TODO: drubin better handling of textfield events.
+	//(Currently this is the easiest method to overload if you want to tie into
+	//"is editing mode" events.) that is triggered by both touch and commands
 		if (this.midpTextBox == null) {
 			createTextBox();
 		}
@@ -3899,10 +4245,12 @@ public class TextField extends StringItem
 		//#if tmp.useNativeTextBox
 			if (cmd == StyleSheet.CANCEL_CMD) {
 				this.midpTextBox.setString( this.text );
+				this.skipKeyReleasedEvent = true;
 			} else if (!this.isUneditable) {
 				setString( this.midpTextBox.getString() );
 				setCaretPosition( size() );
 				notifyStateChanged();
+				this.skipKeyReleasedEvent = true;
 			}
 			StyleSheet.display.setCurrent( this.screen );
 		//#endif
@@ -3957,11 +4305,18 @@ public class TextField extends StringItem
 				return;
 			}
 		//#endif
-		
+		if (cmd.commandAction(this, null)) {
+			return;
+		}
 		//#if tmp.implementsItemCommandListener
 			//#if tmp.supportsSymbolEntry 
 				if (cmd == ENTER_SYMBOL_CMD ) {
-					//#if !polish.TextField.ignoreSymbolCommand
+					//#if polish.TextField.ignoreSymbolCommand
+						Screen scr = getScreen();
+						if (scr != null & scr.getCommandListener() != null) {
+							scr.getCommandListener().commandAction(cmd, scr);
+						}
+					//#else
 						showSymbolsList();
 					//#endif
 					return;
@@ -4017,7 +4372,7 @@ public class TextField extends StringItem
 		//#endif
 	}
 		
-	//#if (tmp.directInput && (polish.TextField.showInputInfo != false)) || polish.blackberry || polish.TextField.activateUneditableWithFire
+	//#if (tmp.directInput && (polish.TextField.showInputInfo != false)) || polish.blackberry || polish.TextField.activateUneditableWithFire || polish.android1.5
 	protected void defocus(Style originalStyle) {
 		super.defocus(originalStyle);
 		//#if polish.blackberry
@@ -4035,6 +4390,9 @@ public class TextField extends StringItem
 			synchronized (bbLock) {
 				this.editField.focusRemove();
 			}
+			//#if polish.hasPointerEvents && polish.TextField.hideSoftKeyboardOnDefocus
+				DeviceControl.hideSoftKeyboard();
+			//#endif
 		//#elif polish.TextField.showInputInfo != false && !tmp.includeInputInfo
 			if (this.screen != null) {
 				this.screen.setInfo((Item)null);
@@ -4046,12 +4404,16 @@ public class TextField extends StringItem
 				notifyStateChanged();
 			}
 		//#endif
+		//#if polish.android1.5 && polish.TextField.hideSoftKeyboardOnDefocus
+				MidletBridge.instance.hideSoftKeyboard();
+		//#endif
+
 	}
 	//#endif
 	
-	//#if tmp.directInput || !(polish.TextField.suppressDeleteCommand || polish.blackberry) 
+	//#if tmp.directInput || !polish.TextField.suppressDeleteCommand 
 	protected Style focus(Style focStyle, int direction) {
-		//#if tmp.directInput
+		//#if tmp.directInput || polish.blackberry
 			//#ifdef tmp.allowDirectInput
 				if (this.enableDirectInput) {
 			//#endif
@@ -4059,9 +4421,13 @@ public class TextField extends StringItem
 						updateInfo();
 					//#endif
 					//#if polish.TextField.jumpToStartOnFocus
-						if (this.caretPosition != 0) {
-							setCaretPosition( 0 );
-						}
+						//#if !polish.blackberry
+							if (this.caretPosition != 0) {
+						//#endif
+								setCaretPosition( 0 );
+						//#if !polish.blackberry
+							}
+						//#endif
 					//#elif !polish.TextField.keepCaretPosition
 						setCaretPosition( getString().length() );
 					//#endif
@@ -4071,13 +4437,13 @@ public class TextField extends StringItem
 		//#endif
 		
 		Style unfocusedStyle = super.focus(focStyle, direction);
-		//#if tmp.updateDeleteCommand
+		//#if tmp.updateDeleteCommand && !polish.blackberry
 			updateDeleteCommand( this.text );
 		//#endif
 		
 		//#if polish.android1.5
 			if (this.isShown) {
-				MIDlet.midletInstance.showSoftKeyboard();
+				DeviceControl.showSoftKeyboard();
 				this.androidFocusedTime = System.currentTimeMillis();
 			}
 		//#endif
@@ -4094,11 +4460,17 @@ public class TextField extends StringItem
 	public void fieldChanged(Field field, int context) {
 		if (context != FieldChangeListener.PROGRAMMATIC && this.isInitialized ) {
 			//#if polish.Bugs.ItemStateListenerCalledTooEarly
-				long currentTime = System.currentTimeMillis();
-				this.lastFieldChangedEvent = currentTime;
-				Screen scr = getScreen();
-				if (scr != null) {
-					scr.lastInteractionTime = currentTime;
+				int fieldType = this.constraints & 0xffff;
+				if (fieldType == NUMERIC || fieldType == DECIMAL || fieldType == FIXED_POINT_DECIMAL) {
+					setString( this.editField.getText() );				
+					notifyStateChanged();					
+				} else {
+					long currentTime = System.currentTimeMillis();
+					this.lastFieldChangedEvent = currentTime;
+					Screen scr = getScreen();
+					if (scr != null) {
+						scr.lastInteractionTime = currentTime;
+					}
 				}
 			//#else
 				setString( this.editField.getText() );				
@@ -4169,25 +4541,30 @@ public class TextField extends StringItem
 				updateInfo();
 			}
 		//#endif
-		//#if polish.android1.5
+		//#if (polish.blackberry && polish.hasPointerEvents) || polish.android1.5
 			if (this.isFocused) {
-				MIDlet.midletInstance.showSoftKeyboard();
+				DeviceControl.showSoftKeyboard();
 			}
 		//#endif
 		super.showNotify();
 	}
 
-	//#if  !polish.blackberry && tmp.directInput
+	//#if  (!polish.blackberry && tmp.directInput) || (polish.blackberry && polish.hasPointerEvents)
 		/* (non-Javadoc)
 		 * @see de.enough.polish.ui.StringItem#hideNotify()
 		 */
 		protected void hideNotify() {
-			if (this.caretChar != this.editingCaretChar) {
-				commitCurrentCharacter();
-			}
+			//#if !polish.blackberry
+				if (this.caretChar != this.editingCaretChar) {
+					commitCurrentCharacter();
+				}
+			//#endif
 			super.hideNotify();
-			//#if polish.android1.5
-				MIDlet.midletInstance.hideSoftKeyboard();
+			//#if polish.blackberry && polish.hasPointerEvents
+				// 2009-11-11: hiding the softkeyboard is not really necessary as we have a finer grained control about this in BaseScreen.notifyDisplayChange()
+				//# //Display.getInstance().getVirtualKeyboard().setVisibility(net.rim.device.api.ui.VirtualKeyboard.HIDE);
+			//#elif polish.android1.5
+				MidletBridge.instance.hideSoftKeyboard();
 			//#endif
 		}	
 	//#endif
@@ -4223,6 +4600,13 @@ public class TextField extends StringItem
 	}
 
 	//#if polish.TextField.showHelpText
+	/**
+	 * Sets a help text for this TextField. The help text
+	 * appears when a TextField has no input yet and is
+	 * used to inform the user about the desired content 
+	 * (e.g. "Insert name here ...")
+	 * @param text the help text
+	 */
 	public void setHelpText(String text)
 	{
 		this.helpItem.setText(text);
@@ -4230,6 +4614,10 @@ public class TextField extends StringItem
 	//#endif
 	
 	//#if polish.TextField.showHelpText
+	/**
+	 * Sets the style of the help text
+	 * @param style the style
+	 */
 	public void setHelpStyle(Style style)
 	{
 		this.helpItem.setStyle(style);
@@ -4237,10 +4625,18 @@ public class TextField extends StringItem
 	//#endif
 
 	//#if polish.TextField.useExternalInfo && !polish.blackberry
+	/**
+	 * Returns the StringItem which is displaying the input info
+	 * @return the StringItem displaying the input info
+	 */
 	public StringItem getInfoItem() {
 		return this.infoItem;
 	}
 
+	/**
+	 * Sets the StringItem which should display the input info 
+	 * @param infoItem the StringItem to display the input info
+	 */
 	public void setInfoItem(StringItem infoItem) {
 		this.infoItem = infoItem;
 	}
@@ -4300,7 +4696,7 @@ public class TextField extends StringItem
 					direction = Canvas.UP;
 				}
 				this.bbLastCursorPosition = cursorPosition;
-				((Container)this.parent).scroll(direction, this);
+				((Container)this.parent).scroll(direction, this, true);
 			}
 		} else {
 			this.internalX = NO_POSITION_SET;
@@ -4368,28 +4764,45 @@ public class TextField extends StringItem
 			getPredictiveAccess().setAlert(alert);
 		//#endif
 	}
+
 	
-	/*
-	public boolean keyChar(char key, int status, int time) {
-		Screen scr = getScreen();
-		if (!this.isFocused || scr == null || !scr.isShown()) {
-			return false;
-		}
-		int currentLength = (this.text == null ? 0 : this.text.length());
-		if (currentLength < this.maxSize) { 
-			this.caretChar = key;
-			insertCharacter();
-			return true;
-		} else {
-			return false;
-		}
+	/**
+	 * Returns true if the flag to open the native editor on CenterSoftKey press is set to true
+	 * @return true when the native editor is opened when FIRE is pressed
+	 */
+	public boolean isCskOpensNativeEditor() {
+		return this.cskOpensNativeEditor;
 	}
-	*/
 	
+	/**
+	 * Sets the flag to open the native editor on CenterSoftKey press
+	 * @param cskOpensNativeEditor true when the native editor should be opened when FIRE is pressed
+	 */
+	public void setCskOpensNativeEditor(boolean cskOpensNativeEditor) {
+		this.cskOpensNativeEditor = cskOpensNativeEditor;
+	}
+
+	/**
+	 * Sets the title to be displayed in the native textbox
+	 * @param title the title to set
+	 */
+	public void setTitle(String title) {
+		this.title = title;
+	}
 	
+	/**
+	 * Set if the textfield should accept the enter key as an input which results in a new line.
+	 * 
+	 * @param noNewLine set if new lines should be ignored
+	 */
+	public void setNoNewLine(boolean noNewLine) {
+		this.noNewLine = noNewLine;
+		//#if polish.blackberry
+			this.setConstraints(this.constraints);
+		//#endif
+	}
 	
 //#ifdef polish.TextField.additionalMethods:defined
 	//#include ${polish.TextField.additionalMethods}
 //#endif
-
 }

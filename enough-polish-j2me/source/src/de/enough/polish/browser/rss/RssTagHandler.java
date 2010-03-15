@@ -67,8 +67,11 @@ public class RssTagHandler
 
 	private static final String TAG_FEEDBURNER_ORIGLINK = "feedburner:origLink";
 
-	/** item attribute for storing the RSS item */
-	public static final String ATTR_RSS_ITEM = "RSS_ITEM";
+	/** item attribute for storing the RSS item
+	 * @deprecated use RssItem.ATTRIBUTE_KEY instead
+	 * @see RssItem#ATTRIBUTE_KEY 
+	 */
+	public static final String ATTR_RSS_ITEM = RssItem.ATTRIBUTE_KEY;
 
 	  /** default select command */
 	//#ifdef polish.i18n.useDynamicTranslations
@@ -123,6 +126,15 @@ public class RssTagHandler
 			}
 		//#endif
 	}
+	
+	/**
+	 * Sets the command that is used for opening &lt;a href...&gt; links. 
+	 * @param link the new command
+	 */
+	public void setLinkCommand( Command link ) {
+		this.linkCommand = link;
+	}
+
 
 	/* (non-Javadoc)
 	 * @see de.enough.polish.browser.TagHandler#register(de.enough.polish.browser.Browser)
@@ -268,7 +280,7 @@ public class RssTagHandler
 		item.setAppearanceMode(Item.HYPERLINK);
 		item.setDefaultCommand(CMD_RSS_ITEM_SELECT);
 		item.setItemCommandListener(this.itemListener);
-		item.setAttribute(ATTR_RSS_ITEM, new RssItem(rssTitle, rssDescription, this.url));
+		item.setAttribute(RssItem.ATTRIBUTE_KEY, new RssItem(rssTitle, rssDescription, this.url));
 		item.addCommand(this.linkCommand);
 
 		if (this.url != null) {
@@ -300,9 +312,10 @@ public class RssTagHandler
 	 * Subclasses may override this to react accordingly (e.g. by storing the URL for using visited styles within applyStylingForRssLink).
 	 * 
 	 * @param rssUrl the URL of the RSS item that is to be shown
+	 * @param item the UI item that is associated with the specified RSS URL 
 	 * @see #applyStylingForRssLink(Item, int, String)
 	 */
-	protected void onViewUrl( String rssUrl ) {
+	protected void onViewUrl( String rssUrl, Item item ) {
 		// ignore
 	}
 	

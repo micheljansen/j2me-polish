@@ -29,12 +29,19 @@ import java.io.IOException;
 
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
+
+//#debug ovidiu
+import de.enough.polish.benchmark.Benchmark;
+
 //#if polish.blackberry
 	import net.rim.device.api.ui.Field;
 //#endif
 
 import de.enough.polish.event.EventManager;
+import de.enough.polish.event.GestureEvent;
+import de.enough.polish.event.UiEventListener;
 import de.enough.polish.util.ArrayList;
+import de.enough.polish.util.Arrays;
 import de.enough.polish.util.DrawUtil;
 import de.enough.polish.util.HashMap;
 import de.enough.polish.util.RgbImage;
@@ -658,6 +665,8 @@ public abstract class Item implements UiElement, Animatable
 	protected int contentWidth;
 	/** The height of this item's content **/
 	protected int contentHeight;
+	protected int availContentWidth;
+	protected int availContentHeight;
 	protected int backgroundWidth;
 	protected int backgroundHeight;
 	/** The appearance mode of this item, either PLAIN or one of the interactive modes BUTTON, HYPERLINK or INTERACTIVE. */
@@ -696,7 +705,7 @@ public abstract class Item implements UiElement, Animatable
 	public int relativeX;
 	/** the vertical start position of this item relative to it's parent item top content edge */
 	public int relativeY; 
-	/** the horizontal position of this item's content relative to it's left edge */
+	/** the horizontal position of this item's content relative to it's left edge (so for a left aligned item its marginLeft + border.widthLeft + paddingLeft */
 	protected int contentX;
 	/** the vertical position of this item's content relative to it's top edge */
 	protected int contentY; // absolute top vertical position of the content 
@@ -747,8 +756,8 @@ public abstract class Item implements UiElement, Animatable
 	protected Style focusedStyle;
 	protected boolean isPressed;
 	//#if polish.css.pressed-style
-		private Style pressedStyle;
 		private Style normalStyle;
+		private Style pressedStyle;
 	//#endif
 
 	//#if polish.css.colspan
@@ -823,8 +832,9 @@ public abstract class Item implements UiElement, Animatable
 		private RgbFilter[] filters;
 		private boolean isFiltersActive;
 		private boolean filterPaintNormally;
-		private RgbImage filterRgbImage;
 		private RgbFilter[] originalFilters;
+		private RgbImage filterRgbImage;
+		private RgbImage filterProcessedRgbImage;
 	//#endif
 	//#if polish.css.inline-label
 		protected boolean isInlineLabel;
@@ -844,6 +854,22 @@ public abstract class Item implements UiElement, Animatable
 		protected Style landscapeStyle;
 		protected Style portraitStyle;
 	//#endif
+	//#if polish.Item.ShowCommandsOnHold
+		//#define tmp.supportTouchGestures
+		private boolean isShowCommands;
+		private Container commandsContainer;
+	//#endif
+	//#if polish.supportTouchGestures
+		//#define tmp.supportTouchGestures
+	//#endif
+	//#if tmp.supportTouchGestures
+		private long gestureStartTime;
+		private int gestureStartX;
+		private int gestureStartY;
+		private boolean isIgnorePointerReleaseForGesture;
+	//#endif
+	private UiEventListener uiEventListener;
+
 
 
 
@@ -867,7 +893,8 @@ public abstract class Item implements UiElement, Animatable
 	/**
 	 * Convenience constructor.
 	 * Creates a new item with the specified label and layout, an Item.PLAIN appearance mode and default style.
-	 * @param style the style for this item
+	 * @param label the label of this item
+	 * @param layout the layout of this item
 	 */
 	protected Item( String label, int layout) {
 		this( label, layout, PLAIN, null );
@@ -1100,6 +1127,7 @@ public abstract class Item implements UiElement, Animatable
 		System.out.println("setting style " + style.name + " for " + this );
 		this.isStyleInitialised = true;
 		this.style = style;
+		
 		if (style != StyleSheet.defaultStyle) {
 			setLayout( style.layout );
 		}
@@ -1464,27 +1492,27 @@ public abstract class Item implements UiElement, Animatable
 			}
 		//#endif
 		//#ifdef polish.css.min-width
-			Dimension minWidthInt = (Dimension) style.getObjectProperty("min-width");
-			if (minWidthInt != null) {
-				this.minimumWidth = minWidthInt;
+			Dimension minWidthDim = (Dimension) style.getObjectProperty("min-width");
+			if (minWidthDim != null) {
+				this.minimumWidth = minWidthDim;
 			}
 		//#endif
 		//#ifdef polish.css.max-width
-			Dimension maxWidthInt  = (Dimension) style.getObjectProperty("max-width");
-			if (maxWidthInt != null) {
-				this.maximumWidth = maxWidthInt;
+			Dimension maxWidthDim  = (Dimension) style.getObjectProperty("max-width");
+			if (maxWidthDim != null) {
+				this.maximumWidth = maxWidthDim;
 			}
 		//#endif
 		//#ifdef polish.css.min-height
-			Dimension minHeightInt = (Dimension) style.getObjectProperty("min-height");
-			if (minHeightInt != null) {
-				this.minimumHeight = minHeightInt;
+			Dimension minHeightDim = (Dimension) style.getObjectProperty("min-height");
+			if (minHeightDim != null) {
+				this.minimumHeight = minHeightDim;
 			}
 		//#endif
 		//#ifdef polish.css.max-height
-			Dimension maxHeightInt  = (Dimension) style.getObjectProperty("max-height");
-			if (maxHeightInt != null) {
-				this.maximumHeight = maxHeightInt;
+			Dimension maxHeightDim  = (Dimension) style.getObjectProperty("max-height");
+			if (maxHeightDim != null) {
+				this.maximumHeight = maxHeightDim;
 			}
 		//#endif
 
@@ -1745,6 +1773,9 @@ public abstract class Item implements UiElement, Animatable
 //					scr.addCommand( cmd );
 //				}
 			}
+			//#if polish.Item.ShowCommandsOnHold
+				this.commandsContainer = null;
+			//#endif
 			if (this.isInitialized) {
 				repaint();
 			}
@@ -1792,6 +1823,9 @@ public abstract class Item implements UiElement, Animatable
 						scr.removeCommand( cmd );
 					}
 				}
+				//#if polish.Item.ShowCommandsOnHold
+					this.commandsContainer = null;
+				//#endif
 				if (this.isInitialized) {
 					repaint();
 				}
@@ -2152,7 +2186,11 @@ public abstract class Item implements UiElement, Animatable
 	 */
 	public int getMinimumWidth()
 	{
-		return this.minimumWidth.getValue(100);
+		if (this.minimumWidth != null) {
+			return this.minimumWidth.getValue(100);
+		} else {
+			return 0;
+		}
 	}
 
 	/**
@@ -2166,7 +2204,11 @@ public abstract class Item implements UiElement, Animatable
 	 */
 	public int getMinimumHeight()
 	{
-		return this.minimumHeight.getValue(100);
+		if (this.minimumHeight != null) {
+			return this.minimumHeight.getValue(100);
+		} else {
+			return 0;
+		}
 	}
 
 	/**
@@ -2216,8 +2258,11 @@ public abstract class Item implements UiElement, Animatable
 				this.appearanceMode = INTERACTIVE;
 			}
 		//#endif
-		if (this.isFocused) {
-			getScreen().notifyDefaultCommand( cmd );
+		if (this.isFocused) 
+		{
+			Screen scr = getScreen();
+			if(scr != null)
+				scr.notifyDefaultCommand( cmd );
 		}
 	}
 	
@@ -2348,7 +2393,10 @@ public abstract class Item implements UiElement, Animatable
 				return;
 			}
 		//#endif
-
+			
+		//#debug ovidiu
+		Benchmark.startSmartTimer("0");
+			
 		// initialise this item if necessary:
 		if (!this.isInitialized) {
 			if (this.availableWidth == 0) {
@@ -2365,6 +2413,7 @@ public abstract class Item implements UiElement, Animatable
 				this.parent.requestInit();
 			}
 		}
+		
 		//#if polish.css.x-adjust
 			if (this.xAdjustment != null) {
 				int value = this.xAdjustment.getValue(this.itemWidth);
@@ -2378,6 +2427,8 @@ public abstract class Item implements UiElement, Animatable
 				y += this.yAdjustment.getValue(this.itemHeight);
 			}
 		//#endif
+		int origX = x;
+		int origY = y;
 			
 		//#if polish.css.filter && polish.midp2
 			if (this.isFiltersActive && this.filters != null && !this.filterPaintNormally) {
@@ -2389,20 +2440,33 @@ public abstract class Item implements UiElement, Animatable
 					this.filterRgbImage = rgbImage;
 					this.filterPaintNormally = false;
 				} 
-				//System.out.println("painting RGB data for " + this  + ", pixel=" + Integer.toHexString( rgbData[ rgbData.length / 2 ]));
-				for (int i=0; i<this.filters.length; i++) {
-					RgbFilter filter = this.filters[i];
-					rgbImage = filter.process(rgbImage);
-				}
-				int width = rgbImage.getWidth();
-				int height = rgbImage.getHeight();
-				int[] rgbData = rgbImage.getRgbData();
-				if (this.isLayoutRight) {
-					x = rightBorder - width;
-				} else if (this.isLayoutCenter) {
-					x =  leftBorder + ((rightBorder - leftBorder)/2) - (width/2);
-				}
-				DrawUtil.drawRgb(rgbData, x, y, width, height, true, g );
+				//System.out.println("painting RGB data for " + this  + ", pixel=" + Integer.toHexString( rgbData[ rgbData.length / 2 ]));		
+				this.filterProcessedRgbImage = paintFilter(x, y, this.filters, rgbImage, this.layout, g);
+//				for (int i=0; i<this.filters.length; i++) {
+//					RgbFilter filter = this.filters[i];
+//					rgbImage = filter.process(rgbImage);
+//				}				
+//				
+//				int width = rgbImage.getWidth();
+//				int height = rgbImage.getHeight();
+//				int[] rgbData = rgbImage.getRgbData();
+//				if (this.isLayoutRight) {
+//					x = rightBorder - width;
+//				} else if (this.isLayoutCenter) {
+//					x =  leftBorder + ((rightBorder - leftBorder)/2) - (width/2);
+//				}
+//				DrawUtil.drawRgb(rgbData, x, y, width, height, true, g );
+//				
+				//#mdebug ovidiu
+				Benchmark.pauseSmartTimer("0");
+				Benchmark.incrementSmartTimer("1");
+				Benchmark.check();
+				//#enddebug
+				//#if polish.Item.ShowCommandsOnHold
+					if (this.isShowCommands) {
+						paintCommands( origX, origY, g );
+					}
+				//#endif
 				return;
 			}
 		//#endif
@@ -2422,6 +2486,11 @@ public abstract class Item implements UiElement, Animatable
 				} 
 				//System.out.println("painting RGB data for " + this  + ", pixel=" + Integer.toHexString( rgbData[ rgbData.length / 2 ]));
 				DrawUtil.drawRgb(rgbData, x, y, this.itemWidth, this.itemHeight, true, g );
+				//#if polish.Item.ShowCommandsOnHold
+					if (this.isShowCommands) {
+						paintCommands( origX, origY, g );
+					}
+				//#endif
 				return;
 			}
 		//#endif
@@ -2501,29 +2570,26 @@ public abstract class Item implements UiElement, Animatable
 //		}
 		
 		
-		// paint background:
 		x += this.marginLeft;
 		y += this.marginTop;
+		// paint background and border:
 		//#if polish.css.include-label
 			if (!this.includeLabel) {
 		//#endif
 				int backgroundX = x;
-				int backgroundY = y;
-				if (this.useSingleRow && this.label != null) {
-					backgroundX += this.label.itemWidth;
+				if (this.label != null) { 
+					backgroundX += this.contentX - this.paddingLeft - this.marginLeft - getBorderWidthLeft();
+					if (this.isLayoutCenter) {
+						//TODO: what happens when having an animated background width?
+                        rightBorder = backgroundX + this.backgroundWidth - this.paddingRight - this.marginRight - getBorderWidthRight();
+                        leftBorder = x + this.contentX;
+					}
 				}
-				if(this.isLayoutRight)
-				{
-					backgroundX = rightBorder + this.paddingRight - this.backgroundWidth;
-					//#if polish.css.after
-						backgroundX += this.afterWidth;
-					//#endif
-				}
-				paintBackgroundAndBorder(backgroundX, backgroundY, this.backgroundWidth, this.backgroundHeight, g);
+				paintBackgroundAndBorder(backgroundX, y, this.backgroundWidth, this.backgroundHeight, g);
 		//#if polish.css.include-label
 			}
 		//#endif
-		
+
 		//#if polish.css.content-x-adjust
 			if (this.contentXAdjustment != null) {
 				x += this.contentXAdjustment.getValue(this.contentWidth);
@@ -2545,7 +2611,7 @@ public abstract class Item implements UiElement, Animatable
 		//#if polish.css.before || polish.css.after || polish.css.min-height  || polish.css.max-height
 			boolean isVerticalCenter = (this.layout & LAYOUT_VCENTER) == LAYOUT_VCENTER; 
 			boolean isTop = !isVerticalCenter && (this.layout & LAYOUT_TOP) == LAYOUT_TOP; 
-			boolean isBottom = !isVerticalCenter && (this.layout & LAYOUT_BOTTOM) == LAYOUT_BOTTOM; 
+			boolean isBottom = !isVerticalCenter && (this.layout & LAYOUT_BOTTOM) == LAYOUT_BOTTOM;
 		//#endif
 		//#ifdef polish.css.before
 			if (this.beforeImage != null) {
@@ -2554,7 +2620,7 @@ public abstract class Item implements UiElement, Animatable
 				int yAdjust = this.beforeHeight - this.contentHeight;
 				if ( this.beforeHeight < this.contentHeight) {
 					if (isTop) {
-						beforeY -= yAdjust;
+						//beforeY -= yAdjust;
 					} else if (isBottom) {
 						beforeY += yAdjust;
 					} else {
@@ -2641,8 +2707,85 @@ public abstract class Item implements UiElement, Animatable
 //			g.setColor(0x00ff00);
 //			g.drawRect( this.parent.getAbsoluteX()  + this.parent.contentX + this.relativeX, this.parent.getAbsoluteY() + this.parent.contentY + this.relativeY, this.itemWidth, this.itemHeight);
 //		}
+		//#if polish.Item.ShowCommandsOnHold
+			if (this.isShowCommands) {
+				paintCommands( origX, origY, g );
+			}
+		//#endif
 	}
 	
+	/**
+	 * Paints the commands for this item after the user has pressed/clicked on an item for a long time.
+	 * Note that the preproessing variable polish.Item.ShowCommandsOnHold needs to be set to true for this feature.
+	 * 
+	 * @param x horizontal left start position
+	 * @param y vertical top start position
+	 * @param g the graphics context
+	 */
+	protected void paintCommands(int x, int y, Graphics g) {
+		//#if polish.Item.ShowCommandsOnHold
+			if (this.commandsContainer == null) {
+				//#style itemcommands?
+				this.commandsContainer = new Container(true);
+				this.commandsContainer.parent = this;
+				//#if polish.css.commands-style
+					if (this.style != null) {
+						Style commandsStyle = (Style) this.style.getObjectProperty("commands-style");
+						if (commandsStyle != null) {
+							this.commandsContainer.setStyle( commandsStyle );
+						}
+					}
+				//#endif
+				//#if polish.css.child-style
+					Style childStyle = null;
+					if (this.commandsContainer.style != null) {
+						childStyle = (Style) this.commandsContainer.style.getObjectProperty("child-style");
+					}
+				//#endif
+				
+				Object[] commandsArr = this.commands.getInternalArray();
+				for (int i = 0; i < commandsArr.length; i++) {
+					Command cmd = (Command) commandsArr[i];
+					if (cmd == null) {
+						break;
+					}
+					CommandItem item = new CommandItem( cmd, this
+							//#if polish.css.child-style
+								, childStyle
+							//#endif
+					);
+					this.commandsContainer.add(item);
+				}
+				this.commandsContainer.init( this.availableWidth, this.availableWidth, this.availableHeight );
+				int relX = 0;
+				if (this.commandsContainer.isLayoutRight()) {
+					relX = this.availableWidth - this.commandsContainer.itemWidth;
+				} else if (this.commandsContainer.isLayoutCenter()) {
+					relX = (this.availableWidth - this.commandsContainer.itemWidth)/2;
+				}
+				this.commandsContainer.relativeX = relX;
+				int relY = this.itemHeight;
+				if (this.commandsContainer.isLayoutTop()) {
+					relY = - this.commandsContainer.itemHeight;
+				} else if (this.commandsContainer.isLayoutVerticalCenter()) {
+					relY = (this.itemHeight - this.commandsContainer.itemHeight)/2;
+				}
+				int absY = getAbsoluteY();
+				Screen scr = getScreen();
+				int contY = scr.getScreenContentY();
+				if (absY + relY < contY) {
+					relY = contY - absY;
+				} else if (absY + relY + this.commandsContainer.itemHeight > contY + scr.getScreenContentHeight()) {
+					relY = contY + scr.getScreenContentHeight() - absY - this.commandsContainer.itemHeight;
+				}
+				this.commandsContainer.relativeY = relY;
+			}
+			x += this.commandsContainer.relativeX;
+			this.commandsContainer.paint(x, y + this.commandsContainer.relativeY, x, x + this.commandsContainer.itemWidth, g);
+		//#endif
+		
+	}
+
 	/**
 	 * Paints the background and border of this item.
 	 * The call is forwarded to paintBackground() and paintBorder().
@@ -2726,7 +2869,7 @@ public abstract class Item implements UiElement, Animatable
 	}
 
 	/**
-	 * Paints the background of this item.
+	 * Paints the background and - if defined - the bgborder of this item.
 	 * 
 	 * @param x the horizontal start position
 	 * @param y the vertical start position
@@ -2761,6 +2904,46 @@ public abstract class Item implements UiElement, Animatable
 		//#if polish.css.view-type
 			}
 		//#endif
+	}
+	
+	/**
+	 * Paints the given filters and retrieves the last processed RGB image.
+	 * @param x horizontal paint position
+	 * @param y vertical paint position
+	 * @param partFilters the filters
+	 * @param rgbImage the initial RGB image
+	 * @param lo the layout for the processed RGB image
+	 * @param g the graphics context
+	 * @return the processed RGB image
+	 */
+	protected RgbImage paintFilter(int x, int y, RgbFilter[] partFilters, RgbImage rgbImage, int lo, Graphics g) {
+		//System.out.println("painting RGB data for " + this  + ", pixel=" + Integer.toHexString( rgbData[ rgbData.length / 2 ]));
+		int origWidth = rgbImage.getWidth();
+		int origHeight = rgbImage.getHeight();
+		for (int i=0; i<partFilters.length; i++) {
+			RgbFilter filter = partFilters[i];
+			rgbImage = filter.process(rgbImage);
+		}
+		int width = rgbImage.getWidth();
+		int height = rgbImage.getHeight();
+		//System.out.println("Changed dimension from " + this.imageWidth +"x" + this.imageHeight + " to " + width + "x" + height);
+		int[] rgb = rgbImage.getRgbData();
+		if (origWidth != width) {
+			if ((lo & LAYOUT_CENTER) == LAYOUT_CENTER) {
+				x -= (width - origWidth) / 2;
+			} else if ((lo & LAYOUT_CENTER) == LAYOUT_RIGHT) {
+				x -= (width - origWidth);
+			}
+		}
+		if (origHeight != height) {
+			if ((lo & LAYOUT_VCENTER) == LAYOUT_VCENTER) {
+				y -= (height - origHeight) / 2; 
+			} else if ((lo & LAYOUT_VCENTER) == LAYOUT_TOP) {
+				y -= (height - origHeight);
+			}
+		}
+		DrawUtil.drawRgb(rgb, x , y, width, height, true, g );
+		return rgbImage;
 	}
 
 	/**
@@ -2850,8 +3033,8 @@ public abstract class Item implements UiElement, Animatable
 				if (firstLineAdjustedWidth > this.maximumWidth.getValue(firstLineWidth) ) {
 					firstLineAdjustedWidth = this.maximumWidth.getValue(firstLineWidth);
 				} 
-				if (lineAdjustedWidth > this.maximumWidth.getValue(firstLineWidth) ) {
-					lineAdjustedWidth = this.maximumWidth.getValue(firstLineWidth);
+				if (lineAdjustedWidth > this.maximumWidth.getValue(availWidth) ) {
+					lineAdjustedWidth = this.maximumWidth.getValue(availWidth);
 				}
 			}
 			firstLineContentWidth = firstLineAdjustedWidth - noneContentWidth;
@@ -2862,14 +3045,9 @@ public abstract class Item implements UiElement, Animatable
 		//#endif
 		
 		this.contentX = this.marginLeft + getBorderWidthLeft() + this.paddingLeft;
-		this.contentY = this.marginTop + getBorderWidthTop() + this.paddingTop; 
-		
-		//#if polish.css.inline-label
-			if (this.isInlineLabel && labelWidth < (90 * availWidth)/100) {
-				firstLineContentWidth -= labelWidth;
-				availableContentWidth -= labelWidth;
-			}
-		//#endif
+		int noneContentHeight = this.marginTop + getBorderWidthTop() + this.paddingTop;
+		this.contentY = noneContentHeight; 
+		noneContentHeight += this.paddingBottom + getBorderWidthBottom() + this.marginBottom;
 		
 		// initialise content by subclass:
 		//#if polish.css.content-visible
@@ -2878,7 +3056,15 @@ public abstract class Item implements UiElement, Animatable
 				this.contentHeight = 0;
 			} else {
 		//#endif
-			availHeight -= this.marginTop + getBorderWidthTop() + this.paddingTop + this.paddingBottom + getBorderWidthBottom() + this.marginBottom; 
+			availHeight -= noneContentHeight;
+			this.availContentWidth = availableContentWidth;
+			this.availContentHeight = availHeight;
+			//#if polish.css.inline-label
+				if (this.isInlineLabel && labelWidth < (90 * availWidth)/100) {
+					firstLineContentWidth -= labelWidth;
+					availableContentWidth -= labelWidth;
+				}
+			//#endif
 			//#ifdef polish.css.view-type
 				if (this.view != null) {
 					this.view.parentItem = this;
@@ -2891,11 +3077,21 @@ public abstract class Item implements UiElement, Animatable
 			//#ifdef polish.css.view-type
 				}
 			//#endif
+			//#if polish.css.inline-label
+				if (this.isInlineLabel && labelWidth < (90 * availWidth)/100) {
+					availableContentWidth += labelWidth;
+				}
+			//#endif
+			
 		//#if polish.css.content-visible
 			}
 		//#endif
-		
-		if (this.contentWidth == 0 && this.contentHeight == 0) {
+
+			
+		int cWidth = this.contentWidth;
+		int cHeight = this.contentHeight;
+
+		if (cWidth == 0 && cHeight == 0) {
 			this.itemWidth = labelWidth;
 			this.itemHeight = labelHeight;
 			this.backgroundHeight = 0;
@@ -2903,14 +3099,21 @@ public abstract class Item implements UiElement, Animatable
 			setInitialized(true);
 			return;
 		}
-		
-		this.itemWidth = noneContentWidth + this.contentWidth;
+		if (cWidth > availableContentWidth) {
+			cWidth = availableContentWidth;
+		}
+		this.itemWidth = noneContentWidth + cWidth;
 		//#ifdef polish.css.min-width
 			if (this.minimumWidth != null) {
 				if (this.itemWidth < this.minimumWidth.getValue(availWidth) ) {
-					int diff = this.minimumWidth.getValue(availWidth) - this.itemWidth;
+					int minWidth = this.minimumWidth.getValue(availWidth);
+					if (minWidth > availWidth) {
+						minWidth = availWidth;
+					}
+					int diff = minWidth - this.itemWidth;
 					this.itemWidth += diff;
 					setContentWidth( this.contentWidth + diff );
+					cWidth = this.contentWidth;
 				}
 			}
 		//#endif
@@ -2919,21 +3122,30 @@ public abstract class Item implements UiElement, Animatable
 				int diff = this.maximumWidth.getValue(availWidth) - this.itemWidth;
 				this.itemWidth += diff;
 				setContentWidth( this.contentWidth + diff );
+				cWidth = this.contentWidth;
 			}
 		//#endif
-		int cHeight = this.contentHeight;
 		//#ifdef polish.css.before
-			if (this.contentHeight < this.beforeHeight) {
+			if (cHeight < this.beforeHeight) {
 				cHeight = this.beforeHeight;
 			}
 		//#endif
 		//#ifdef polish.css.after
-			if (this.contentHeight < this.afterHeight) {
+			if (cHeight < this.afterHeight) {
 				cHeight = this.afterHeight;
 			}
 		//#endif
-		int noneContentHeight = this.marginTop + getBorderWidthTop() + this.paddingTop 
-			  + this.paddingBottom + getBorderWidthBottom() + this.marginBottom;
+		if ( this.isLayoutExpand ) {
+			if (cWidth < availableContentWidth) {
+				if (this.itemWidth + labelWidth <= availWidth && (this.label == null || !this.label.isLayoutNewlineAfter())) {
+					this.itemWidth += availableContentWidth - cWidth - labelWidth;
+				} else {
+					this.itemWidth += availableContentWidth - cWidth;
+				}
+			}
+		} else if (this.itemWidth > availWidth) {
+			this.itemWidth = availWidth;
+		}
 		if (this.itemWidth + labelWidth <= availWidth) {
 			// label and content fit on one row:
 			this.useSingleRow = true;
@@ -2944,30 +3156,17 @@ public abstract class Item implements UiElement, Animatable
 					this.contentY += labelHeight;
 				}
 			}
-			if (this.useSingleRow) {
+			if (this.useSingleRow && labelWidth > 0) {
 				this.itemWidth += labelWidth;
 				this.contentX += labelWidth;
-			}
-			if ( cHeight + noneContentHeight < labelHeight ) {
-				cHeight = labelHeight - noneContentHeight;
+				if ( cHeight + noneContentHeight < labelHeight ) {
+					cHeight = labelHeight - noneContentHeight;
+				}
 			}
 		} else {
 			this.useSingleRow = false;
 			cHeight += labelHeight;
 			this.contentY += labelHeight;
-		}
-		if (labelWidth > this.itemWidth) {
-			this.itemWidth = labelWidth;
-		}
-		if ( this.isLayoutExpand ) {
-			this.itemWidth = availWidth;
-			//#ifdef polish.css.max-width
-				if (this.maximumWidth != null && availWidth > this.maximumWidth.getValue(firstLineWidth) ) {
-					this.itemWidth = this.maximumWidth.getValue(firstLineWidth);
-				}
-			//#endif
-		} else if (this.itemWidth > availWidth) {
-			this.itemWidth = availWidth;
 		}
 		if (this.minimumHeight != null && cHeight + noneContentHeight < this.minimumHeight.getValue(availWidth)) {
 			cHeight = this.minimumHeight.getValue(availWidth) - noneContentHeight;
@@ -3002,6 +3201,28 @@ public abstract class Item implements UiElement, Animatable
 							  - this.marginTop
 							  - this.marginBottom
 							  - labelHeight;
+//			if (labelWidth > this.itemWidth) {
+//				int diff = labelWidth - this.itemWidth;
+//				if (isLayoutCenter()) {
+//					this.contentX += diff/2;
+//				} else if (isLayoutRight()) {
+//					this.contentX += diff;
+//				}
+//				this.itemWidth = labelWidth;
+//			}
+		}
+		if (labelWidth > 0 && availableContentWidth > this.contentWidth) {
+			//int diff = availableContentWidth - this.contentWidth;
+			int contX = this.contentX;
+			if (isLayoutCenter()) {
+				contX = (availWidth - availableContentWidth)/2;
+			} else if (isLayoutRight()) {
+				contX = (availWidth - availableContentWidth);
+			}
+			if (contX > this.contentX) {
+				this.contentX = contX;
+				this.itemWidth = availWidth;
+			}
 		}
 		//#if polish.css.background-width
 			this.originalBackgroundWidth = this.backgroundWidth;
@@ -3215,7 +3436,8 @@ public abstract class Item implements UiElement, Animatable
 	protected boolean handleKeyPressed( int keyCode, int gameAction ) {
 		//#debug
 		System.out.println("item " + this + ": handling keyPressed for keyCode=" + keyCode + ", gameAction=" + gameAction);
-		if ( this.appearanceMode != PLAIN && getScreen().isGameActionFire(keyCode, gameAction) )
+		Screen scr = getScreen();
+		if ( this.appearanceMode != PLAIN && null != scr && scr.isGameActionFire(keyCode, gameAction) )
 		{
 			return notifyItemPressedStart();
 		}
@@ -3253,7 +3475,8 @@ public abstract class Item implements UiElement, Animatable
 	protected boolean handleKeyReleased( int keyCode, int gameAction ) {
 		//#debug
 		System.out.println("handleKeyReleased(" + keyCode + ", " + gameAction + ") for " + this + ", isPressed=" + this.isPressed );
-		if (this.appearanceMode != PLAIN && this.isPressed && getScreen().isGameActionFire(keyCode, gameAction) )
+		Screen scr = getScreen();
+		if (this.appearanceMode != PLAIN && this.isPressed && scr != null && scr.isGameActionFire(keyCode, gameAction) )
 		{
 			notifyItemPressedEnd();
 			Item item = this;
@@ -3264,30 +3487,10 @@ public abstract class Item implements UiElement, Animatable
 				if (item.itemCommandListener != null) {
 					item.itemCommandListener.commandAction(item.defaultCommand, this);
 				} else {			
-					Screen scr = getScreen();
-					if (scr != null ) {
-						scr.callCommandListener(item.defaultCommand);
-					}
+					scr.callCommandListener(item.defaultCommand);
 				}
 				//#if polish.css.visited-style
-					if (this.style != null) {
-						Style visitedStyle = (Style) this.style.getObjectProperty("visited-style");
-						if (visitedStyle != null) {
-							this.hasBeenVisited = true;
-							//#debug
-							System.out.println("found visited style " + visitedStyle.name + " in " + this.style.name);
-							setStyle( visitedStyle );
-						} 
-						if (this.parent instanceof Container) {
-							Container cont = (Container) this.parent;
-							visitedStyle = (Style) cont.itemStyle.getObjectProperty("visited-style");
-							if (visitedStyle != null) {
-								//#debug
-								System.out.println("found visited style " + visitedStyle.name + " in " + cont.itemStyle.name);								
-								cont.itemStyle = visitedStyle;
-							}
-						}
-					}
+					notifyVisited();
 				//#endif
 				return true;
 			}
@@ -3314,11 +3517,8 @@ public abstract class Item implements UiElement, Animatable
 			if (deleteCommand != null) {
 				if (this.itemCommandListener != null) {
 					this.itemCommandListener.commandAction(deleteCommand, this);
-				} else {			
-					Screen scr = getScreen();
-					if (scr != null ) {
-						scr.callCommandListener(deleteCommand);
-					}
+				} else if (scr != null ) {
+					scr.callCommandListener(deleteCommand);
 				}				
 			}
 		}
@@ -3326,19 +3526,96 @@ public abstract class Item implements UiElement, Animatable
 		return false;
 	}
 
+	/**
+	 * Is called when this item has been visited.
+	 */
+	public void notifyVisited() {
+		//#if polish.css.visited-style
+			if (this.style != null && !this.hasBeenVisited) {
+				if (this.isPressed) {
+					notifyItemPressedEnd();
+				}
+				Style visitedStyle = (Style) this.style.getObjectProperty("visited-style");
+				if (visitedStyle != null) {
+					this.hasBeenVisited = true;
+					//#debug
+					System.out.println("found visited style " + visitedStyle.name + " in " + this.style.name);
+					setStyle( visitedStyle );
+				} 
+				if (this.parent instanceof Container) {
+					Container cont = (Container) this.parent;
+					visitedStyle = (Style) cont.itemStyle.getObjectProperty("visited-style");
+					if (visitedStyle != null) {
+						//#debug
+						System.out.println("found visited style " + visitedStyle.name + " in " + cont.itemStyle.name);								
+						cont.itemStyle = visitedStyle;
+					}
+				}
+			}
+		//#endif
+		//#if tmp.handleEvents
+			EventManager.fireEvent( EventManager.EVENT_VISIT, this, null); 
+		//#endif
+
+	}
 	
+	/**
+	 * Is called when the visited state of this item should be reset.
+	 */
+	public void notifyUnvisited() {
+		//#if polish.css.visited-style
+			if (this.style != null && this.hasBeenVisited) {
+				if (this.isPressed) {
+					notifyItemPressedEnd();
+				}
+				this.hasBeenVisited = false;
+				Style[] styles = (Style[]) Arrays.toArray(StyleSheet.getStyles().elements(), new Style[ StyleSheet.getStyles().size()] );
+				Container cont = null;
+				if (this.parent instanceof Container) {
+					cont = (Container) this.parent;
+				}
+				boolean oneLeft = false;
+				for (int i = 0; i < styles.length; i++) {
+					Style aStyle = styles[i];
+					Style visitedStyle = (Style) aStyle.getObjectProperty("visited-style");
+					if (visitedStyle == this.style) {
+						setStyle( aStyle );
+						if (oneLeft) {
+							break;
+						} else {
+							oneLeft = true;
+						}
+					}
+					else if (cont != null && cont.itemStyle == visitedStyle) {
+						cont.itemStyle = aStyle;
+						if (!oneLeft) {
+							Style focStyle = (Style) aStyle.getObjectProperty("focused-style");
+							if (focStyle != null) {
+								setStyle( focStyle );
+							}
+						}
+						break;
+					}
+				}
+			}
+		//#endif	
+		//#if tmp.handleEvents
+			EventManager.fireEvent( EventManager.EVENT_UNVISIT, this, null); 
+		//#endif
+	}
+
 	/**
 	 * Is called when an item is pressed using the FIRE game action
 	 * 
 	 * @return true when the item requests a repaint after this action
 	 */
-	protected boolean notifyItemPressedStart() {
+	public boolean notifyItemPressedStart() {
 		//try { throw new RuntimeException(); } catch (Exception e) { e.printStackTrace(); }
 		if (this.isPressed) {
 			return false;
 		}
 		//#debug
-		System.out.println("notifyItemPressedStart");
+		System.out.println("notifyItemPressedStart for " + this);
 		this.isPressed = true;
 		boolean handled = false;
 		//#if polish.css.pressed-style
@@ -3356,9 +3633,17 @@ public abstract class Item implements UiElement, Animatable
 	}
 	
 	/**
+	 * Determines whether this item is currently pressed.
+	 * @return true when this item is pressed
+	 */
+	public boolean isPresed() {
+		return this.isPressed;
+	}
+	
+	/**
 	 * Is called when an item is pressed
 	 */
-	protected void notifyItemPressedEnd() {
+	public void notifyItemPressedEnd() {
 		if (!this.isPressed) {
 			return;
 		}
@@ -3399,19 +3684,45 @@ public abstract class Item implements UiElement, Animatable
 	 */
 	public boolean isInContentArea( int relX, int relY ) {
 		int contTop = this.contentY;
-		if ( relY < contTop || relY > contTop + this.contentHeight ) {
+		int contLeft = this.contentX;
+		if ( relY < contTop || relX < contLeft || relY > contTop + this.contentHeight || relX > contLeft + this.contentWidth) {
 			//#debug
 			System.out.println("isInContentArea(" + relX + "," + relY + ") = false: contentY=" + this.contentY + ", contentY + contentHeight=" + (contTop + this.contentHeight) + " (" + this +")");
-			return false;
-		}
-		int contLeft = this.contentX;
-		if (relX < contLeft || relX > contLeft + this.contentWidth) {
 			//#debug
 			System.out.println("isInContentArea(" + relX + "," + relY + ") = false: contentX=" + this.contentX + ", contentX + contentWidth=" + (contLeft + this.contentWidth) + " (" + this +")");
 			return false;
 		}
 		//#debug
 		System.out.println("isInContentArea(" + relX + "," + relY + ") = true: contentX=" + this.contentX + ", contentX + contentWidth=" + (contLeft + this.contentWidth) + ", contentY=" + this.contentY + ", contentY + contentHeight=" + (contTop + this.contentHeight) + " (" + this +")");
+		return true;
+	}
+	
+	/**
+	 * Determines whether the given relative x/y position is inside of this item's content area.
+	 * Subclasses which extend their area over the declared/official content area, which is determined
+	 * in the initContent() method (like popup items), might want to override this method or possibly the getContentX(), getContentY() methods.
+	 * It is assumed that the item has been initialized before.
+	 * 
+	 * @param relX the x position relative to this item's left position
+	 * @param relY the y position relative to this item's top position
+	 * @return true when the relX/relY coordinate is within this item's content + padding area.
+	 * @see #initContent(int, int, int)
+	 */
+	public boolean isInContentWithPaddingArea( int relX, int relY ) {
+		int contTop = this.contentY - this.paddingTop;
+		if ( relY < contTop || relY > contTop + this.contentHeight + this.paddingTop + this.paddingBottom ) {
+			//#debug
+			System.out.println("isInContentWithPaddingArea(" + relX + "," + relY + ") = false: contentY=" + this.contentY + ", contentY + contentHeight=" + (contTop + this.contentHeight) + " (" + this +")");
+			return false;
+		}
+		int contLeft = this.contentX - this.paddingLeft;
+		if (relX < contLeft || relX > contLeft + this.contentWidth + this.paddingLeft + this.paddingRight) {
+			//#debug
+			System.out.println("isInContentWithPaddingArea(" + relX + "," + relY + ") = false: contentX=" + this.contentX + ", contentX + contentWidth=" + (contLeft + this.contentWidth) + " (" + this +")");
+			return false;
+		}
+		//#debug
+		System.out.println("isInContentWithPaddingArea(" + relX + "," + relY + ") = true: contentX=" + this.contentX + ", contentX + contentWidth=" + (contLeft + this.contentWidth) + ", contentY=" + this.contentY + ", contentY + contentHeight=" + (contTop + this.contentHeight) + " (" + this +")");
 		return true;
 	}
 
@@ -3427,7 +3738,7 @@ public abstract class Item implements UiElement, Animatable
 	 * @see #initContent(int, int, int)
 	 */
 	public boolean isInItemArea( int relX, int relY ) {
-		if (relY < 0 || relY > this.itemHeight || relX < 0 || relX > Math.max(this.itemWidth, this.contentX + this.contentWidth)) {
+		if (relY < 0 || relY > this.itemHeight || relX < 0 || relX > this.itemWidth) { //Math.max(this.itemWidth, this.contentX + this.contentWidth)) {
 			//#debug
 			System.out.println("isInItemArea(" + relX + "," + relY + ") = false: itemWidth=" + this.itemWidth + ", itemHeight=" + this.itemHeight + " (" + this + ")");
 			return false;
@@ -3461,7 +3772,7 @@ public abstract class Item implements UiElement, Animatable
 	 * The default method discards this event when relX/relY is outside of the item's area.
 	 * When the event took place inside of the content area, the pointer-event is translated into an artificial
 	 * FIRE game-action keyPressed event, which is subsequently handled
-	 * bu the handleKeyPressed(-1, Canvas.FIRE) method.
+	 * by the handleKeyPressed(-1, Canvas.FIRE) method.
 	 * This method needs should be overwritten only when the "polish.hasPointerEvents"
 	 * preprocessing symbol is defined: "//#ifdef polish.hasPointerEvents".
 	 *    
@@ -3476,9 +3787,36 @@ public abstract class Item implements UiElement, Animatable
 	 */
 	protected boolean handlePointerPressed( int relX, int relY ) {
 		//#ifdef polish.hasPointerEvents
-			if ( isInItemArea(relX, relY)) {
+			//#if polish.Item.ShowCommandsOnHold
+				if (this.isShowCommands) {
+					Container cmdCont = this.commandsContainer;
+					if (cmdCont != null && cmdCont.handlePointerPressed(relX - cmdCont.relativeX, relY - cmdCont.relativeY)) {
+						return true;
+					}
+				}
+			//#endif
+			//#ifdef polish.css.view-type
+				if (this.view != null && this.view.handlePointerPressed(relX, relY)) {
+					return true;
+				}
+			//#endif
+			if ( isInItemArea(relX, relY) ) {
+				//#if tmp.supportTouchGestures
+					this.gestureStartTime = System.currentTimeMillis();
+					this.gestureStartX = relX;
+					this.gestureStartY = relY;
+				//#endif
 				return handleKeyPressed( 0, Canvas.FIRE );
 			}
+			//#if polish.Item.ShowCommandsOnHold
+				else {
+					this.gestureStartTime = 0;
+					if (this.isShowCommands) {
+						this.isShowCommands = false;
+						return true;
+					}
+				}
+			//#endif			
 		//#endif
 		return false;
 	}
@@ -3505,7 +3843,41 @@ public abstract class Item implements UiElement, Animatable
 		//#ifdef polish.hasPointerEvents
 			//#debug
 			System.out.println("handlePointerReleased " + relX + ", " + relY + " for item " + this + " isPressed=" + this.isPressed);
-			if ( isInItemArea(relX, relY)) {
+			//#if tmp.supportTouchGestures
+				if (this.isIgnorePointerReleaseForGesture) {
+					this.isIgnorePointerReleaseForGesture = false;
+					return true;
+				}
+			//#endif
+			//#if polish.Item.ShowCommandsOnHold
+				if (this.isShowCommands) {
+					this.commandsContainer.handlePointerReleased(relX - this.commandsContainer.relativeX, relY - this.commandsContainer.relativeY);
+					this.isShowCommands = false;
+					notifyItemPressedEnd();
+					return true;
+				}
+			//#endif
+			//#if tmp.supportTouchGestures
+				int verticalDiff = Math.abs( relY - this.gestureStartY );
+				if (verticalDiff < 20) {
+					int horizontalDiff = relX - this.gestureStartX;
+					if (horizontalDiff > this.itemWidth/2) {
+						if (handleGesture(GestureEvent.GESTURE_SWIPE_RIGHT, relX, relY)) {
+							return true;
+						}
+					} else if (horizontalDiff < -this.itemWidth/2) {
+						if (handleGesture(GestureEvent.GESTURE_SWIPE_LEFT, relX, relY)) {
+							return true;
+						}						
+					}
+				}
+			//#endif
+			//#ifdef polish.css.view-type
+				if (this.view != null && this.view.handlePointerReleased(relX, relY)) {
+					return true;
+				}
+			//#endif
+			if ( isInItemArea(relX, relY) ) {
 				return handleKeyReleased( 0, Canvas.FIRE );
 			} else if (this.isPressed) {
 				notifyItemPressedEnd();
@@ -3528,12 +3900,135 @@ public abstract class Item implements UiElement, Animatable
 	protected boolean handlePointerDragged(int relX, int relY)
 	{
 		//#ifdef polish.hasPointerEvents
+			//#if tmp.supportTouchGestures
+				if (this.gestureStartTime != 0 && Math.abs( relX - this.gestureStartX) > 30 || Math.abs( relY - this.gestureStartY) > 30) {
+					// abort (hold) gesture after moving out for too much:
+					this.gestureStartTime = 0;
+				}
+			//#endif
+			//#if polish.Item.ShowCommandsOnHold
+				if (this.isShowCommands && this.commandsContainer.handlePointerDragged(relX - this.commandsContainer.relativeX, relY - this.commandsContainer.relativeY)) {
+					return true;
+				}
+			//#endif
 			//#ifdef polish.css.view-type
 				if (this.view != null && this.view.handlePointerDragged(relX, relY)) {
 					return true;
 				}
 			//#endif
 		//#endif
+		return false;
+	}
+	
+	/**
+	 * Handles a touch down/press event. 
+	 * This is similar to a pointerPressed event, however it is only available on devices with screens that differentiate
+	 * between press and touch events (read: BlackBerry Storm).
+	 * 
+	 * @param x the horizontal pixel position of the touch event relative to this item's left position
+	 * @param y  the vertical pixel position of the touch event relative to this item's top position
+	 * @return true when the event was handled
+	 */
+	public boolean handlePointerTouchDown( int x, int y ) {
+		//#if polish.hasTouchEvents && polish.css.view-type
+			if (this.view != null && this.view.handlePointerTouchDown(x, y)) {
+				return true;
+			}
+		//#endif
+		return false;
+	}
+	
+
+	/**
+	 * Handles a touch up/release event. 
+	 * This is similar to a pointerReleased event, however it is only available on devices with screens that differentiate
+	 * between press and touch events (read: BlackBerry Storm).
+	 * 
+	 * @param x the horizontal pixel position of the touch event relative to this item's left position
+	 * @param y  the vertical pixel position of the touch event relative to this item's top position
+	 * @return true when the event was handled
+	 */
+	public boolean handlePointerTouchUp( int x, int y ) {
+		//#if polish.hasTouchEvents && polish.css.view-type
+			if (this.view != null && this.view.handlePointerTouchUp(x, y)) {
+				return true;
+			}
+		//#endif
+		return false;
+	}
+	
+	/**
+	 * Handles a touch gestures.
+	 * Note that touch gesture support needs to be activated using the preprocessing variable polish.supportGestures.
+	 * The default implementation calls handleGestureHold() in case GESTURE_HOLD is specified.
+	 * @param gesture the gesture identifier, e.g. GESTURE_HOLD
+	 * @return true when this gesture was handled
+	 * @see #handleGestureHold(int, int)
+	 */
+	protected boolean handleGesture(int gesture, int x, int y) {
+		boolean handled = false;
+		switch (gesture) {
+		case GestureEvent.GESTURE_HOLD:
+			handled = handleGestureHold(x, y);
+			break;
+		case GestureEvent.GESTURE_SWIPE_LEFT:
+			handled = handleGestureSwipeLeft(x, y);
+			break;
+		case GestureEvent.GESTURE_SWIPE_RIGHT:
+			handled = handleGestureSwipeRight(x, y);
+		}
+		if (!handled) {
+			GestureEvent event = GestureEvent.getInstance();
+			event.reset( gesture, x, y );
+			UiEventListener listener = getUiEventListener();
+			if (listener != null) {
+				listener.handleUiEvent(event, this);
+				handled = event.isHandled();
+			}
+			//#if tmp.handleEvents
+				if (!handled) {
+					EventManager.fireEvent(event.getGestureName(), this, event );
+					handled = event.isHandled();
+				}
+			//#endif			
+		}
+		return handled;
+	}
+
+	/**
+	 * Handles the hold touch gestures.
+	 * Note that touch gesture support needs to be activated using the preprocessing variable polish.supportGestures
+	 * The default implementation shows the commands of this item, but only when the preprocessing variable
+	 * polish.Item.ShowCommandsOnHold is set to true.
+	 * 
+	 * @return true when this gesture was handled
+	 */
+	protected boolean handleGestureHold(int x, int y) {
+		//#if polish.Item.ShowCommandsOnHold
+			if (this.commands != null && !this.isShowCommands && this.commands.size() > 1) {
+				this.isShowCommands = true;
+				if (this.commandsContainer != null) {
+					this.commandsContainer.focusChild(-1);
+				}
+				return true;
+			}
+		//#endif
+		return false;
+	}
+	
+	/**
+	 * Handles the swipe left gesture.
+	 * @return true when the gesture was handled
+	 */
+	protected boolean handleGestureSwipeLeft(int x, int y) {
+		return false;
+	}
+	
+	/**
+	 * Handles the swipe right gesture.
+	 * @return true when the gesture was handled
+	 */
+	protected boolean handleGestureSwipeRight(int x, int y) {
 		return false;
 	}
 
@@ -3543,12 +4038,42 @@ public abstract class Item implements UiElement, Animatable
 	 * @param repaintRegion the clipping rectangle to which the repaint area should be added
 	 */
 	public void addRepaintArea( ClippingRegion repaintRegion ) {
+		int absX = getAbsoluteX();
+		int absY = getAbsoluteY();
+		int w = this.itemWidth;
+		int h = this.itemHeight + 1;
+		//#if polish.css.filter
+			RgbImage img = this.filterProcessedRgbImage;
+			if (img != null && (img.getHeight() > h || img.getWidth() > w)) {
+				int lo = this.layout;
+				int wFilter = img.getWidth();
+				int hFilter = img.getHeight();
+				int horDiff = wFilter - w;
+				int verDiff = hFilter - h;
+				if ((lo & LAYOUT_CENTER) == LAYOUT_CENTER) {
+					absX -= horDiff / 2;
+					w += horDiff;
+				} else if ((lo & LAYOUT_CENTER) == LAYOUT_RIGHT) {
+					absX -= horDiff;
+				} else {
+					w += horDiff;
+				}
+				if ((lo & LAYOUT_VCENTER) == LAYOUT_VCENTER) {
+					absY -= verDiff / 2;
+					h += verDiff;
+				} else if ((lo & LAYOUT_VCENTER) == LAYOUT_TOP) {
+					absY -= verDiff; 
+				} else {
+					h += verDiff;
+				}
+			}
+		//#endif
 		//System.out.println("adding repaint area x=" + getAbsoluteX() + ", width=" + this.itemWidth + ", y=" + getAbsoluteY() + " for " + this);
 		repaintRegion.addRegion(
-				getAbsoluteX(),
-				getAbsoluteY(),
-				this.itemWidth, 
-				this.itemHeight + 1 );
+				absX,
+				absY,
+				w, 
+				h );
 	}
 	
 	/**
@@ -3671,9 +4196,28 @@ public abstract class Item implements UiElement, Animatable
 				this.view.animate(currentTime, repaintRegion);
 			}
 		//#endif
+		//#if tmp.supportTouchGestures
+			if (this.isPressed && (this.gestureStartTime != 0) && (currentTime - this.gestureStartTime > 500)) {
+				boolean handled = handleGesture( GestureEvent.GESTURE_HOLD, this.gestureStartX, this.gestureStartY );
+				if (handled) {
+					this.isIgnorePointerReleaseForGesture = true;
+					notifyItemPressedEnd();
+					this.gestureStartTime = 0;					
+					Screen scr = getScreen();
+					repaintRegion.addRegion( scr.contentX, scr.contentY, scr.contentWidth, scr.contentHeight );
+				} else {
+					this.gestureStartTime = 0;
+				}
+			}
+		//#endif
+		//#if polish.Item.ShowCommandsOnHold
+			if (this.isShowCommands && this.commandsContainer != null) {
+				this.commandsContainer.animate(currentTime, repaintRegion);
+			}
+		//#endif
 	}
 	
-	
+
 	/**
 	 * Animates this item.
 	 * Subclasses can override this method to create animations.
@@ -3694,8 +4238,15 @@ public abstract class Item implements UiElement, Animatable
 	 * @return the style used for focussing this item.
 	 */
 	public Style getFocusedStyle() {
-		if (!this.isStyleInitialised && this.style != null) {
-			setStyle( this.style );
+		if (!this.isStyleInitialised) {
+			if (this.style != null) {
+				setStyle( this.style );
+			}
+			//#ifdef polish.useDynamicStyles
+			else {
+				initStyle();
+			}
+			//#endif
 		}
 		Style focStyle;
 		if (this.focusedStyle != null) {
@@ -3730,31 +4281,36 @@ public abstract class Item implements UiElement, Animatable
 	protected Style focus( Style newStyle, int direction ) {
 		//#debug
 		System.out.println("focus " + this);
+		
 		Style oldStyle = this.style;
-		if (!this.isStyleInitialised && oldStyle != null) {
-			setStyle( oldStyle );
+		
+		if(!this.isFocused) {
+			if (!this.isStyleInitialised && oldStyle != null) {
+				setStyle( oldStyle );
+			}
+			if (newStyle == null) {
+				newStyle = getFocusedStyle();
+			}
+			//#if polish.css.view-type
+				this.preserveViewType = true;
+			//#endif
+			setStyle( newStyle );
+			//#if polish.css.view-type
+				this.preserveViewType = false;
+			//#endif
+			this.isFocused = true;
+			// now set any commands of this item:
+			if (this.commands != null) {
+				showCommands();
+			}
+			if (oldStyle == null) {
+				oldStyle = StyleSheet.defaultStyle;
+			}
+			//#if tmp.handleEvents
+				EventManager.fireEvent( EventManager.EVENT_FOCUS, this, new Integer(direction));
+			//#endif
 		}
-		if (newStyle == null) {
-			newStyle = getFocusedStyle();
-		}
-		//#if polish.css.view-type
-			this.preserveViewType = true;
-		//#endif
-		setStyle( newStyle );
-		//#if polish.css.view-type
-			this.preserveViewType = false;
-		//#endif
-		this.isFocused = true;
-		// now set any commands of this item:
-		if (this.commands != null) {
-			showCommands();
-		}
-		if (oldStyle == null) {
-			oldStyle = StyleSheet.defaultStyle;
-		}
-		//#if tmp.handleEvents
-			EventManager.fireEvent( EventManager.EVENT_FOCUS, this, new Integer(direction));
-		//#endif
+		
 		return oldStyle;
 	}
 	
@@ -3813,6 +4369,12 @@ public abstract class Item implements UiElement, Animatable
 	 * @return true when the command has been handled by this item
 	 */
 	protected boolean handleCommand( Command cmd ) {
+		if (cmd == this.defaultCommand) {
+			notifyVisited();
+		}
+		if (cmd.commandAction(this, null)) {
+			return true;
+		}
 		if (this.commands == null || this.itemCommandListener == null || !this.commands.contains(cmd) ) {
 			return false;
 		}
@@ -3868,6 +4430,9 @@ public abstract class Item implements UiElement, Animatable
 				scr.removeItemCommands(this);
 			}
 		}
+		//#if polish.Item.ShowCommandsOnHold
+			this.isShowCommands = false;
+		//#endif
 		//#if tmp.handleEvents
 			EventManager.fireEvent( EventManager.EVENT_DEFOCUS, this, null); 
 		//#endif
@@ -3913,7 +4478,7 @@ public abstract class Item implements UiElement, Animatable
 		//#endif
 		//#if polish.blackberry
 			if (this.isFocused  && this._bbField != null) {
-				Display.getInstance().notifyFocusSet(this);
+				getScreen().notifyFocusSet(this);
 			}
 		//#endif
 		//#if tmp.handleEvents
@@ -4007,6 +4572,32 @@ public abstract class Item implements UiElement, Animatable
 					filter.releaseResources();
 				}
 			}
+		//#endif
+	}
+	
+	/**
+	 * Destroy the item by removing all references to parent, screen, listeners etc.
+	 * and calling releaseResources()
+	 */
+	public void destroy() {
+		releaseResources();
+		
+		AnimationThread.removeAnimationItem(this);
+		
+		if(null != this.itemCommandListener)
+			this.itemCommandListener = null;
+		if(null != this.itemStateListener)
+			this.itemStateListener = null;
+		if(null != this.parent)
+			this.parent = null;
+		if(null != this.screen)
+			this.screen = null;
+		
+		//#ifdef polish.css.view-type
+		if (this.view != null) {
+			this.view.destroy();
+			this.view = null;
+		}
 		//#endif
 	}
 
@@ -4199,6 +4790,24 @@ public abstract class Item implements UiElement, Animatable
 	}
 	
 	/**
+	 * Retrieves the width of the content.
+	 * @return the content width in pixels
+	 */
+	public int getAvailableContentWidth()
+	{
+		return this.availContentWidth;
+	}
+	
+	/**
+	 * Retrieves the height of the content.
+	 * @return the content height in pixels
+	 */
+	public int getAvailableContentHeight()
+	{
+		return this.availContentHeight;
+	}
+	
+	/**
 	 * Retrieves the height of the area that this item covers.
 	 * This can be different from the original itemHeight for items that have popups such as the POPUP ChoiceGroup
 	 * @return the height of the item's area in pixel
@@ -4331,7 +4940,7 @@ public abstract class Item implements UiElement, Animatable
 						//System.out.println("setting parent scroll offset to " + offset );
 						parentContainer.setScrollYOffset( offset, false );
 					} else {
-						parentContainer.scroll( 0, parentContainer.focusedItem );
+						parentContainer.scroll( 0, parentContainer.focusedItem, true);
 					}
 				} else {
 					parentContainer.focusChild(-1);
@@ -4635,6 +5244,77 @@ public abstract class Item implements UiElement, Animatable
 		return ((this.layout & LAYOUT_VCENTER) == LAYOUT_VCENTER);
 	}
 	
+	/**
+	 * Determines the layout of this item.
+	 * Note that either setLayout() or init() has to be called before this method returns valid values.
+	 * 
+	 * @return true when the item has a vshrink layout.
+	 * @see #setLayout(int)
+	 * @see #init(int,int,int)
+	 */	
+	public boolean isLayoutVerticalShrink() {
+		return ((this.layout & LAYOUT_VSHRINK) == LAYOUT_VSHRINK);
+	}
+	
+	/**
+	 * Determines the layout of this item.
+	 * Note that either setLayout() or init() has to be called before this method returns valid values.
+	 * 
+	 * @return true when the item has a vexpand layout.
+	 * @see #setLayout(int)
+	 * @see #init(int,int,int)
+	 */	
+	public boolean isLayoutVerticalExpand() {
+		return ((this.layout & LAYOUT_VEXPAND) == LAYOUT_VEXPAND);
+	}
+	
+	/**
+	 * Determines the layout of this item.
+	 * Note that either setLayout() or init() has to be called before this method returns valid values.
+	 * 
+	 * @return true when the item has a horizontal expand layout.
+	 * @see #setLayout(int)
+	 * @see #init(int,int,int)
+	 */	
+	public boolean isLayoutExpand() {
+		return ((this.layout & LAYOUT_EXPAND) == LAYOUT_EXPAND);
+	}
+	
+	/**
+	 * Determines the layout of this item.
+	 * Note that either setLayout() or init() has to be called before this method returns valid values.
+	 * 
+	 * @return true when the item has a horizontal shrink layout.
+	 * @see #setLayout(int)
+	 * @see #init(int,int,int)
+	 */	
+	public boolean isLayoutShrink() {
+		return ((this.layout & LAYOUT_SHRINK) == LAYOUT_SHRINK);
+	}
+	
+	/**
+	 * Determines the layout of this item.
+	 * Note that either setLayout() or init() has to be called before this method returns valid values.
+	 * 
+	 * @return true when the item has a newwline-after layout.
+	 * @see #setLayout(int)
+	 * @see #init(int,int,int)
+	 */	
+	public boolean isLayoutNewlineAfter() {
+		return ((this.layout & LAYOUT_NEWLINE_AFTER) == LAYOUT_NEWLINE_AFTER);
+	}
+	
+	/**
+	 * Determines the layout of this item.
+	 * Note that either setLayout() or init() has to be called before this method returns valid values.
+	 * 
+	 * @return true when the item has a newwline-after layout.
+	 * @see #setLayout(int)
+	 * @see #init(int,int,int)
+	 */	
+	public boolean isLayoutNewlineBefore() {
+		return ((this.layout & LAYOUT_NEWLINE_BEFORE) == LAYOUT_NEWLINE_BEFORE);
+	}
 	public void setItemTransition( ItemTransition transition ) {
 		this.itemTransition = transition;
 	}
@@ -4718,9 +5398,33 @@ public abstract class Item implements UiElement, Animatable
 		return this.availableHeight;
 	}
 
-
-
-
+	/**
+	 * Sets an UiEventListener for the this item and its children.
+	 * @param listener the listener, use null to remove a listener
+	 */
+	public void setUiEventListener(UiEventListener listener) {
+		this.uiEventListener = listener;
+	}
+	
+	/**
+	 * Retrieves the UiEventListener for this item or for one of its parents.
+	 * @return the listener or null, if none has been registered
+	 */
+	public UiEventListener getUiEventListener() {
+		UiEventListener listener = this.uiEventListener;
+		if (listener == null) {
+			Item parentItem = this.parent;
+			while (parentItem != null && listener == null) {
+				listener = parentItem.uiEventListener;
+				parentItem = parentItem.parent;
+			}
+			if (listener == null) {
+				listener = getScreen().getUiEventListener();
+			}
+		}
+		return listener;
+	}
+	
 //#ifdef polish.Item.additionalMethods:defined
 	//#include ${polish.Item.additionalMethods}
 //#endif

@@ -7,7 +7,7 @@ import javax.microedition.location.LocationException;
 //#if polish.android
 import android.content.Context;
 import android.location.LocationManager;
-import de.enough.polish.android.midlet.MIDlet;
+import de.enough.polish.android.midlet.MidletBridge;;
 //#endif
 
 public class LocationService {
@@ -45,7 +45,7 @@ public class LocationService {
 	public static boolean isGpsEnabled() {
 		boolean providerEnabled = false;
 		//#if polish.android
-		LocationManager locationManager = (LocationManager)MIDlet.midletInstance.getSystemService(Context.LOCATION_SERVICE);
+		LocationManager locationManager = (LocationManager)MidletBridge.instance.getSystemService(Context.LOCATION_SERVICE);
 		providerEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
 		//#endif
 		return providerEnabled;
@@ -62,7 +62,7 @@ public class LocationService {
 	public static boolean isNetworkLocationProviderEnabled() {
 		boolean providerEnabled = false;
 		//#if polish.android
-		LocationManager locationManager = (LocationManager)MIDlet.midletInstance.getSystemService(Context.LOCATION_SERVICE);
+		LocationManager locationManager = (LocationManager)MidletBridge.instance.getSystemService(Context.LOCATION_SERVICE);
 		providerEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
 		//#endif
 		return providerEnabled;

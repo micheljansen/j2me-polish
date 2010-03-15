@@ -1234,7 +1234,7 @@ public abstract class CustomItem extends Item
 		}
 		if (this.contentHeight > prefHeight && this.parent instanceof Container) {
 			// this item has been probably collapsed, so adjust scrolling:
-			((Container)this.parent).scroll(0, 0, this.relativeY, prefWidth, prefHeight );
+			((Container)this.parent).scroll(0, 0, this.relativeY, prefWidth, prefHeight, true);
 		}
 		this.contentWidth = prefWidth;
 		this.contentHeight = prefHeight;

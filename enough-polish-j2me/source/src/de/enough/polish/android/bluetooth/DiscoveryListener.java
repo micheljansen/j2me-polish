@@ -410,7 +410,7 @@ public interface DiscoveryListener
 	 * <A HREF="../../constant-values.html#javax.bluetooth.DiscoveryListener.INQUIRY_COMPLETED" tppabs="http://java.sun.com/javame/reference/apis/jsr082/constant-values.html#javax.bluetooth.DiscoveryListener.INQUIRY_COMPLETED">Constant Field Values</A></DL>
 	 * 
 	 */
-	static final int INQUIRY_COMPLETED = 0x00;
+	int INQUIRY_COMPLETED = 0x00;
 
 	/**
 	 * Indicates device discovery has been canceled
@@ -425,7 +425,7 @@ public interface DiscoveryListener
 	 * <A HREF="../../constant-values.html#javax.bluetooth.DiscoveryListener.INQUIRY_TERMINATED" tppabs="http://java.sun.com/javame/reference/apis/jsr082/constant-values.html#javax.bluetooth.DiscoveryListener.INQUIRY_TERMINATED">Constant Field Values</A></DL>
 	 * 
 	 */
-	static final int INQUIRY_TERMINATED = 0x05;
+	int INQUIRY_TERMINATED = 0x05;
 
 	/**
 	 * Indicates that the inquiry request failed to complete normally,
@@ -438,7 +438,7 @@ public interface DiscoveryListener
 	 * <A HREF="../../constant-values.html#javax.bluetooth.DiscoveryListener.INQUIRY_ERROR" tppabs="http://java.sun.com/javame/reference/apis/jsr082/constant-values.html#javax.bluetooth.DiscoveryListener.INQUIRY_ERROR">Constant Field Values</A></DL>
 	 * 
 	 */
-	static final int INQUIRY_ERROR = 0x07;
+	int INQUIRY_ERROR = 0x07;
 
 	/**
 	 * Indicates the normal completion of service
@@ -452,7 +452,7 @@ public interface DiscoveryListener
 	 * <A HREF="../../constant-values.html#javax.bluetooth.DiscoveryListener.SERVICE_SEARCH_COMPLETED" tppabs="http://java.sun.com/javame/reference/apis/jsr082/constant-values.html#javax.bluetooth.DiscoveryListener.SERVICE_SEARCH_COMPLETED">Constant Field Values</A></DL>
 	 * 
 	 */
-	static final int SERVICE_SEARCH_COMPLETED = 0x01;
+	int SERVICE_SEARCH_COMPLETED = 0x01;
 
 	/**
 	 * Indicates the service search has been canceled
@@ -467,7 +467,7 @@ public interface DiscoveryListener
 	 * <A HREF="../../constant-values.html#javax.bluetooth.DiscoveryListener.SERVICE_SEARCH_TERMINATED" tppabs="http://java.sun.com/javame/reference/apis/jsr082/constant-values.html#javax.bluetooth.DiscoveryListener.SERVICE_SEARCH_TERMINATED">Constant Field Values</A></DL>
 	 * 
 	 */
-	static final int SERVICE_SEARCH_TERMINATED = 0x02;
+	int SERVICE_SEARCH_TERMINATED = 0x02;
 
 	/**
 	 * Indicates the service search terminated with an error.
@@ -481,7 +481,7 @@ public interface DiscoveryListener
 	 * <A HREF="../../constant-values.html#javax.bluetooth.DiscoveryListener.SERVICE_SEARCH_ERROR" tppabs="http://java.sun.com/javame/reference/apis/jsr082/constant-values.html#javax.bluetooth.DiscoveryListener.SERVICE_SEARCH_ERROR">Constant Field Values</A></DL>
 	 * 
 	 */
-	static final int SERVICE_SEARCH_ERROR = 0x03;
+	int SERVICE_SEARCH_ERROR = 0x03;
 
 	/**
 	 * Indicates the service search has completed with no
@@ -496,7 +496,7 @@ public interface DiscoveryListener
 	 * <A HREF="../../constant-values.html#javax.bluetooth.DiscoveryListener.SERVICE_SEARCH_NO_RECORDS" tppabs="http://java.sun.com/javame/reference/apis/jsr082/constant-values.html#javax.bluetooth.DiscoveryListener.SERVICE_SEARCH_NO_RECORDS">Constant Field Values</A></DL>
 	 * 
 	 */
-	static final int SERVICE_SEARCH_NO_RECORDS = 0x04;
+	int SERVICE_SEARCH_NO_RECORDS = 0x04;
 
 	/**
 	 * Indicates the service search could not be completed because
@@ -515,7 +515,7 @@ public interface DiscoveryListener
 	 * 
 	 * 
 	 */
-	static final int SERVICE_SEARCH_DEVICE_NOT_REACHABLE = 0x06;
+	int SERVICE_SEARCH_DEVICE_NOT_REACHABLE = 0x06;
 
 
 	/**

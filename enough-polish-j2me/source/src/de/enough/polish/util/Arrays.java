@@ -25,6 +25,8 @@
  */
 package de.enough.polish.util;
 
+import java.util.Enumeration;
+
 
 /**
  * Arrays is used for sorting array elements.
@@ -198,12 +200,17 @@ public final class Arrays implements Comparator {
     
     public static void quicksort(Object obj[], int elements, Comparator comparator)
     {
+    	if(elements <= 1) {
+    		return;
+    	}
+    	
         int left=0, right=elements-1, top=0;
         int sSize = elements/2;
         int lStack[] = new int[sSize];
         int rStack[] = new int[sSize];
         Object tmp;
         int i, j;
+        Object pivot;
 
         lStack[top] = left; rStack[top] = right;
 
@@ -217,12 +224,12 @@ public final class Arrays implements Comparator {
                 {
                         i = left;
                         j = right;
-                        tmp = obj[(left+right)/2];
+                        pivot = obj[(left+right)/2];
 
-                        while (i <= j)
+                        while (i < j)
                         {
-                        	while (comparator.compare(tmp,obj[i]) > 0 )i++;
-                            while (comparator.compare(tmp,obj[j]) < 0) j--;
+                        	while (comparator.compare(pivot,obj[i]) > 0 )i++;
+                            while (comparator.compare(pivot,obj[j]) < 0) j--;
 
                                 if (i<=j)
                                 {
@@ -616,6 +623,32 @@ public final class Arrays implements Comparator {
 				destination[destinationOffset+i] = source[sourceOffset+i];
 			}
 		}
+	}
+	
+	/**
+	 * Extracts the array out of the specified enumeration.
+	 * @param enumeration the enumeration
+	 * @return an array of all elements within the enumeration
+	 */
+	public static Object[] toArray( Enumeration enumeration ) {
+		ArrayList list = new ArrayList();
+		while (enumeration.hasMoreElements()) {
+			list.add( enumeration.nextElement() );
+		}
+		return list.toArray();
+	}
+	
+	/**
+	 * Copies the enumeration into the given (possibly typed) array.
+	 * @param enumeration the enumeration
+	 * @param target the array
+	 * @return the original target array
+	 */
+	public static Object[] toArray( Enumeration enumeration, Object[] target ) {
+		for (int i = 0; i < target.length; i++) {
+			target[i] = enumeration.nextElement();
+		}
+		return target;
 	}
 
 }

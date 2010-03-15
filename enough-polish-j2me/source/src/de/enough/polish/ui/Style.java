@@ -35,6 +35,8 @@ import javax.microedition.lcdui.Graphics;
 
 import de.enough.polish.io.Externalizable;
 import de.enough.polish.io.Serializer;
+import de.enough.polish.util.HashMap;
+import de.enough.polish.util.IntHashMap;
 
 
 /**
@@ -90,7 +92,63 @@ public class Style implements Externalizable
 				null, null // attributes
 		);
 	}
+	
+	/**
+	 * Creates a new style by creating a deep copy of the given style
+	 * @param style the style
+	 */
+	public Style(Style style) {
+		super();
+		
+		this.name = style.name;
+		this.layout = style.layout;
+		this.background = style.background;
+		this.border = style.border;
+		
+		short[] keys = style.attributeKeys;
+		Object[] values = style.attributeValues;
+		
+		if (keys != null) {
+			this.attributeKeys = new short[ keys.length ];
+			System.arraycopy( keys, 0, this.attributeKeys, 0, keys.length );
+			this.attributeValues = new Object[ values.length ];
+			System.arraycopy( values, 0, this.attributeValues, 0, values.length );
+		}
+	}
+	
+	public void extendStyle(Style style) {
+		this.name = style.name;
+		this.layout = style.layout;
+		this.background = style.background;
+		this.border = style.border;
+		
+		IntHashMap map = new IntHashMap();
+		
+		//TODO make more performant
+		addAttributesToMap(map, style);
+		addAttributesToMap(map, this);
+		
+		int[] keys = map.keys();
+		Object[] values = map.values();
+		this.attributeKeys = new short[keys.length];
+		this.attributeValues = new Object[keys.length];
+		for (int i = 0; i < keys.length; i++) {
+			this.attributeKeys[i] = (short)keys[i];
+			this.attributeValues[i] = values[i];
+			System.out.println(values[i]);
+		}
+	}
 
+	void addAttributesToMap(IntHashMap map, Style style) {
+		short[] keys = style.attributeKeys;
+		Object[] values = style.attributeValues;
+		
+		if(keys != null && values != null) {
+			for (int i = 0; i < keys.length; i++) {
+				map.put(keys[i], values[i]);
+			}
+		}
+	}
 
 	/**
 	 * Creates a new Style.
@@ -951,6 +1009,21 @@ public class Style implements Externalizable
 		Serializer.serialize(this.attributeValues, out);
 	}
 
+	/**
+	 * Retrieves the internal attribute keys 
+	 * @return a short array with all the keys or null when this style has no attributes
+	 */
+	public short[] getRawAttributeKeys() {
+		return this.attributeKeys;
+	}
+
+	/**
+	 * Retrieves the internal attribute values that are defined in this style.
+	 * @return the attribute values or none in case no attributes are defined for this style
+	 */
+	public Object[] getRawAttributeValues() {
+		return this.attributeValues;
+	}
 
 
 

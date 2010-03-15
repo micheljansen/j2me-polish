@@ -125,6 +125,7 @@ public class Midp2ContainerView extends ContainerView
 			}
 		}
 		if (x != 0) {
+			//#debug
 			System.out.println("Midp2ContainerView: currentRowHeight=" + currentRowHeight + ", x=" + x + ", maxRowWidth=" + maxRowWidth);
 			if (currentRowHeight != 0) {
 				lineBreak( items, currentRowStartIndex, items.length-1, x, currentRowHeight, availWidth);

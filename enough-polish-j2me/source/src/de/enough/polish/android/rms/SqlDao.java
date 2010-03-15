@@ -29,6 +29,8 @@ public class SqlDao {
 		@Override
 		public void onCreate(SQLiteDatabase database2) {
 			// Version 1.
+			// TODO: Add upgrade mechanism to add a size field in the Record table.
+			// TODO: Add an index to the tables. Check if it is needed for the PK.
 			String a = "CREATE TABLE "+TABLENAME_RECORDSTORE+" (" +
 					COLUMNNAME_RECORDSTORE_RECORDSTORE_PK + " INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT," +
 					COLUMNNAME_RECORDSTORE_NAME + " VARCHAR(30) NOT NULL," +
@@ -348,6 +350,7 @@ public class SqlDao {
 
 	public synchronized void removeRecord(long recordStorePk, int recordId) throws RecordStoreException {
 		//TODO: Update the size in the recordstore table.
+		//TODO: Cache the size in the record table.
 		RecordStore recordStore = getRecordStore(recordStorePk);
 		byte[] oldData = getRecord(recordStorePk,recordId);
 		ContentValues values = new ContentValues();
@@ -356,7 +359,7 @@ public class SqlDao {
 		values.put(COLUMNNAME_RECORDSTORE_SIZE, new Integer(size));
 		values.put(COLUMNNAME_RECORDSTORE_VERSION, new Integer(version));
 		database.update(TABLENAME_RECORDSTORE, values, COLUMNNAME_RECORDSTORE_RECORDSTORE_PK + "= ?" , new String[] {Long.toString(recordStorePk)});
-		database.delete(TABLENAME_RECORD,COLUMNNAME_RECORD_RECORD_PK+"=? AND "+COLUMNNAME_RECORD_RECORDSTORE_FK+"=?",new String[] {Integer.toString(recordId),Long.toString(recordStorePk)});
+		database.delete(TABLENAME_RECORD,COLUMNNAME_RECORD_RECORDNUMBER+"=? AND "+COLUMNNAME_RECORD_RECORDSTORE_FK+"=?",new String[] {Integer.toString(recordId),Long.toString(recordStorePk)});
 	}
 
 	public synchronized int[] getRecordIdsForRecordStore(long recordStorePk) {

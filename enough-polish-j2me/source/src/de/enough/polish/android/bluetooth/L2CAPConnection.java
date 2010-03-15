@@ -304,7 +304,7 @@ public interface L2CAPConnection
 	 * <DT><B>See Also:</B>
 	 * 
 	 */
-	static final int DEFAULT_MTU = 0x02A0;
+	int DEFAULT_MTU = 0x02A0;
 
 	/**
 	 * Minimum MTU value for connection-oriented channels
@@ -316,7 +316,7 @@ public interface L2CAPConnection
 	 * 
 	 * 
 	 */
-	static final int MINIMUM_MTU = 0x30;
+	int MINIMUM_MTU = 0x30;
 
 	
 

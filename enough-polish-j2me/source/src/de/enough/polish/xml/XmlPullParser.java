@@ -35,7 +35,7 @@ public class XmlPullParser implements SimplePullParser {
 
     // general
 
-    public boolean relaxed;
+    public boolean relaxed = false;
     private Hashtable entityMap;
     private int depth;
     private String[] elementStack = new String[4];
@@ -85,20 +85,28 @@ public class XmlPullParser implements SimplePullParser {
             "End Tag",
             "Text" };
 
+	private boolean doNewline;
+
     private final int read() throws IOException {
 
         int r = this.peek0;
         this.peek0 = this.peek1;
 
+        if(this.doNewline) {
+        	this.line++;
+            this.column = 0;
+            this.doNewline = false;
+        }
+        
         if (this.peek0 == -1) {
             this.eof = true;
             return r;
         }
-        else if (r == '\n' || r == '\r') {
-            this.line++;
-            this.column = 0;
-            if (r == '\r' && this.peek0 == '\n')
-                this.peek0 = 0;
+        else if (r == '\n' || (r == '\r' && this.peek0 != '\n')) {
+        	// If we are truly at the end of a line, update the line/column information.
+        	// We do not swallow any newline characters as XML processors always return any characters.
+        	// Its up to the client to trim any unwanted whitespace.
+            this.doNewline = true;
         }
         this.column++;
 

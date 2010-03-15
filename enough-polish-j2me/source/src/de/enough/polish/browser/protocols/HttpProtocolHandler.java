@@ -50,14 +50,33 @@ import javax.microedition.io.StreamConnection;
  */
 public class HttpProtocolHandler extends ProtocolHandler
 {
-	private static final String USER_AGENT = 
+	private static String USER_AGENT = 
 	//#if polish.Browser.UserAgent:defined
 		//#= 	"${polish.Browser.UserAgent}";
 	//#else
 				"J2ME-Polish/" + System.getProperty("microedition.platform");
 	//#endif
 
+	private static boolean userAgentSet = false;
+	
 	private HashMap requestProperties;
+	
+	/**
+	 * Sets the USER_AGENT string used for the request header
+	 * @param userAgent the USER_AGENT string to set
+	 */
+	public static void setUserAgent(String userAgent) {
+		USER_AGENT = userAgent;
+		userAgentSet = true;
+	}
+	
+	/**
+	 * Returns the user agent string
+	 * @return the user agent string
+	 */
+	public static String getUserAgent() {
+		return USER_AGENT;
+	}
 
 	/**
 	 * Creates a new HttpProtocolHandler object with "http" as it's protocol.
@@ -100,9 +119,14 @@ public class HttpProtocolHandler extends ProtocolHandler
 			requestProperties = new HashMap();
 		}
 		this.requestProperties = requestProperties;
-		if ( requestProperties.get("User-Agent") == null )
+		if ( requestProperties.get("User-Agent") == null || userAgentSet)
 		{
-			requestProperties.put("User-Agent", USER_AGENT );
+			if(USER_AGENT != null) {
+				requestProperties.put("User-Agent", USER_AGENT );
+			} else {
+				requestProperties.remove("User-Agent");
+			}
+			 
 		}
 		if ( requestProperties.get("Accept") == null ) {
 			requestProperties.put("Accept", "text/html, text/xml, text/*, image/png, image/*, application/xhtml+xml, */*" );

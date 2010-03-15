@@ -40,6 +40,6 @@ public interface ItemCreator {
 	 * @param node the node for which the item should be generated
 	 * @return the generated item - must not be null
 	 */
-	public Item createItem( FileSystemNode node );
+	Item createItem( FileSystemNode node );
 
 }

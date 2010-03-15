@@ -70,9 +70,9 @@ public class ArraysTest extends TestCase {
 		System.out.println("testing sort");
 		String[] j2meObjects = new String[]{ "abc", "aaa", "aad", "acd", "ddd", "berta", "emil", "alfred", "gerhard", "ricky", "robert", "tim", "abc", "aaa", "aad", "acd", "ddd", "berta", "emil", "alfred", "gerhard", "ricky", "robert", "tim", "abc", "aaa", "aad", "acd", "ddd", "berta", "emil", "alfred", "gerhard", "ricky", "robert", "tim","z" ,"x"};
 		String[] j2seObjects = new String[]{ "abc", "aaa", "aad", "acd", "ddd", "berta", "emil", "alfred", "gerhard", "ricky", "robert", "tim", "abc", "aaa", "aad", "acd", "ddd", "berta", "emil", "alfred", "gerhard", "ricky", "robert", "tim", "abc", "aaa", "aad", "acd", "ddd", "berta", "emil", "alfred", "gerhard", "ricky", "robert", "tim","z" ,"x"};
-		System.out.print("lenght:"+j2meObjects.length+"\n");
+		System.out.print("length:"+j2meObjects.length+"\n");
 		Arrays.sort( j2meObjects);
-		System.out.print("lenght:"+j2meObjects.length+"\n");
+		System.out.print("length:"+j2meObjects.length+"\n");
 		java.util.Arrays.sort( j2seObjects );
 		assertEquals( j2meObjects.length, j2seObjects.length );
 		for (int i = 0; i < j2meObjects.length; i++) {
@@ -114,23 +114,23 @@ public class ArraysTest extends TestCase {
 		System.out.println("testing quicksort");
 		String[] j2meObjects = new String[]{ "abc", "aaa", "aad", "acd", "ddd", "berta", "emil", "alfred", "gerhard", "ricky", "ddd", "ddd", "baerta", "emil", "sarlfred", "gerhard", "ricky","fofofo","zu","auf"};
 		String[] j2seObjects = new String[]{ "abc", "aaa", "aad", "acd", "ddd", "berta", "emil", "alfred", "gerhard", "ricky", "ddd", "ddd", "baerta", "emil", "sarlfred", "gerhard", "ricky","fofofo","zu","auf"};
-		System.out.print("lenght:"+j2meObjects.length+"\n");
+		System.out.print("length:"+j2meObjects.length+"\n");
 		Arrays.quicksort( j2meObjects);
-		System.out.print("lenght:"+j2meObjects.length+"\n");
+		System.out.print("length:"+j2meObjects.length+"\n");
 		java.util.Arrays.sort( j2seObjects );
 		assertEquals( j2meObjects.length, j2seObjects.length );
 		for (int i = 0; i < j2meObjects.length; i++) {
 			String j2me = j2meObjects[i];
 			String j2se = j2seObjects[i];
 			System.out.print("'"+j2me+"'"+",");
-//			assertEquals( j2se, j2me );
+			assertEquals( j2se, j2me );
 //			System.out.println(j2me );
 		}
 
 		System.out.println( 	"\nFIRST QUICK SORT OK; NEXT:2");
 		j2meObjects = new String[]{ "aaa","aad","abc","acd","alfred","berta","auf","baerta","ddd","ddd","ddd","emil","emil","fofofo","gerhard","gerhard","ricky","ricky","sarlfred","zu","auf","bae","bae","aud","auf","fofofo","kkkl","tim","polish","aad","mut","lala"};
 		j2seObjects = new String[]{ "aaa","aad","abc","acd","alfred","berta","auf","baerta","ddd","ddd","ddd","emil","emil","fofofo","gerhard","gerhard","ricky","ricky","sarlfred","zu","auf","bae","bae","aud","auf","fofofo","kkkl","tim","polish","aad","mut","lala"};
-		System.out.print("lenght:"+j2meObjects.length+"\n");
+		System.out.print("length:"+j2meObjects.length+"\n");
 		Arrays.quicksort( j2meObjects );
 		java.util.Arrays.sort( j2seObjects );
 		assertEquals( j2meObjects.length, j2seObjects.length );

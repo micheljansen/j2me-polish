@@ -1,43 +1,14 @@
 //#condition polish.usePolishGui && polish.android
 package de.enough.polish.android.midlet;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.HashMap;
-import java.util.Locale;
 
-import android.app.Activity;
-import android.content.ContentResolver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.res.Configuration;
-import android.media.AudioManager;
-import android.net.Uri;
-import android.os.Bundle;
-import android.os.IBinder;
-import android.os.Process;
-import android.os.ResultReceiver;
-import android.telephony.CellLocation;
-import android.telephony.PhoneStateListener;
-import android.telephony.TelephonyManager;
-import android.telephony.gsm.GsmCellLocation;
-import android.view.KeyEvent;
-import android.view.Menu;
-import android.view.MenuItem;
-import android.view.MotionEvent;
-import android.view.Window;
-import android.view.WindowManager;
+import de.enough.polish.android.helper.ResourcesHelper;
 import de.enough.polish.android.io.ConnectionNotFoundException;
-import de.enough.polish.android.lcdui.AndroidDisplay;
-import de.enough.polish.ui.Command;
-import de.enough.polish.ui.Container;
-import de.enough.polish.ui.Display;
-import de.enough.polish.ui.Displayable;
-import de.enough.polish.ui.Item;
-import de.enough.polish.ui.Screen;
-import de.enough.polish.util.ArrayList;
-
-//#if polish.android1.5
-import android.view.inputmethod.InputMethodManager;
-//#endif
+import de.enough.polish.util.TextUtil;
 
 
 /**
@@ -71,16 +42,9 @@ import android.view.inputmethod.InputMethodManager;
  * 
  * 
  */
-public abstract class MIDlet extends Activity {
+public abstract class MIDlet 
+{
 	
-	//#if polish.useFullScreen
-		//#define tmp.fullScreen
-	//#else
-		private final ArrayList addedCommands = new ArrayList();
-		private final ArrayList addedCommandMenuItemBridges = new ArrayList();
-		private boolean isMenuOpened;
-	//#endif
-
 
 	//The one and only MIDlet
 	public static MIDlet midletInstance;
@@ -91,17 +55,10 @@ public abstract class MIDlet extends Activity {
 	// The view of the application
 //	private AndroidDisplay display;
 
-	private HashMap<String,String> appProperties;
+	private final HashMap<String,String> appProperties;
+	private boolean isAppPropertiesLoaded;
 
-	private ContentResolver contentResolver;
-
-	private boolean shuttingDown;
-	
-	private boolean isSoftkeyboardOpen;
-
-	private int currentScreenYOffset;
-
-	private boolean suicideOnExit;
+	private MidletBridge _bridge;
 
 //	private PowerManager.WakeLock wakeLock;
 
@@ -116,104 +73,13 @@ public abstract class MIDlet extends Activity {
 	 */
 	protected MIDlet() {
 		midletInstance = this;
-	}
-	
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see android.app.Activity#onCreate(android.os.Bundle)
-	 */
-	protected void onCreate(Bundle icicle) {
-		super.onCreate(icicle);
-		requestWindowFeature(Window.FEATURE_NO_TITLE);
-		//TODO: Remove this as we do not want to shrink the application on softkeyboard display.
-//		getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
-		
-		//TODO: Extract all strings to constants.
-		TelephonyManager telephonyManager = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
-		PhoneStateListener listener = new PhoneStateListener() {
-			@Override
-			public void onCellLocationChanged(CellLocation location) {
-				//#debug
-				System.out.println("onCellLocationChanged");
-				if(location instanceof GsmCellLocation) {
-					GsmCellLocation gsmCellLocation = (GsmCellLocation)location;
-					//#debug
-					System.out.println("gsmCellLocation:"+gsmCellLocation);
-					int cellId = gsmCellLocation.getCid();
-					String cellIdString = Integer.toString(cellId);
-					setSystemProperty("Cell-Id",cellIdString);
-
-					int lac = gsmCellLocation.getLac();
-					String lacString = Integer.toString(lac);
-					setSystemProperty("Cell-lac",lacString);
-				}
-			}
-
-			@Override
-			public void onSignalStrengthChanged(int asu) {
-				String asuString = Integer.toString(asu);
-				//#debug
-				System.out.println("SignalStrength (asu) is '"+asu+"'");
-				setSystemProperty("SignalStrength",asuString);
-			}
-		};
-		int events = PhoneStateListener.LISTEN_CELL_LOCATION | PhoneStateListener.LISTEN_SIGNAL_STRENGTH;
-		telephonyManager.listen(listener, events);
-		setSystemProperty("Cell-Id","-1");
-		setSystemProperty("Cell-lac","-1");
-		setSystemProperty("SignalStrength","0");
-		String subscriberId = telephonyManager.getSubscriberId();
-		if(subscriberId == null) {
-			subscriberId = "";
-		}
-		setSystemProperty("IMSI", subscriberId);
-		String deviceId = telephonyManager.getDeviceId();
-		if(deviceId == null) {
-			deviceId = "";
-		}
-		setSystemProperty("IMEI", deviceId);
-		
-		Locale locale = getBaseContext().getResources().getConfiguration().locale;
-		String language = locale.getLanguage();
-		setSystemProperty("microedition.locale", language);
-		if(this.contentResolver == null) {
-			this.contentResolver = getContentResolver();
-		}
 		this.appProperties = new HashMap<String,String>();
 		//#= this.appProperties.put("MIDlet-Name", "${MIDlet-Name}");
 		//#= this.appProperties.put("MIDlet-Vendor", "${MIDlet-Vendor}");
 		//#= this.appProperties.put("MIDlet-Version", "${MIDlet-Version}");
-		
-		
-		// read files directory and save it as a system property
-		String appDirectory = getApplicationContext().getFilesDir().getAbsolutePath();
-		setSystemProperty("fileconn.dir.private", appDirectory);
-	}
-
-	public void backlightOn() {
-//		if(this.wakeLock != null && this.wakeLock.isHeld()) {
-//			//#debug
-//			System.out.println("The backlight was requested to go on but the wakeLock is already held. I return without doing anything.");
-//			return;
-//		}
-//		PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-//		this.wakeLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK|PowerManager.ACQUIRE_CAUSES_WAKEUP, "Skobbler Wake Lock");
-//		this.wakeLock.acquire();
-//		//#debug
-//		System.out.println("WakeLock acquired?"+this.wakeLock.isHeld());
-		AndroidDisplay.getDisplay(this).setKeepScreenOn(true);
 	}
 	
-	/**
-	 * You need to call this method when you switched on the light with {@link #backlightOn()}.
-	 */
-	public void backlightRelease() {
-//		if(this.wakeLock != null && this.wakeLock.isHeld()) {
-//			this.wakeLock.release();
-//		}
-		AndroidDisplay.getDisplay(this).setKeepScreenOn(false);
-	}
+	
 	
 	protected void setSystemProperty(String name, String value) {
 		if(value == null) {
@@ -223,149 +89,6 @@ public abstract class MIDlet extends Activity {
 		//#= System.setProperty(name,value);
 	}
 	
-	@Override
-	public void onConfigurationChanged(Configuration newConfig) {
-		super.onConfigurationChanged(newConfig);
-		//#debug
-		System.out.println("Config changed:"+newConfig);
-		Locale locale = newConfig.locale;
-		String language = locale.getLanguage();
-		setSystemProperty("microedition.locale", language);
-	}
-
-	/* (non-Javadoc)
-	 * @see android.app.Activity#onKeyDown(int, android.view.KeyEvent)
-	 */
-	public boolean onKeyDown(int keyCode, KeyEvent event) {
-		return AndroidDisplay.getDisplay(this).onKeyDown(keyCode, event);
-	}
-
-	/* (non-Javadoc)
-	 * @see android.app.Activity#onKeyUp(int, android.view.KeyEvent)
-	 */
-	public boolean onKeyUp(int keyCode, KeyEvent event) {
-		return AndroidDisplay.getDisplay(this).onKeyUp(keyCode, event);
-	}
-	
-	@Override
-	public boolean onKeyMultiple(int keyCode, int repeatCount, KeyEvent event)
-	{
-		return AndroidDisplay.getDisplay(this).onKeyMultiple(keyCode, repeatCount, event);
-	}
-	
-	protected void onPause() {
-		//#debug
-		System.out.println("onPause().");
-		try {
-			pauseApp();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		super.onPause();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see android.app.Activity#onRestart()
-	 */
-	
-	protected void onRestart() {
-		//#debug
-		System.out.println("onRestart().");
-		super.onRestart();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see android.app.Activity#onResume()
-	 */
-	
-	protected void onResume() {
-		//#debug
-		System.out.println("onResume().");
-		super.onResume();
-		AndroidDisplay display = AndroidDisplay.getDisplay(this);
-		setContentView(display);
-		// This should allow to control the audio volume with the volume keys on the handset when the application has focus.
-		setVolumeControlStream(AudioManager.STREAM_MUSIC);
-		this.shuttingDown = false;
-		// Needed to redraw the any previous screens of a previous run. So the application need not call setCurrent in the case of a rerun.
-		display.refresh();
-		try {
-			startApp();
-		} catch (Exception e) {
-			e.printStackTrace();
-			//#debug fatal
-			System.out.println("starApp() failed: " + e);
-			//TODO: add fatal error handling here, e.g. by displaying system error message
-		}
-	}
-
-	protected void onStart() {
-		//#debug
-		System.out.println("onStart().");
-		super.onStart();
-		//Debug.startMethodTracing("skobbler");
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see android.app.Activity#onStop()
-	 */
-	
-	protected void onStop() {
-		//#debug
-		System.out.println("onStop().");
-		//#if polish.android1.5
-			hideSoftKeyboard();
-		//#endif
-		//Debug.stopMethodTracing();
-		pauseApp();
-		// Release the wake lock if it was acquired.
-		backlightRelease();
-		super.onStop();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see android.app.Activity#onDestroy()
-	 */
-	
-	protected void onDestroy() {
-		//#debug
-		System.out.println("onDestroy().");
-		//#if polish.android1.5
-			hideSoftKeyboard();
-		//#endif
-		//Debug.stopMethodTracing();
-		super.onDestroy();
-		//TODO: Use listener pattern to register and unregister Lifecycle listeners.
-//		deregisterSqlDao();
-		AndroidDisplay display = AndroidDisplay.getDisplay(this);
-		display.shutdown();
-		if ( ! this.shuttingDown) {
-			this.shuttingDown = true;
-			try {
-				destroyApp(true);
-			} catch (MIDletStateChangeException e) {
-				//
-			}
-		}
-		if(this.suicideOnExit) {
-			int myPid = Process.myPid();
-			Process.killProcess(myPid);
-		}
-	}
-
-	// TODO:
-//	private void deregisterSqlDao() {
-//		SqlDao.getInstance().destroy();
-//	}
 
 	/**
 	 * Signals the <code>MIDlet</code> that it has entered the <em>Active</em>
@@ -459,23 +182,10 @@ public abstract class MIDlet extends Activity {
 	 * 
 	 */
 	public final void notifyDestroyed() {
-		if( ! this.shuttingDown) {
-			this.shuttingDown = true;
-			super.finish();
-		}
-		
+		this._bridge.notifyDestroyed();
 	}
 
 	
-	
-	@Override
-	public boolean dispatchTouchEvent(MotionEvent ev) {
-		
-		
-		// TODO Auto-generated method stub
-		return super.dispatchTouchEvent(ev);
-	}
-
 
 
 	/**
@@ -502,6 +212,7 @@ public abstract class MIDlet extends Activity {
 	 */
 	public final void notifyPaused() {
 		//TODO: Trigger the lifecycle but do not call the lifecycle notification methods directly.
+		//TODO: hide this app, return to desktop
 //		onPause();
 	}
 
@@ -516,15 +227,51 @@ public abstract class MIDlet extends Activity {
 	 * the manifest the value from the descriptor is used and the value from the
 	 * manifest is ignored.
 	 * 
-	 * @param key -
-	 *            the name of the property
+	 * @param key the name of the property
 	 * @return A string with the value of the property. null is returned if no
 	 *         value is available for the key.
-	 * @throws NullPointerException -
-	 *             is thrown if key is null.
+	 * @throws NullPointerException is thrown if key is null.
 	 */
 	public final String getAppProperty(String key) {
 		String value = this.appProperties.get(key);
+		if (value == null && !this.isAppPropertiesLoaded) {
+			try {
+				InputStream in = ResourcesHelper.getResourceAsStream("/jadprops.txt");
+				this.isAppPropertiesLoaded = true;
+				if (in != null) {
+					InputStreamReader reader = new InputStreamReader( in );
+					char[] buffer = new char[ 4 * 1024 ]; // 8 kb
+					StringBuffer completeBuffer = new StringBuffer();
+					try {
+						int read;
+						while ( (read = reader.read(buffer)) != -1 ) {
+							completeBuffer.append(buffer, 0, read);
+						}
+					} catch (IOException e) {
+						//#debug error
+						System.out.println("Unable to read manifest" + e);
+					}
+					String[] lines = TextUtil.split( completeBuffer.toString(), '\n' );
+					for (int i = 0; i < lines.length; i++) {
+						String line = lines[i];
+						int colonPos = line.indexOf(':');
+						if (colonPos == -1) {
+							//#debug warn
+							System.out.println("Unable to to split line " + line);
+							continue;
+						}
+						String attributeKey = line.substring( 0, colonPos );
+						String attributeValue = line.substring( colonPos + 2 );
+						//#debug
+						System.out.println("Adding: " + attributeKey + "=" + attributeValue );
+						this.appProperties.put( attributeKey, attributeValue );
+					}
+					value = this.appProperties.get(key);
+				}
+			} catch (Exception e) {
+				// try later
+			}
+		}
 		//#debug
 		System.out.println("AppProperty for key '"+key+"' is '"+value+"'");
 		return value;
@@ -611,7 +358,7 @@ public abstract class MIDlet extends Activity {
 	 * Many of the ways this method will be used could have a financial impact
 	 * to the user (e.g. transferring data through a wireless network, or
 	 * initiating a voice call). Therefore the platform MUST ask the user to
-	 * explicitly acknowlege each request before the action is taken.
+	 * explicitly acknowledge each request before the action is taken.
 	 * Implementation freedoms are possible so that a pleasant user experience
 	 * is retained. For example, some platforms may put up a dialog for each
 	 * request asking the user for permission, while other platforms may launch
@@ -620,7 +367,7 @@ public abstract class MIDlet extends Activity {
 	 * buttons.
 	 * </p>
 	 * 
-	 * @param url the URL for the platform to load. An empty string (not null)
+	 * @param urlString the URL for the platform to load. An empty string (not null)
 	 *            cancels any pending requests.
 	 * @return true if the MIDlet suite MUST first exit before the content can
 	 *         be fetched.
@@ -628,38 +375,8 @@ public abstract class MIDlet extends Activity {
 	 *             if the platform cannot handle the URL requested.
 	 * @since MIDP 2.0
 	 */
-	public final boolean platformRequest(String url) throws ConnectionNotFoundException{
-		if(url == null) {
-			throw new IllegalArgumentException("Parameter 'url' must not be null.");
-		}
-		if("".equals(url)) {
-			// TODO: Cancel pending requests.
-			return false;
-		}
-		if(url.startsWith("tel:")) {
-			String number = url.substring(4);
-			// The line is hidden from the IDE as eclipse uses the MIDP String which does not implement CharSequence.
-			boolean matches = false;
-			//#= matches = java.util.regex.Pattern.compile("\\+?\\d+").matcher(number).matches();
-			if(!matches) {
-				throw new ConnectionNotFoundException("The telephone number '"+number+"' is malformed. It must be described by the regular expression '\\+?\\d+'");
-			}
-			Intent i = new Intent();
-			i.setAction(Intent.ACTION_DIAL);
-			Uri numberUri = Uri.parse("tel:"+number);
-			//#debug
-			System.out.println("Uri for phone number:"+numberUri);
-			i.setData(numberUri);
-			startActivity(i);
-			return false;
-		}
-		if(url.startsWith("http:") || url.startsWith("https:")) {
-			Uri uri = Uri.parse(url);
-			Intent intent = new Intent(Intent.ACTION_VIEW,uri);
-			startActivity(intent);
-			return false;
-		}
-		throw new ConnectionNotFoundException("The url '"+url+"' can not behandled. The url scheme is not supported");
+	public final boolean platformRequest(String urlString) throws ConnectionNotFoundException{
+		return this._bridge.platformRequest(urlString);
 	}
 
 	/**
@@ -679,377 +396,15 @@ public abstract class MIDlet extends Activity {
 		// TODO implement checkPermission
 	}
 
-	public void showSoftKeyboard() {
-		//#debug
-		System.out.println("Handling showSoftKeyboard");
-		//#if polish.android1.5
-			
-			Configuration configuration;
-			configuration = getBaseContext().getResources().getConfiguration();
-			//#debug
-			System.out.println("Configuration before showing softkeyboard is '"+configuration+"'");
-		
-			if (this.isSoftkeyboardOpen) {
-				//#debug
-				System.out.println("Canceling the display of the softkeybard as it is already visible.");
-				return;
-			}
-			//#debug
-			System.out.println("About to show softkeyboard");
-			
-			// TODO: This code is not needed as android does this test for us?!
-//			if(configuration.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO) {
-//				//#debug
-//				System.out.println("Canceling the display of the softkeyboard because the hardkeyboard is already shown.");
-//				return;
-//			}
-			AndroidDisplay display = AndroidDisplay.getDisplay(this);
-			if(display == null) {
-				//#debug
-				System.out.println("Canceling the display of the softkeyboard as no AndroidDisplay is available.");
-				return;
-			}
-			InputMethodManager inputMethodManager = (InputMethodManager)getSystemService( Context.INPUT_METHOD_SERVICE);
-			boolean active;
-			active = inputMethodManager.isActive(display);
-			//#debug
-			System.out.println("Input method before showing is active: '"+active+"'");
-			// requestingFocus is important! Do not remove it!
-			display.requestFocus();
-			inputMethodManager.hideSoftInputFromWindow(display.getWindowToken(), 0, new ResultReceiver(display.getHandler()) {
-				@Override
-				protected void onReceiveResult(int resultCode, Bundle resultData) {
-					//#debug
-					System.out.println("Result for hiding softinput (before showing) is '"+resultCode+"' with resultData '"+resultData+"'");
-				}
-			});
-			inputMethodManager.showSoftInput(display, InputMethodManager.SHOW_FORCED,new ResultReceiver(display.getHandler()) {
-				@Override
-				protected void onReceiveResult(int resultCode, Bundle resultData) {
-					//#debug
-					System.out.println("Result for showing softinput is '"+resultCode+"' with resultData '"+resultData+"'");
-				}
-			});
-			active = inputMethodManager.isActive(display);
-			//#debug
-			System.out.println("Input method after showing is active: '"+active+"'");
-			configuration = getBaseContext().getResources().getConfiguration();
-			//#debug
-			System.out.println("Configuration after showing softkeyboard is '"+configuration+"'");
-			// TODO: Find out the height of the soft input!!
-//				View rootView = display.getRootView();
-//				ArrayList<View> touchables = rootView.getTouchables();
-//				if(touchables == null || touchables.isEmpty()) {
-//					//#debug
-//					System.out.println("No touchable view found in RootView.");
-//				} else {
-//					for (View view : touchables) {
-//						//#debug
-//						System.out.println("Found touchable view with id '"+view.getId()+"'");
-//					}
-//				}
-//				View focusView = rootView.findFocus();
-//				if(focusView != null) {
-//					//#debug
-//					System.out.println("View with focus is '"+focusView.getId()+"'");
-//				} else {
-//					//#debug
-//					System.out.println("No view with focus in RootView found.");
-//				}
-//				Window window = getWindow();
-			this.isSoftkeyboardOpen = true;
-			onSoftKeyboardOpened();
-		//#endif
-	}
 
-	public void hideSoftKeyboard() {
-		//#debug
-		System.out.println("Handling hideSoftKeyboard");
-		//#if polish.android1.5
-		Configuration configuration;
-		configuration = getBaseContext().getResources().getConfiguration();
-		//#debug
-		System.out.println("Configuration before hiding softkeyboard is '"+configuration+"'");
-		
-		// TODO: Do not use a self managed field but the configuration or InputMethodManager.isActive or something similar.
-		if (!this.isSoftkeyboardOpen) {
-			//#debug
-			System.out.println("Canceling the hiding of the softkeyboard as it is not visible anyway.");
-			return;
-		}
-		//#debug
-		System.out.println("About to show softkeyboard");
-		AndroidDisplay display = AndroidDisplay.getDisplay(this);
-		InputMethodManager inputMethodManager = (InputMethodManager)getSystemService( Context.INPUT_METHOD_SERVICE);
-		boolean active;
-		active = inputMethodManager.isActive(display);
-		//#debug
-		System.out.println("Input method before hiding is active: '"+active+"'");
-		IBinder windowToken = display.getWindowToken();
-		inputMethodManager.hideSoftInputFromWindow(windowToken, 0);
-		active = inputMethodManager.isActive(display);
-		//#debug
-		System.out.println("Input method after hiding is active: '"+active+"'");
-		configuration = getBaseContext().getResources().getConfiguration();
-		//#debug
-		System.out.println("Configuration after hiding softkeyboard is '"+configuration+"'");
-		this.isSoftkeyboardOpen = false;
-		onSoftKeyboardClosed();
-		//#endif
-	}
-	
-	/**
-	 * Shows the virtual keyboard when it is hidden and hides it when it is shown.
-	 */
-	public void toggleSoftKeyboard() {
-		//#debug
-		System.out.println("Handling toggleSoftKeyboard");
-		//#if polish.android1.5
-		
-			InputMethodManager inputMethodManager = (InputMethodManager)getSystemService( Context.INPUT_METHOD_SERVICE);
-			Configuration configuration;
-//			if(configuration.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO) {
-//				if(this.isSoftkeyboardOpen) {
-//					hideSoftKeyboard();
-//				}
-//				return;
-//			}
-			configuration = getBaseContext().getResources().getConfiguration();
-			//#debug
-			System.out.println("Configuration before toggling softkeyboard is '"+configuration+"'");
-			
-			AndroidDisplay display = AndroidDisplay.getDisplay(this);
-//			boolean active = inputMethodManager.isActive(display);
-//			if(active) {
-			IBinder windowToken = display.getWindowToken();
-			boolean active;
-			active = inputMethodManager.isActive(display);
-			//#debug
-			System.out.println("Input method before toggle is active: '"+active+"'");
-			//#debug
-			System.out.println("Toggling the softinput method.");
-			inputMethodManager.toggleSoftInputFromWindow(windowToken,  InputMethodManager.SHOW_FORCED, 0);
-				//inputMethodManager.hideSoftInputFromWindow(windowToken, 0);			
-//			}
-			active = inputMethodManager.isActive(display);
-			//#debug
-			System.out.println("Input method after toogle is active: '"+active+"'");
-			configuration = getBaseContext().getResources().getConfiguration();
-			//#debug
-			System.out.println("Configuration after toggling softkeyboard is '"+configuration+"'");
-			this.isSoftkeyboardOpen = !this.isSoftkeyboardOpen;
-			if (this.isSoftkeyboardOpen) {
-				onSoftKeyboardOpened();
-			} else {
-				onSoftKeyboardClosed();
-			}
-		//#endif
-	}
-	
-	private Screen getCurrentScreen() {
-		Display display = Display.getInstance();
-		if (display == null) {
-			return null;
-		}
-		Displayable disp = display.getCurrent();
-		if (disp == null || (!(disp instanceof Screen))) {
-			return null;
-		}
-		return (Screen) disp;
-	}
-	
-	private void onSoftKeyboardOpened() {
-		Screen screen = getCurrentScreen();
-		if (screen != null) {
-			Item item = screen.getCurrentItem();
-			if (item != null) {
-				while (item instanceof Container && ((Container)item).getFocusedItem() != null) {
-					item = ((Container)item).getFocusedItem();
-				}
-				this.currentScreenYOffset = screen.getScrollYOffset();
-				int contAbsY = 0;
-				Container cont = screen.getRootContainer();
-				if (cont != null) {
-					contAbsY = cont.getAbsoluteY() + (screen.getScreenContentY() - cont.relativeY);
-					//System.out.println("contentY=" + screen.getScreenContentY() + ", cont.relativeY=" + cont.relativeY + ", cont.absY=" + cont.getAbsoluteY() + ", item.absY=" + item.getAbsoluteY());
-				}
-				int newYOffset = - (item.getAbsoluteY() - contAbsY); // - this.currentScreenYOffset;
-				screen.setScrollYOffset( newYOffset, true);
-			}
-		}
-	}
-
-	private void onSoftKeyboardClosed() {
-		Screen screen = getCurrentScreen();
-		if (screen != null) {
-			screen.setScrollYOffset(this.currentScreenYOffset, true);
-		}
-	}
-
-	/**
-	 * 
-	 * @param suicideOnExit true if the process should be killed after the destroy event is received.
-	 */
-	public void setSuicideOnExit(boolean suicideOnExit) {
-		this.suicideOnExit = suicideOnExit;
-	}
-
-	public void switchInputMethod() {
-		InputMethodManager inputMethodManager = (InputMethodManager)getSystemService( Context.INPUT_METHOD_SERVICE);
-		inputMethodManager.showInputMethodPicker();
-	}
-
-	public void onSizeChanged( int w, int h) {
-		//#if polish.android1.5
-			hideSoftKeyboard();
-			this.isSoftkeyboardOpen = false;
-		//#endif
-	}
-	
-	
-	
-	public synchronized void addCommand( de.enough.polish.ui.Command cmd ) {
-		//#if !tmp.fullscreen
-			if (!this.addedCommands.contains(cmd)) {
-				this.addedCommands.add( cmd );
-			}
-		//#endif
-	}
-	
-	public synchronized void removeCommand( de.enough.polish.ui.Command cmd ) {
-		//#if !tmp.fullscreen
-			this.addedCommands.remove( cmd );
-		//#endif
-	}
-	
-	
-	//#if !tmp.fullScreen
-	@Override
-	public boolean onPrepareOptionsMenu(Menu menu) {
-		if (menu != null) {
-			this.isMenuOpened = true;
-			menu.clear();
-			this.addedCommandMenuItemBridges.clear();
-			Object[] commands = this.addedCommands.getInternalArray();
-			for (int i = 0; i < commands.length; i++) {
-				Command cmd = (Command) commands[i];
-				if (cmd == null) {
-					break;
-				}
-				int groupId = 0;
-				int itemId = this.addedCommandMenuItemBridges.size();
-				MenuItem item = menu.add( groupId, itemId, cmd.getPriority(), cmd.getLabel() );
-				CommandMenuItemBridge bridge = new CommandMenuItemBridge( cmd, item );
-				this.addedCommandMenuItemBridges.add(bridge);
-			}
-		}
-		return super.onPrepareOptionsMenu(menu) || true;
-	}
-	//#endif
-
-	//#if !tmp.fullScreen
-	public boolean onOptionsItemSelected(MenuItem item) {
-		Object[] items = this.addedCommandMenuItemBridges.getInternalArray();
-		for (int i = 0; i < items.length; i++) {
-			CommandMenuItemBridge bridge = (CommandMenuItemBridge) items[i];
-			if (bridge == null) {
-				break;
-			}
-			if (bridge.menuItem == item) {
-				Display.getInstance().commandAction(bridge.cmd, (de.enough.polish.ui.Displayable)null );
-				return true;
-			}
-		}
-		return super.onOptionsItemSelected(item);
-	}
-	//#endif
-
-	//#if !tmp.fullScreen
-	@Override
-	public void onOptionsMenuClosed(Menu menu) {
-		super.onOptionsMenuClosed(menu);
-		this.isMenuOpened = false;
-	}
-	//#endif
-	
-	
-	//#if !tmp.fullScreen
-	public boolean onBack() {
-		if (this.isMenuOpened) {
-			return false;
-		}
-		//#if polish.android1.5
-			if (this.isSoftkeyboardOpen) {
-				hideSoftKeyboard();
-				return true;
-			}
-		//#endif
-		Command cmdBack = null;
-		Object[] commands = this.addedCommands.getInternalArray();
-		for (int i = 0; i < commands.length; i++) {
-			Command cmd = (Command) commands[i];
-			if (cmd == null) {
-				break;
-			}
-			int type = cmd.getCommandType();
-			if (type == Command.BACK || type == Command.CANCEL || type == Command.EXIT) {
-				if (cmdBack == null || cmdBack.getPriority() > cmd.getPriority()) {
-					cmdBack = cmd;
-				}
-			}
-		}
-		if (cmdBack == null && this.addedCommands.size() == 1 && ((Command)commands[0]).getCommandType() == Command.OK) {
-			// this seems to be an alert with only the OK command present:
-			cmdBack = (Command)commands[0];
-		}
-		if (cmdBack != null) {
-			Display.getInstance().commandAction(cmdBack, (de.enough.polish.ui.Displayable)null );
-			return true;
-		}
-		return false;
-	}
-	//#endif
-	
-	//#if !tmp.fullScreen
-	public boolean onOK() {
-		Command cmdOK = null;
-		Object[] commands = this.addedCommands.getInternalArray();
-		for (int i = 0; i < commands.length; i++) {
-			Command cmd = (Command) commands[i];
-			if (cmd == null) {
-				break;
-			}
-			int type = cmd.getCommandType();
-			if (type == Command.OK) {
-				if (cmdOK == null || cmdOK.getPriority() > cmd.getPriority()) {
-					cmdOK = cmd;
-				}
-			}
-		}
-		if (cmdOK != null) {
-			Display.getInstance().commandAction(cmdOK, (de.enough.polish.ui.Displayable)null );
-			return true;
-		}
-		return false;
-	}
-	//#endif
-
-
-	static class CommandMenuItemBridge {
-		final Command cmd;
-		final MenuItem menuItem;
-
-		public CommandMenuItemBridge(de.enough.polish.ui.Command cmd, MenuItem menuItem) {
-			this.cmd = cmd;
-			this.menuItem = menuItem;
-		}
-		
+	public MidletBridge _getMidletBridge() {
+		return this._bridge;
 	}
 
 
-
-
-
+	public void  _setMidletBridge(MidletBridge bridge) {
+		this._bridge = bridge;
+	}
 
 
 

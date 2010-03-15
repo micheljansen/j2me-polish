@@ -57,15 +57,16 @@ public abstract class ItemView implements Serializable{
 	
 	/**
 	 * Initialises this item view. 
-	 * The implementation needs to calculate and set the contentWidth and 
-	 * contentHeight fields. 
+	 * This method saves the available width and height and then calls initContent(int, int, int).
+	 * Please always call the super.init(..) method when overriding this method.
 	 * 
 	 * @param parent the parent item
 	 * @param firstLineWidth the maximum width of the first line 
 	 * @param availWidth the maximum width of the view
 	 * @param availHeight the maximum height of the view
-	 * @see #contentWidth
-	 * @see #contentHeight
+	 * @see #initContent(Item, int, int, int)
+	 * @see #availableWidth
+	 * @see #availableHeight
 	 */
 	protected void init( Item parent, int firstLineWidth, int availWidth, int availHeight ) {
 		this.parentItem = parent;
@@ -378,6 +379,20 @@ public abstract class ItemView implements Serializable{
 	}
 
 	/**
+	 * Adjusts the given position to the content area of this view
+	 * @param x the horizontal position relative to the parent item's outer left border
+	 * @param y the vertical position relative to the parent item's outer top border
+	 * @return the adjusted position relative to this view's content area
+	 */
+	protected Point adjustToContentArea( int x, int y ) {
+		x -= this.parentItem.getContentX();
+		y -= this.parentItem.getContentY();
+		return new Point( x, y );
+	}
+	
+	
+
+	/**
 	 * Handles pointer pressed events.
 	 * This is an optional feature that doesn't need to be implemented by subclasses, since the parent container already forwards the event to the appropriate item (when this method returns false).
 	 * The default implementation just returns false.
@@ -425,6 +440,33 @@ public abstract class ItemView implements Serializable{
 	 */
 	public boolean handlePointerDragged(int x, int y)
 	{
+		return false;
+	}
+	
+	/**
+	 * Handles a touch down/press event. 
+	 * This is similar to a pointerPressed event, however it is only available on devices with screens that differentiate
+	 * between press and touch events (read: BlackBerry Storm).
+	 * 
+	 * @param x the horizontal pixel position of the touch event relative to the parent item's left position
+	 * @param y  the vertical pixel position of the touch event relative to the parent item's top position
+	 * @return true when the event was handled
+	 */
+	public boolean handlePointerTouchDown( int x, int y ) {
+		return false;
+	}
+	
+
+	/**
+	 * Handles a touch up/release event. 
+	 * This is similar to a pointerReleased event, however it is only available on devices with screens that differentiate
+	 * between press and touch events (read: BlackBerry Storm).
+	 * 
+	 * @param x the horizontal pixel position of the touch event relative to the parent item's left position
+	 * @param y  the vertical pixel position of the touch event relative to the parent item's top position
+	 * @return true when the event was handled
+	 */
+	public boolean handlePointerTouchUp( int x, int y ) {
 		return false;
 	}
 	
@@ -496,12 +538,22 @@ public abstract class ItemView implements Serializable{
 	 * Releases all resources that are not required to keep the state of this view.
 	 * The default implementation does free nothing and only sets the "isInitialized" flag if the parent item.
 	 */
-	public void releaseResources(){
-		// do nothing
+	public void releaseResources()
+	{
 		if(this.parentItem != null)
 		{
 			this.parentItem.isInitialized = false;
 		}
+	}
+	
+	/**
+	 * Destroys the containerview by removing references to the parent item
+	 */
+	public void destroy() {
+		releaseResources();
+		
+		//make sure parent item is dereferenced, else possible mem leak
+		this.parentItem = null;
 	}
 	
 	/**

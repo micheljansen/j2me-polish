@@ -29,6 +29,7 @@ import java.io.InterruptedIOException;
 import java.util.Date;
 
 import de.enough.polish.android.midlet.MIDlet;
+import de.enough.polish.android.midlet.MidletBridge;
 import de.enough.polish.util.ArrayList;
 
 import android.content.BroadcastReceiver;
@@ -140,7 +141,7 @@ implements MessageConnection
 	private void setupMessageReceiver() {
 		this.isListeningForMessages = true;
 		IntentFilter filter = new IntentFilter(ACTION);
-		MIDlet.midletInstance.registerReceiver( this, filter );
+		MidletBridge.instance.registerReceiver( this, filter );
 	}
 
 	public void send(Message msg) throws IOException, InterruptedIOException {
@@ -170,7 +171,7 @@ implements MessageConnection
 			this.receiveLock.notify();
 		}
 		if (this.isListeningForMessages) {
-			MIDlet.midletInstance.unregisterReceiver( this );
+			MidletBridge.instance.unregisterReceiver( this );
 			this.isListeningForMessages = false;
 		}
 	}

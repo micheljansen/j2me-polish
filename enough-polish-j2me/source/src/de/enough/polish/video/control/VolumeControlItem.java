@@ -113,7 +113,7 @@ public class VolumeControlItem extends Gauge implements VideoCallback, ItemState
 		}
 	}
 
-	public void onSnapshot(byte[] data) {
+	public void onSnapshot(byte[] data, String encoding) {
 		// TODO Auto-generated method stub
 		
 	}

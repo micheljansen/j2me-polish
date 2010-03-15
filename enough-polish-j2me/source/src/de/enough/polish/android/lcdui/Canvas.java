@@ -3,6 +3,7 @@ package de.enough.polish.android.lcdui;
 
 import android.graphics.Bitmap;
 import de.enough.polish.android.midlet.MIDlet;
+import de.enough.polish.android.midlet.MidletBridge;
 
 /**
  * The <code>Canvas</code> class is a base class for writing
@@ -774,7 +775,7 @@ public abstract class Canvas
 	 */
 	public void addCommand( de.enough.polish.ui.Command cmd )
 	{
-		MIDlet.midletInstance.addCommand(cmd);
+		MidletBridge.instance.addCommand(cmd);
 	}
 	
 	
@@ -791,7 +792,7 @@ public abstract class Canvas
 	 *            - the command to be removed
 	 */
 	public void removeCommand(de.enough.polish.ui.Command cmd) {
-		MIDlet.midletInstance.removeCommand(cmd);
+		MidletBridge.instance.removeCommand(cmd);
 	}
 	
 	/**
@@ -817,7 +818,7 @@ public abstract class Canvas
 	 */
 	public final void repaint()
 	{
-		AndroidDisplay display = AndroidDisplay.getDisplay(MIDlet.midletInstance);
+		AndroidDisplay display = AndroidDisplay.getInstance();
 		
 		if(display != null)
 		{
@@ -875,7 +876,7 @@ public abstract class Canvas
 	 */
 	public final void repaint(int x, int y, int width, int height)
 	{
-		AndroidDisplay display = AndroidDisplay.getDisplay(MIDlet.midletInstance);
+		AndroidDisplay display = AndroidDisplay.getInstance();
 		
 		if(display != null)
 		{

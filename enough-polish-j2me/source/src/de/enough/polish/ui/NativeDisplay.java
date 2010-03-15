@@ -339,6 +339,12 @@ public interface NativeDisplay
 	public void setCurrent( Display nextDisplayable);
 	
 	/**
+	 * Sets the next native displayable
+	 * @param nextDisplayable the next displayable which is not a Canvas
+	 */
+	public void setCurrent( Displayable nextDisplayable);
+	
+	/**
 	 * Causes the <code>Runnable</code> object <code>r</code> to have
 	 * its <code>run()</code> method
 	 * called later, serialized with the event stream, soon after completion of

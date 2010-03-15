@@ -25,6 +25,7 @@
  */
 package de.enough.polish.blackberry.ui;
 
+import de.enough.polish.ui.Screen;
 import de.enough.polish.ui.Style;
 import de.enough.polish.ui.StyleSheet;
 import net.rim.device.api.ui.component.PasswordEditField;
@@ -65,11 +66,10 @@ public class PolishPasswordEditField extends PasswordEditField implements Polish
         }
         
         public void paint( net.rim.device.api.ui.Graphics g ) {
-              if (this.isFocused && !StyleSheet.currentScreen.isMenuOpened()) {
-            	  //g.setFont( this.font.font );
-            	  g.setColor( this.fontColor );
-                  super.paint( g );
-              }
+        	if (this.isFocused && !StyleSheet.currentScreen.isMenuOpened()) {
+        		g.setColor( this.fontColor );
+        		super.paint( g );
+        	}
         }
         
 		public void setFont(Font font, int textColor) {

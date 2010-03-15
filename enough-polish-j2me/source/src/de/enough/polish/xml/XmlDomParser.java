@@ -29,6 +29,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.Hashtable;
 
 /**
@@ -69,7 +70,7 @@ public class XmlDomParser
 	/**
 	 * Parses an XML document and returns it's root element as an XmlDomNode.
 	 * When the XML document has no root element, it will return an artificial root element that contains
-	 * all root elelements of the document.
+	 * all root elements of the document.
 	 * 
 	 * @param document the document.
 	 * @return the root element of the document as XmlDomNode
@@ -77,14 +78,36 @@ public class XmlDomParser
 	 */
 	public static XmlDomNode parseTree(String document)
 	{
+		try {
+			return parseTree(document, null);
+		} catch (UnsupportedEncodingException e) {
+			//#debug error
+			System.out.println("Unable to parse stream in default encoding: " + e);
+			throw new RuntimeException( e.toString() );
+		}
+	}
+	
+	/**
+	 * Parses an XML document and returns it's root element as an XmlDomNode.
+	 * When the XML document has no root element, it will return an artificial root element that contains
+	 * all root elements of the document.
+	 * 
+	 * @param document the document.
+	 * @param encoding the encoding, e.g. "UTF-8"
+	 * @return the root element of the document as XmlDomNode
+	 * @throws UnsupportedEncodingException 
+	 * @throws RuntimeException when the parsing fails
+	 */
+	public static XmlDomNode parseTree(String document, String encoding) throws UnsupportedEncodingException
+	{
 		ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(document.getBytes());
-		return parseTree(byteArrayInputStream);
+		return parseTree(byteArrayInputStream, null);
 	}
 
 	/**
 	 * Parses an XML document and returns it's root element as an XmlDomNode.
 	 * When the XML document has no root element, it will return an artificial root element that contains
-	 * all root elelements of the document.
+	 * all root elements of the document.
 	 * 
 	 * @param in input stream of the document.
 	 * @return the root element of the document as XmlDomNode
@@ -92,8 +115,35 @@ public class XmlDomParser
 	 */
 	public static XmlDomNode parseTree(InputStream in)
     {
+		try {
+			return parseTree( in, null );
+		} catch (UnsupportedEncodingException e) {
+			//#debug error
+			System.out.println("Unable to parse stream in default encoding: " + e);
+			throw new RuntimeException( e.toString() );
+		}
+    }
+
+	/**
+	 * Parses an XML document and returns it's root element as an XmlDomNode.
+	 * When the XML document has no root element, it will return an artificial root element that contains
+	 * all root elements of the document.
+	 * 
+	 * @param in input stream of the document.
+	 * @param encoding the encoding, e.g. "UTF-8"
+	 * @return the root element of the document as XmlDomNode
+	 * @throws UnsupportedEncodingException  
+	 * @throws RuntimeException when the parsing fails
+	 */
+	public static XmlDomNode parseTree(InputStream in, String encoding) throws UnsupportedEncodingException
+    {
     	XmlPullParser parser;
-        InputStreamReader inputStreamReader = new InputStreamReader(in);
+        InputStreamReader inputStreamReader;
+        if (encoding != null) {
+        	inputStreamReader = new InputStreamReader(in, encoding);
+        } else {
+        	inputStreamReader = new InputStreamReader(in);
+        }
 
         try {
             parser = new XmlPullParser(inputStreamReader);

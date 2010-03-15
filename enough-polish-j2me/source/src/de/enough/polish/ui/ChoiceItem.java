@@ -141,7 +141,9 @@ public class ChoiceItem extends IconItem
 		private String plainImgName;
 	//#endif
 	private int yBoxAdjust;
-	
+	//#if polish.css.box-align
+		private boolean isBoxAlignRight;
+	//#endif
 	//#if polish.css.checked-style
 		Style styleNormal;
 		Style styleNormalFocused;
@@ -329,11 +331,22 @@ public class ChoiceItem extends IconItem
 	 */
 	public void paintContent(int x, int y, int leftBorder, int rightBorder, Graphics g) {
 		if (this.drawBox) {
+			int boxX = x;
+			int boxY = y + this.yBoxAdjust;
+			//#if polish.css.box-align
+				if (this.isBoxAlignRight) {
+					rightBorder -= this.boxWidth + this.paddingHorizontal;
+					boxX = rightBorder;
+				} else {
+			//#endif
+					x += this.boxWidth;
+					leftBorder += this.boxWidth;					
+			//#if polish.css.box-align
+				}
+			//#endif
 			if ( this.boxImage != null) {
-				g.drawImage( this.boxImage, x, y + this.yBoxAdjust, Graphics.TOP | Graphics.LEFT );
+				g.drawImage( this.boxImage, boxX, boxY, Graphics.TOP | Graphics.LEFT );
 			}
-			x += this.boxWidth;
-			leftBorder += this.boxWidth;
 			y += this.yAdjust;
 		}
 		super.paintContent(x, y, leftBorder, rightBorder, g);
@@ -437,6 +450,12 @@ public class ChoiceItem extends IconItem
 						this.styleCheckedFocused = st;
 					}
 				}
+			}
+		//#endif
+		//#ifdef polish.css.box-align
+			Integer boxAlignInt = style.getIntProperty("box-align");
+			if (boxAlignInt != null) {
+				this.isBoxAlignRight = (boxAlignInt.intValue() == 1);
 			}
 		//#endif
 	}
@@ -562,6 +581,11 @@ public class ChoiceItem extends IconItem
 			this.styleCheckedFocused = newStyle;
 		} else if (this.style == this.styleNormal && this.styleNormalFocused == null) {
 			this.styleNormalFocused = newStyle;
+		} else if (this.isSelected && this.styleCheckedFocused != null) {
+			if (this.styleNormalFocused == null) {
+				this.styleNormalFocused = newStyle;
+			}
+			newStyle = this.styleCheckedFocused;
 		}
 		Style st = super.focus(newStyle, direction);
 		if (this.styleNormal != null) {
@@ -636,5 +660,6 @@ public class ChoiceItem extends IconItem
 	public Image getSelectedImage() {
 		return this.selected;
 	}
+
 
 }

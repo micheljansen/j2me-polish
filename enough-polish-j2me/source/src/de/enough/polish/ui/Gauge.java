@@ -795,7 +795,7 @@ implements ImageConsumer
 				if(this.useBackgroundColor)
 				{
 					g.setColor(this.backgroundColor);
-					g.fillRect(x, y, this.contentWidth + 1, this.contentHeight + 1 );
+					g.fillRect(x, y, this.contentWidth, this.contentHeight );
 				}
 				//#endif
 				if (this.showValue && this.valuePosition != POSITION_CENTER) {
@@ -803,7 +803,7 @@ implements ImageConsumer
 				}
 				int w = (maxWidth * this.value) / this.maxValue;
 				g.setColor( this.color );
-				g.fillRect(x, y, w + 1, this.contentHeight + 1 );
+				g.fillRect(x, y, w + 1, this.contentHeight );
 			} else {
 				g.drawImage(this.indicatorImage, x, y, Graphics.TOP | Graphics.LEFT );
 			}
@@ -1137,14 +1137,52 @@ implements ImageConsumer
 	 * @see de.enough.polish.ui.Item#handlePointerPressed(int, int)
 	 */
 	protected boolean handlePointerPressed(int x, int y) {
-		if (this.isIndefinite || !this.isInteractive || !isInItemArea(x, y)) {
-			return false;
+		if (this.isIndefinite || !this.isInteractive || !isInContentArea(x, y)) {
+			return super.handlePointerPressed(x, y );
 		}
-		int val = this.value;
-		if (val < this.maxValue) {
-			setValue( ++val );
-		} else {
-			setValue( 0 );
+		//#if polish.css.view-type
+			if (this.view != null && this.view.handlePointerPressed(x, y)) {
+				return true;
+			}
+		//#endif
+		int cw = this.contentWidth;
+		if (this.showValue && this.valuePosition == POSITION_LEFT) {
+			x -= this.valueWidth;
+			cw -= this.valueWidth;
+		}
+		x -= this.contentX - (cw / (this.maxValue * 2));
+		int val = (x * this.maxValue) / cw;
+		if (val != this.value) {
+			setValue( val );
+			notifyStateChanged();
+		}
+		return true;
+	}
+	//#endif
+	
+	//#ifdef polish.hasPointerEvents
+	/* (non-Javadoc)
+	 * @see de.enough.polish.ui.Item#handlePointerDragged(int, int)
+	 */
+	protected boolean handlePointerDragged(int x, int y) {
+		if (this.isIndefinite || !this.isInteractive || !isInContentArea(x, y)) {
+			return super.handlePointerDragged(x, y);
+		}
+		//#if polish.css.view-type
+			if (this.view != null && this.view.handlePointerDragged(x, y)) {
+				return true;
+			}
+		//#endif
+		int cw = this.contentWidth;
+		if (this.showValue && this.valuePosition == POSITION_LEFT) {
+			x -= this.valueWidth;
+			cw -= this.valueWidth;
+		}
+		x -= this.contentX - (cw / (this.maxValue * 2));
+		int val = (x * this.maxValue) / cw;
+		if (val != this.value) {
+			setValue( val );
+			notifyStateChanged();
 		}
 		return true;
 	}

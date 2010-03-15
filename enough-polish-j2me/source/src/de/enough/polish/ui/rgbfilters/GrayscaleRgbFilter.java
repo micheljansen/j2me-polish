@@ -36,94 +36,111 @@ import de.enough.polish.util.RgbImage;
  *
  * <p>Copyright Enough Software 2008</p>
  * @author Robert Virkus, j2mepolish@enough.de
+ * @author Ovidiu Iliescu
  */
-public class GrayscaleRgbFilter extends RgbFilter
-{
-	protected Dimension grayscale;
-	protected transient RgbImage output;
-	
-	/**
-	 * Creates a new grayscale filter
-	 */
-	public GrayscaleRgbFilter()
-	{
-		// just create a new instance
-	}
+public class GrayscaleRgbFilter extends RgbFilter {
 
-	/* (non-Javadoc)
-	 * @see de.enough.polish.ui.RgbFilter#isActive()
-	 */
-	public boolean isActive()
-	{
-		boolean isActive = false;
-		if (this.grayscale != null) {
-			isActive = (this.grayscale.getValue(255) != 0);
-		}
-		return isActive;
-	}
+    protected Dimension grayscale;
+    protected transient RgbImage output;
 
-	/* (non-Javadoc)
-	 * @see de.enough.polish.ui.RgbFilter#process(de.enough.polish.util.RgbImage)
-	 */
-	public RgbImage process(RgbImage input)
-	{
-		if (!isActive()) {
-			return input;
-		}
-		if (this.output == null || this.output.getWidth() != input.getWidth() || this.output.getHeight() != input.getHeight() ) {
-			this.output = new RgbImage( input.getWidth(), input.getHeight() );
-		}
-		int[] rgbInput = input.getRgbData();
-		int[] rgbOutput = this.output.getRgbData();
-		int grayscalePercent = (this.grayscale.getValue(255) * 100) / 255; 
-		int inverseGrayscalePercent = 100 - grayscalePercent;
-		int alpha, red, green, blue;
-		for (int i = 0; i < rgbOutput.length; i++)
-		{
-			int pixel = rgbInput[i];
-				//TODO keep pixels within keep-range
-				alpha = (0xFF000000 & pixel) >>> 24;
-				if (alpha == 0) {
-					rgbOutput[i] = 0;
-					continue;
-				}
-				red = (0x00FF & (pixel >>> 16));	
-				green = (0x0000FF & (pixel >>> 8));
-				blue = pixel & (0x000000FF );
-				
-				int brightness = ((((red + green + blue) / 3 ) & 0x000000FF) * grayscalePercent) / 100;
-				red = (red * inverseGrayscalePercent) / 100;
-				green = (green * inverseGrayscalePercent) / 100;
-				blue = (blue * inverseGrayscalePercent) / 100;
-				pixel = (brightness << 0)  | blue
-					|   (brightness << 8)  | (green << 8)
-					|   (brightness << 16) | (red   << 16)
-					|                        (alpha << 24);
-				rgbOutput[i] = pixel;
-		}
-		return this.output;
-	}
+    /**
+     * Creates a new grayscale filter
+     */
+    public GrayscaleRgbFilter() {
+        // just create a new instance
+    }
 
-	/* (non-Javadoc)
-	 * @see de.enough.polish.ui.RgbFilter#setStyle(de.enough.polish.ui.Style, boolean)
-	 */
-	public void setStyle(Style style, boolean resetStyle)
-	{
-		super.setStyle(style, resetStyle);
-		//#if polish.css.filter-grayscale-grade
-			Dimension grayscaleInt = (Dimension) style.getObjectProperty("filter-grayscale-grade");
-			if (grayscaleInt != null) {
-				this.grayscale = grayscaleInt;
-			}
-		//#endif
-	}
-	
-	/* (non-Javadoc)
-	 * @see de.enough.polish.ui.RgbFilter#releaseResources()
-	 */
-	public void releaseResources()
-	{
-		this.output = null;
-	}
+    /* (non-Javadoc)
+     * @see de.enough.polish.ui.RgbFilter#isActive()
+     */
+    public boolean isActive() {
+        boolean isActive = false;
+        if (this.grayscale != null) {
+            isActive = (this.grayscale.getValue(1024) != 0);
+        }
+        return isActive;
+    }
 
+    /* (non-Javadoc)
+     * @see de.enough.polish.ui.RgbFilter#process(de.enough.polish.util.RgbImage)
+     */
+    public RgbImage process(RgbImage input) {
+
+        if (!isActive()) {
+            return input;
+        }
+        if (this.output == null || this.output.getWidth() != input.getWidth() || this.output.getHeight() != input.getHeight()) {
+            this.output = new RgbImage(input.getWidth(), input.getHeight());
+        }
+        int[] rgbInput = input.getRgbData();
+        int[] rgbOutput = this.output.getRgbData();
+
+        /**
+         * We will implement a fast (de)saturation algorithm using matrix multiplication.
+         *
+         * To make things even faster, we will use bitshifts wherever possible.
+         * To support this, we will "redefine" 1 in the original formulas
+         * as being 1024 ( 2 ^ 10 ). We will modify all the formulas accordingly.
+         */
+        int saturation = 1024 - this.grayscale.getValue(1024);
+
+        int alpha, red, green, blue;
+        int output_red, output_green, output_blue;
+
+        // We will use the standard NTSC color quotiens, multiplied by 1024
+        // in order to be able to use integer-only math throughout the code.
+        int RW = 306; // 0.299 * 1024
+        int RG = 601; // 0.587 * 1024
+        int RB = 117; // 0.114 * 1024
+
+        // Define and calculate matrix quotients
+        final int a, b, c, d, e, f, g, h, i;
+        a = (1024 - saturation) * RW + saturation * 1024;
+        b = (1024 - saturation) * RW;
+        c = (1024 - saturation) * RW;
+        d = (1024 - saturation) * RG;
+        e = (1024 - saturation) * RG + saturation * 1024;
+        f = (1024 - saturation) * RG;
+        g = (1024 - saturation) * RB;
+        h = (1024 - saturation) * RB;
+        i = (1024 - saturation) * RB + saturation * 1024;
+
+        int pixel = 0;
+        for (int p = 0; p < rgbOutput.length; p++) {
+            pixel = rgbInput[p];
+            alpha = (0xFF000000 & pixel);
+            red = (0x00FF & (pixel >> 16));
+            green = (0x0000FF & (pixel >> 8));
+            blue = pixel & (0x000000FF);
+
+            // Matrix multiplication
+            output_red = ((a * red + d * green + g * blue) >> 4) & 0x00FF0000;
+            output_green = ((b * red + e * green + h * blue) >> 12) & 0x0000FF00;
+            output_blue = (c * red + f * green + i * blue) >> 20;
+
+            rgbOutput[p] = alpha | output_red | output_green | output_blue;
+        }
+
+        return this.output;
+    }
+
+    /* (non-Javadoc)
+     * @see de.enough.polish.ui.RgbFilter#setStyle(de.enough.polish.ui.Style, boolean)
+     */
+    public void setStyle(Style style, boolean resetStyle) {
+        super.setStyle(style, resetStyle);
+        //#if polish.css.filter-grayscale-grade
+        Dimension grayscaleInt = (Dimension) style.getObjectProperty("filter-grayscale-grade");
+        if (grayscaleInt != null) {
+            this.grayscale = grayscaleInt;
+        }
+        //#endif
+    }
+
+    /* (non-Javadoc)
+     * @see de.enough.polish.ui.RgbFilter#releaseResources()
+     */
+    public void releaseResources() {
+        this.output = null;
+    }
 }

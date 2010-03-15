@@ -41,7 +41,7 @@ public interface ResourceLoader {
 	 * @return the input stream
 	 * @throws IOException when the resource could not be retrieved
 	 */
-	public InputStream getResourceAsStream( String url )
+	InputStream getResourceAsStream( String url )
 	throws IOException;
 	
 	/**
@@ -50,7 +50,7 @@ public interface ResourceLoader {
 	 * @param in the corresponding input stream
 	 * @throws IOException when the connection could not be closed
 	 */
-	public void close( String url, InputStream in )
+	void close( String url, InputStream in )
 	throws IOException;
 
 }

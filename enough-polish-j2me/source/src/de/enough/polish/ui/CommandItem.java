@@ -71,7 +71,7 @@ public class CommandItem extends IconItem {
 	 * @param parent the parent item
 	 */
 	public CommandItem( Command command, Item parent ) {
-		this( command, parent, null );
+		this( command, parent, command.getStyle() );
 	}
 
 	/**
@@ -82,7 +82,7 @@ public class CommandItem extends IconItem {
 	 * @param style the style for this item
 	 */
 	public CommandItem( Command command, Item parent, Style style ) {
-		super( null, command.getLabel(), null, style );
+		super( null, command.getLabel(), null, (style == null ? command.getStyle() : style) );
 		this.appearanceMode = Item.INTERACTIVE;
 		this.command = command;
 		this.parent = parent;
@@ -232,7 +232,7 @@ public class CommandItem extends IconItem {
 //			System.out.println( this + ": backgroundYOffset=" + this.backgroundYOffset);
 //		}
 		if (this.hasChildren) {
-			paintChildren(y, leftBorder, rightBorder, g);
+			paintChildren(x, y, leftBorder, rightBorder, g);
 		}
 	}
 
@@ -242,89 +242,86 @@ public class CommandItem extends IconItem {
 	 * @param rightBorder
 	 * @param g
 	 */
-	protected void paintChildren(int y, int leftBorder, int rightBorder,
+	protected void paintChildren(int x, int y, int leftBorder, int rightBorder,
 			Graphics g)
 	{
-		int x;
-		if (this.hasChildren) {
-			// paint child indicator
-			//rightBorder -= this.childIndicatorWidth;
-			//#if polish.css.suppress-indicator
-			if(!this.suppressIndicator)
-			{
+		// paint child indicator
+		//rightBorder -= this.childIndicatorWidth;
+		//#if polish.css.suppress-indicator
+		if(!this.suppressIndicator)
+		{
+		//#endif
+			//#if polish.css.command-child-indicator
+				if (this.childIndicator != null) {
+					int height = this.childIndicator.getHeight(); // center image if lower than the font:
+					g.drawImage( this.childIndicator, rightBorder, y + (this.contentHeight - height)/2, Graphics.TOP | Graphics.RIGHT );
+				} else {
 			//#endif
-				//#if polish.css.command-child-indicator
-					if (this.childIndicator != null) {
-						int height = this.childIndicator.getHeight(); // center image if lower than the font:
-						g.drawImage( this.childIndicator, rightBorder, y + (this.contentHeight - height)/2, Graphics.TOP | Graphics.RIGHT );
-					} else {
-				//#endif
-						//#if polish.css.command-child-indicator-color
-							if ( this.childIndicatorColor != -1 ) {
-								g.setColor( this.childIndicatorColor );							
-							}
-						//#endif
-						x = rightBorder - this.childIndicatorWidth;
-						int indicatorY = y + this.childIndicatorYOffset;
-						//#if polish.midp2
-							g.fillTriangle(x, indicatorY, rightBorder, indicatorY + this.childIndicatorHeight/2, x, indicatorY + this.childIndicatorHeight );
-						//#else
-							g.drawLine( x, indicatorY, rightBorder, indicatorY + this.childIndicatorHeight/2 );
-							g.drawLine( x, indicatorY + this.childIndicatorHeight, rightBorder, indicatorY + this.childIndicatorHeight/2 );
-							g.drawLine( x, indicatorY, x, indicatorY + this.childIndicatorHeight );
-						//#endif
-				//#if polish.css.command-child-indicator
-					}
-				//#endif
-			//#if polish.css.suppress-indicator
-			}
+					//#if polish.css.command-child-indicator-color
+						if ( this.childIndicatorColor != -1 ) {
+							g.setColor( this.childIndicatorColor );							
+						}
+					//#endif
+					x = rightBorder - this.childIndicatorWidth;
+					int indicatorY = y + this.childIndicatorYOffset;
+					//#if polish.midp2
+						g.fillTriangle(x, indicatorY, rightBorder, indicatorY + this.childIndicatorHeight/2, x, indicatorY + this.childIndicatorHeight );
+					//#else
+						g.drawLine( x, indicatorY, rightBorder, indicatorY + this.childIndicatorHeight/2 );
+						g.drawLine( x, indicatorY + this.childIndicatorHeight, rightBorder, indicatorY + this.childIndicatorHeight/2 );
+						g.drawLine( x, indicatorY, x, indicatorY + this.childIndicatorHeight );
+					//#endif
+			//#if polish.css.command-child-indicator
+				}
 			//#endif
-			
-			if (this.isOpen) {
-				int originalY = y;
-				// draw children:
-				// when there is enough space to the right, open it on the right side, otherwise open it on the left:
-				int clipX = g.getClipX();
-				int clipWidth = g.getClipWidth();
-				int clipY = g.getClipY() - 1;
-				int clipHeight = g.getClipHeight();
+		//#if polish.css.suppress-indicator
+		}
+		//#endif
+		
+		if (this.isOpen) {
+			int originalY = y;
+			// draw children:
+			// when there is enough space to the right, open it on the right side, otherwise open it on the left:
+			int clipX = g.getClipX();
+			int clipWidth = g.getClipWidth();
+			int clipY = g.getClipY() - 1;
+			int clipHeight = g.getClipHeight();
 //				g.setColor(0x00FF00);
 //				g.fillRect(clipX, clipY, clipWidth, clipHeight);
-				
-				int availWidth = (clipWidth * 2) / 3;
-				int availHeight = this.availableHeight;
-				int childrenWidth = this.children.getItemWidth( availWidth, availWidth, availHeight );
-				int childrenHeight = this.children.itemHeight; // is initialised because of the getItemWidth() call
-				rightBorder += this.paddingHorizontal;
+			
+			int availWidth = (clipWidth * 2) / 3;
+			int availHeight = this.availableHeight;
+			int childrenWidth = this.children.getItemWidth( availWidth, availWidth, availHeight );
+			int childrenHeight = this.children.itemHeight; // is initialised because of the getItemWidth() call
+			rightBorder += this.paddingHorizontal;
 //				System.out.println("drawing children: children-width " + childrenWidth + ", clipWidth=" + clipWidth + ", leftBorder=" + leftBorder + ", rightBorder=" + rightBorder);
 //				System.out.println("rightBorder + childrenWidth=" + (rightBorder + childrenWidth) + ", clipX + clipWidth=" + ( clipX + clipWidth ));
 //				System.out.println("clipX + clipWidth - childrenWidth=" + (clipX + clipWidth - childrenWidth) + ", (leftBorder + 10)=" + (leftBorder + 10));
 //				System.out.println("clipX=" + clipX + ", leftBorder - childrenWidth=" + (leftBorder - childrenWidth));
-				if ( rightBorder + childrenWidth < clipX + clipWidth ) {					
-					x = rightBorder;
-				} else if ( clipX + clipWidth - childrenWidth > (leftBorder + 10) ) {
-					x = clipX + clipWidth - (childrenWidth + 1);
-				} else {
-					x = Math.max( leftBorder - childrenWidth, clipX );
+			if ( rightBorder + childrenWidth < clipX + clipWidth ) {					
+				x = rightBorder;
+			} else if ( clipX + clipWidth - childrenWidth > (leftBorder + 10) ) {
+				x = clipX + clipWidth - (childrenWidth + 1);
+			} else {
+				x = Math.max( leftBorder - childrenWidth, clipX );
+			}
+			//System.out.println("submenu: y=" + y + ", y + childrenHeight=" + (y + childrenHeight) + ", clipY + clipHeight=" + (clipY + clipHeight));
+			if ( y + childrenHeight > clipY + clipHeight ) {
+				y -= (y + childrenHeight) - (clipY + clipHeight);
+				//System.out.println("submenu: adjusted y=" + y + ", clipY=" + clipY);
+				if ( y < clipY ) {
+					y = clipY;
 				}
-				//System.out.println("submenu: y=" + y + ", y + childrenHeight=" + (y + childrenHeight) + ", clipY + clipHeight=" + (clipY + clipHeight));
-				if ( y + childrenHeight > clipY + clipHeight ) {
-					y -= (y + childrenHeight) - (clipY + clipHeight);
-					//System.out.println("submenu: adjusted y=" + y + ", clipY=" + clipY);
-					if ( y < clipY ) {
-						y = clipY;
-					}
 //					g.setColor( 0x00FFFF);
 //					for (int i = 0; i < 15; i++) {
 //						g.drawLine( x - 20,y-i, x+childrenWidth+10, y-i);						
 //					}
-				}
-				this.children.relativeX = x - leftBorder;
-				this.children.relativeY = y - originalY;
-				this.children.setScrollHeight( clipHeight );
-				this.children.paint( x, y, x, x + childrenWidth, g);
-				//System.out.println("set height for children to " + clipHeight + ", yOffset=" + this.children.yOffset + ", internalY=" + this.children.internalY);				
 			}
+			this.children.relativeX = x - leftBorder;
+			this.children.relativeY = y - originalY;
+			this.children.setScrollHeight( clipHeight );
+			this.children.paint( x, y, x, x + childrenWidth, g);
+			//System.out.println("set height for children to " + clipHeight + ", yOffset=" + this.children.yOffset + ", internalY=" + this.children.internalY);				
 		}
 	}
 
@@ -469,11 +466,9 @@ public class CommandItem extends IconItem {
 		System.out.println("handlePointerPressed( " + x + ", " + y + ") for " + this);
 		boolean handled = false;
 		if (this.isOpen) {
-			handled = this.children.handlePointerPressed(x - this.children.relativeX, y - this.children.relativeY );
-			if (!isInItemArea(x, y, this.children)) {
-				open(false);
-				handled = true;
-			}
+			this.children.handlePointerPressed(x - this.children.relativeX, y - this.children.relativeY );
+			// handle press events in any case since we close the children in release when the event is outside of the children's area:
+			handled = true;
 		}
 		return handled || super.handlePointerPressed(x, y);
 	}
@@ -481,15 +476,17 @@ public class CommandItem extends IconItem {
 	
 	//#ifdef polish.hasPointerEvents
 	/* (non-Javadoc)
-	 * @see de.enough.polish.ui.Item#handlePointerPressed(int, int)
+	 * @see de.enough.polish.ui.Item#handlePointerReleased(int, int)
 	 */
 	protected boolean handlePointerReleased(int x, int y) {
 		//#debug
 		System.out.println("handlePointerReleased( " + x + ", " + y + ") for " + this);
 		boolean handled = false;
 		if (this.isOpen) {
-			handled = this.children.handlePointerReleased(x - this.children.relativeX, y - this.children.relativeY );
-			if (!handled) {
+			int relX = x - this.children.relativeX;
+			int relY = y - this.children.relativeY;
+			handled = this.children.handlePointerReleased(relX, relY );
+			if (!handled || !this.children.isInItemArea( relX, relY)) {
 				open(false);
 				handled = true;
 			}
@@ -498,6 +495,20 @@ public class CommandItem extends IconItem {
 	}
 	//#endif
 
+	//#ifdef polish.hasPointerEvents
+	/* (non-Javadoc)
+	 * @see de.enough.polish.ui.Item#handlePointerDragged(int, int)
+	 */
+	protected boolean handlePointerDragged(int x, int y) {
+		//#debug
+		System.out.println("handlePointerDragged( " + x + ", " + y + ") for " + this);
+		boolean handled = false;
+		if (this.isOpen) {
+			handled = this.children.handlePointerDragged(x - this.children.relativeX, y - this.children.relativeY );
+		}
+		return handled || super.handlePointerDragged(x, y);
+	}
+	//#endif
 
 	/**
 	 * Opens or closes this command item so that the children commands are visible (or not).
@@ -695,11 +706,14 @@ public class CommandItem extends IconItem {
 		}
 	}
 
-	/* (Override) */
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.Item#getItemAt(int, int)
+	 */
 	public Item getItemAt(int relX, int relY) {
 		if (this.isOpen) {
-			int itemRelX = relX - this.contentX - this.children.relativeX;
-			int itemRelY = relY - this.contentY - this.children.relativeY;
+			int itemRelX = relX - this.children.relativeX;
+			int itemRelY = relY - this.children.relativeY;
 			Item item = this.children.getItemAt(itemRelX, itemRelY);
 			if (item != null) {
 				return item;
@@ -708,11 +722,14 @@ public class CommandItem extends IconItem {
 		return super.getItemAt(relX, relY);
 	}
 
-	/* (Override) */
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.Item#isInItemArea(int, int)
+	 */
 	public boolean isInItemArea(int relX, int relY) {
 		if (this.isOpen) {
-			int itemRelX = relX - this.contentX - this.children.relativeX;
-			int itemRelY = relY - this.contentY - this.children.relativeY;
+			int itemRelX = relX - this.children.relativeX;
+			int itemRelY = relY - this.children.relativeY;
 			if (this.children.isInItemArea(itemRelX, itemRelY)) {
 				return true;
 			}
@@ -725,7 +742,6 @@ public class CommandItem extends IconItem {
 	 * @param item the child command item
 	 */
 	public void focusChild(Item item) {
-		System.out.println("focusChild");
 		if (this.hasChildren) {
 			int index = this.children.indexOf(item);
 			if (index != -1) {
@@ -749,7 +765,9 @@ public class CommandItem extends IconItem {
 			this.parent.getScreen().addCommand(getCommand());
 		}
 	}
+	//#endif
 	
+	//#if polish.CommandItem.showCommand
 	/**
 	 * Removes the command from the screen of
 	 * the parenting item
@@ -761,7 +779,9 @@ public class CommandItem extends IconItem {
 			this.parent.getScreen().removeCommand(getCommand());
 		}
 	}
+	//#endif
 	
+	//#if polish.CommandItem.showCommand
 	/* (non-Javadoc)
 	 * @see de.enough.polish.ui.Item#focus(de.enough.polish.ui.Style, int)
 	 */
@@ -769,15 +789,19 @@ public class CommandItem extends IconItem {
 		addCommandToScreen();
 		return super.focus(newStyle, direction);
 	}
+	//#endif
 	
 	/* (non-Javadoc)
 	 * @see de.enough.polish.ui.IconItem#defocus(de.enough.polish.ui.Style)
 	 */
 	protected void defocus( Style originalStyle ) {
-		removeCommandFromScreen();
-		
+		//#if polish.CommandItem.showCommand
+			removeCommandFromScreen();
+		//#endif 
+		if (this.isOpen) {
+			open( false );
+		}
 		super.defocus(originalStyle);
 	}
-	//#endif
 	
 }

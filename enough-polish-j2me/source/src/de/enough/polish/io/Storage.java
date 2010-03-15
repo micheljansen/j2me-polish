@@ -52,9 +52,9 @@ public interface Storage
 	 * @throws IOException when serializing or storage fails
 	 */
 	//#if polish.java5
-		public void save(K object, String name)
+		void save(K object, String name)
 	//#else
-		//# public void save(Object object, String name)
+		//# void save(Object object, String name)
 	//#endif
 		throws IOException;
 	
@@ -66,7 +66,7 @@ public interface Storage
 //	 * @param name the name under which the object should be stored
 //	 * @throws IOException when serializing or storage fails
 //	 */
-//	public void saveAll( Serializable[] objects, String name )
+//	void saveAll( Serializable[] objects, String name )
 //	throws IOException;
 	
 	/**
@@ -77,9 +77,9 @@ public interface Storage
 	 * @throws IOException when de-serializing or reading fails
 	 */
 	//#if polish.java5
-		public K read( String name )
+		K read( String name )
 	//#else
-		//# public Object read( String name )
+		//# Object read( String name )
 	//#endif
 		throws IOException;
 	
@@ -92,7 +92,7 @@ public interface Storage
 	 *
 	 */
 //	@see #saveAll(Serializable[], String)
-	public Enumeration enumerate( String name )
+	Enumeration enumerate( String name )
 	  throws IOException;
 	
 //	/**
@@ -105,7 +105,7 @@ public interface Storage
 //	 * @throws IOException when de-serializing or reading fails
 //	 * @see #saveAll(Serializable[], String)
 //	 */
-//	public Serializable[] readAll( String name )
+//	Serializable[] readAll( String name )
 //	throws IOException;
 
 	/**
@@ -116,7 +116,7 @@ public interface Storage
 	 * @throws IOException when the names could not be read
 	 * @throws IllegalStateException whent the storage implementation or configuration does not support a listing of names.
 	 */
-	public String[] list()
+	String[] list()
 	  throws IOException;
   
   /**
@@ -125,6 +125,6 @@ public interface Storage
    * @param name the name under which the object has been stored
    * @throws IOException when deletion fails
    */
-  public void delete( String name )
+  void delete( String name )
     throws IOException;
 }

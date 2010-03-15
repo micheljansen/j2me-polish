@@ -41,5 +41,5 @@ public interface VideoCallback {
 	 * Called when a capture is done
 	 * @param data the resulting data of the capture
 	 */
-	public void onSnapshot(byte[] data);
+	public void onSnapshot(byte[] data, String encoding);
 }

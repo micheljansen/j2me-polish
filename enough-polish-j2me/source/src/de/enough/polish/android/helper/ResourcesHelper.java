@@ -9,6 +9,7 @@ import java.util.HashMap;
 import android.content.res.Resources;
 import android.util.Log;
 import de.enough.polish.android.midlet.MIDlet;
+import de.enough.polish.android.midlet.MidletBridge;
 
 public class ResourcesHelper {
 
@@ -44,7 +45,7 @@ public class ResourcesHelper {
 	private static void initResources()
 	{
 		resourceMap = new HashMap<String,Integer>();
-		resources = MIDlet.midletInstance.getResources();
+		resources = MidletBridge.instance.getResources();
 		
 		int id = -1;
 		try
@@ -90,7 +91,7 @@ public class ResourcesHelper {
 		try
 		{
 			int id = ResourcesHelper.getResourceID(resourceName);
-			InputStream is = MIDlet.midletInstance.getResources().openRawResource(id);
+			InputStream is = MidletBridge.instance.getResources().openRawResource(id);
 			if (is == null) {
 				return null;
 			}

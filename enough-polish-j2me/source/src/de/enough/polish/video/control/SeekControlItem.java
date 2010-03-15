@@ -242,7 +242,7 @@ public class SeekControlItem extends Gauge implements VideoCallback
 		AnimationThread.removeAnimationItem(this);
 	}
 
-	public void onSnapshot(byte[] data) {
+	public void onSnapshot(byte[] data, String encoding) {
 		// TODO Auto-generated method stub
 		
 	}

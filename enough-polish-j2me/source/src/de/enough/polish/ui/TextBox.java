@@ -159,7 +159,7 @@ public class TextBox extends Screen
 	 */
 	public String getString()
 	{
-		return this.textField.getText();
+		return this.textField.getString();
 	}
 
 	/**

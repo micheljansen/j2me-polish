@@ -46,6 +46,7 @@ import de.enough.polish.util.TextUtil;
 public class CalendarItem extends TableItem
 {
 	
+	
 	/**
 	 * Show mode for displaying the current month and year within the label of this CalendarItem.
 	 */
@@ -90,6 +91,12 @@ public class CalendarItem extends TableItem
 	private int lastMonth;
 	private int lastYear;
 	private int lastDay;
+	
+	private Style calendarWeekdayStyle;
+	private Style calendarDayInactiveStyle;
+	private Style calendarDayStyle;
+	private Style calendarCurrentdayStyle;
+	
 	
 	
 
@@ -165,7 +172,7 @@ public class CalendarItem extends TableItem
 	/**
 	 * Creates a new Calendar Item.
 	 * 
-	 * @param cal the month that should be dislayed by default.
+	 * @param cal the month that should be displayed by default.
 	 */
 	public CalendarItem(Calendar cal)
 	{
@@ -175,13 +182,13 @@ public class CalendarItem extends TableItem
 	/**
 	 * Creates a new Calendar Item.
 	 * 
-	 * @param cal the month that should be dislayed by default.
+	 * @param cal the month that should be displayed by default.
 	 * @param style the style of the calendar item
 	 */
 	public CalendarItem(Calendar cal, Style style)
 	{
 		// depending on the month up to 6 rows my be used, typically 5 are enough + 1 for the day abbreviations
-		//TODO where are the year and the month name shown?
+		//TODO where are the year and the month name shown? (right now the label is used)
 		super( 7, 7, style); 
 		this.calendar = cal;
 		
@@ -467,5 +474,121 @@ public class CalendarItem extends TableItem
 	{
 		return getSelectedCalendar().getTime();
 	}
+	
+	/**
+	 * Enables or disables the interactivity state of this calendar item.
+	 * @param isInteractive true when the item should be editable and selectable
+	 */
+	public void setEditable( boolean isInteractive ) {
+		if (isInteractive) {
+			setAppearanceMode( INTERACTIVE );
+		} else {
+			setAppearanceMode( PLAIN );
+		}
+	}
+
+	/**
+	 * Gets the style for the headings of this calendar, if different from .calendarWeekday
+	 * @return the style
+	 */
+	public Style getCalendarWeekdayStyle() {
+		return this.calendarWeekdayStyle;
+	}
+
+	/**
+	 * Sets the style for the headings of this calendar
+	 * @param calendarWeekdayStyle the style
+	 */
+	public void setCalendarWeekdayStyle(Style calendarWeekdayStyle) {
+		this.calendarWeekdayStyle = calendarWeekdayStyle;
+	}
+
+	/**
+	 * Gets the style for days of another month, if different from .calendarDayInactive
+	 * @return the style
+	 */
+	public Style getCalendarDayInactiveStyle() {
+		return this.calendarDayInactiveStyle;
+	}
+
+	/**
+	 * Sets the style for days of another month
+	 * @param calendarDayInactiveStyle the style
+	 */
+	public void setCalendarDayInactiveStyle(Style calendarDayInactiveStyle) {
+		this.calendarDayInactiveStyle = calendarDayInactiveStyle;
+	}
+
+	/**
+	 * Gets the style for a normal calendar day entry, if different from .calendarDay
+	 * @return the style
+	 */
+	public Style getCalendarDayStyle() {
+		return this.calendarDayStyle;
+	}
+
+	/**
+	 * Sets the style for a normal calendar day entry
+	 * @param calendarDayStyle the style
+	 */
+	public void setCalendarDayStyle(Style calendarDayStyle) {
+		this.calendarDayStyle = calendarDayStyle;
+	}
+
+	/**
+	 * Gets the style for the currently selected calendar day entry, if different from .calendarCurrentDay
+	 * @return the style
+	 */
+	public Style getCalendarCurrentdayStyle() {
+		return this.calendarCurrentdayStyle;
+	}
+
+	/**
+	 * Sets the style for the currently selected calendar day entry
+	 * @param calendarCurrentdayStyle the style
+	 */
+	public void setCalendarCurrentdayStyle(Style calendarCurrentdayStyle) {
+		this.calendarCurrentdayStyle = calendarCurrentdayStyle;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see de.enough.polish.ui.TableItem#setStyle(de.enough.polish.ui.Style)
+	 */
+	public void setStyle(Style style) {
+		super.setStyle(style);
+		//#if polish.css.customitem-inactive
+			Boolean inactiveBool = style.getBooleanProperty("customitem-inactive");
+			if (inactiveBool != null) {
+				setEditable( !inactiveBool.booleanValue() );
+			}
+		//#endif
+		//#if polish.css.calendar-weekday-style
+			Style headingStyle = (Style) style.getObjectProperty("calendar-weekday-style");
+			if (headingStyle != null) {
+				this.calendarWeekdayStyle = headingStyle;
+			}
+		//#endif
+		//#if polish.css.calendar-day-inactive-style
+			Style dayInactiveStyle = (Style) style.getObjectProperty("calendar-day-inactive-style");
+			if (dayInactiveStyle != null) {
+				this.calendarDayInactiveStyle = dayInactiveStyle;
+			}
+		//#endif
+		//#if polish.css.calendar-day-style
+			Style dayStyle = (Style) style.getObjectProperty("calendar-day-style");
+			if (dayStyle != null) {
+				this.calendarDayStyle = dayStyle;
+			}
+		//#endif
+		//#if polish.css.calendar-current-day-style
+			Style currentDayStyle = (Style) style.getObjectProperty("calendar-current-day-style");
+			if (currentDayStyle != null) {
+				this.calendarCurrentdayStyle = currentDayStyle;
+			}
+		//#endif		
+	}
+	
+	
 
 }
